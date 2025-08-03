@@ -28,6 +28,10 @@
     "node_modules",
     "**/*_old.tsx",
     "**/*page_old.tsx",
-    "**/*page_new.tsx"
+    "**/*page_new.tsx",
+    "**/*_old.ts",
+    ".next",
+    "out",
+    "dist"
   ]
 }

@@ -7,6 +7,7 @@
 - [機能概要](#機能概要)
 - [技術スタック](#技術スタック)
 - [プロジェクト構成](#プロジェクト構成)
+- [データベース設計](#データベース設計)
 - [セットアップ](#セットアップ)
 - [開発環境の起動](#開発環境の起動)
 - [テスト](#テスト)
@@ -86,6 +87,43 @@ cat-management-system/
 ├── .env                    # 開発環境変数
 ├── .env.production         # 本番環境変数
 └── README.md               # このファイル
+```
+
+## 🗄️ データベース設計
+
+本プロジェクトではPostgreSQLとPrisma ORMを使用してデータベースを管理しています。
+
+### 📚 データベースドキュメント
+
+- **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** - 詳細なテーブル構造とリレーション
+- **[DATABASE_QUICK_REF.md](./DATABASE_QUICK_REF.md)** - 開発時のクイックリファレンス
+
+### 🔗 主要テーブル
+
+| テーブル名 | 概要 | 主要フィールド |
+|-----------|------|---------------|
+| `users` | ユーザー管理 | email, name, role |
+| `cats` | 猫の基本情報 | name, birthDate, gender, breed |
+| `breeds` | 猫種マスタ | name_ja, name_en, category |
+| `pedigrees` | 血統情報 | cat, father, mother, generation |
+| `breeding_records` | 交配記録 | mother, father, mating_date |
+| `care_schedules` | ケアスケジュール | cat, care_type, scheduled_date |
+
+### 🔄 主要リレーション
+
+- **猫 ↔ 血統**: 1対1（各猫には1つの血統記録）
+- **猫 ↔ 繁殖記録**: 1対多（1匹の猫が複数の交配に参加）
+- **ユーザー ↔ 猫**: 1対多（1人のユーザーが複数の猫を管理）
+- **猫 ↔ ケアスケジュール**: 1対多（1匹の猫に複数のケア予定）
+
+### 📊 データベース接続情報
+
+```bash
+# 開発環境
+DATABASE_URL="postgresql://postgres:password@localhost:5432/cat_management?schema=public"
+
+# ヘルスチェック
+curl http://localhost:3001/health
 ```
 
 ## 🚀 クイックスタート
