@@ -17,10 +17,9 @@ interface CoatColorData {
 
 interface PedigreeData {
   pedigreeId: string;
-  championFlag: string;
   title: string;
-  catteryName: string;
-  catName: string;
+  catName: string;  // Combined field (previously catteryName + catName)
+  catName2: string; // Additional name field
   breedCode: string;
   gender: string;
   eyeColor: string;
@@ -34,7 +33,24 @@ interface PedigreeData {
   notes: string;
   notes2: string;
   otherNo: string;
-  [key: string]: string; // For parent and grandparent data
+  oldCode: string;
+  // Father data (ChampionFlag removed)
+  fatherTitle: string;
+  fatherName: string;
+  fatherCatName2: string;
+  fatherCoatColor: string;
+  fatherEyeColor: string;
+  fatherJCU: string;
+  fatherOtherCode: string;
+  // Mother data (ChampionFlag removed)
+  motherTitle: string;
+  motherCatName: string;
+  motherCatName2: string;
+  motherCoatColor: string;
+  motherEyeColor: string;
+  motherJCU: string;
+  motherOtherCode: string;
+  // Additional ancestor data would be included here...
 }
 
 async function importBreeds() {
@@ -53,15 +69,18 @@ async function importBreeds() {
       })
       .on('end', async () => {
         try {
+          const processedNames = new Set<string>();
           for (const breed of breeds) {
             const code = parseInt(breed.key);
-            if (!isNaN(code) && breed.name.trim()) {
+            const trimmedName = breed.name.trim();
+            if (!isNaN(code) && trimmedName && !processedNames.has(trimmedName)) {
+              processedNames.add(trimmedName);
               await prisma.breed.upsert({
                 where: { code },
-                update: { name: breed.name.trim() },
+                update: { name: trimmedName },
                 create: {
                   code,
-                  name: breed.name.trim(),
+                  name: trimmedName,
                 },
               });
             }
@@ -92,15 +111,18 @@ async function importCoatColors() {
       })
       .on('end', async () => {
         try {
+          const processedColorNames = new Set<string>();
           for (const color of colors) {
             const code = parseInt(color.key);
-            if (!isNaN(code) && color.name.trim()) {
+            const trimmedName = color.name.trim();
+            if (!isNaN(code) && trimmedName && !processedColorNames.has(trimmedName)) {
+              processedColorNames.add(trimmedName);
               await prisma.coatColor.upsert({
                 where: { code },
-                update: { name: color.name.trim() },
+                update: { name: trimmedName },
                 create: {
                   code,
-                  name: color.name.trim(),
+                  name: trimmedName,
                 },
               });
             }
@@ -119,29 +141,47 @@ async function importPedigrees() {
   console.log('📜 Importing pedigree data...');
   
   const pedigrees: PedigreeData[] = [];
-  const csvPath = path.join(__dirname, '../../NewPedigree/血統書データUTFVer.csv');
+  const csvPath = path.join(__dirname, '../../NewPedigree/血統書データRenamed.csv');
   
-  // Define headers based on CSV structure
+  // Define headers based on updated CSV structure (ChampionFlag columns removed)
   const headers = [
-    'pedigreeId', 'championFlag', 'title', 'catteryName', 'catName',
+    'pedigreeId', 'title', 'catName', 'catName2',
     'breedCode', 'gender', 'eyeColor', 'coatColorCode', 'birthDate',
     'breederName', 'ownerName', 'registrationDate', 'brotherCount', 'sisterCount',
     'notes', 'notes2', 'otherNo',
-    // Father data
-    'fatherChampionFlag', 'fatherTitle', 'fatherCatteryName', 'fatherCatName',
+    // Father data (ChampionFlag removed)
+    'fatherTitle', 'fatherName', 'fatherCatName2',
     'fatherCoatColor', 'fatherEyeColor', 'fatherJCU', 'fatherOtherCode',
-    // Mother data
-    'motherChampionFlag', 'motherTitle', 'motherCatteryName', 'motherCatName',
+    // Mother data (ChampionFlag removed)
+    'motherTitle', 'motherCatName', 'motherCatName2',
     'motherCoatColor', 'motherEyeColor', 'motherJCU', 'motherOtherCode',
-    // Grandparents data (abbreviated for brevity)
-    'patGrandFatherChampionFlag', 'patGrandFatherTitle', 'patGrandFatherCatteryName', 'patGrandFatherCatName', 'patGrandFatherJCU',
-    'patGrandMotherChampionFlag', 'patGrandMotherTitle', 'patGrandMotherCatteryName', 'patGrandMotherCatName', 'patGrandMotherJCU',
-    'matGrandFatherChampionFlag', 'matGrandFatherTitle', 'matGrandFatherCatteryName', 'matGrandFatherCatName', 'matGrandFatherJCU',
-    'matGrandMotherChampionFlag', 'matGrandMotherTitle', 'matGrandMotherCatteryName', 'matGrandMotherCatName', 'matGrandMotherJCU',
-    // Additional fields...
+    // Grandparents data FF (ChampionFlag removed)
+    'ffTitle', 'ffCatName', 'ffCatColor', 'ffJCU',
+    // Grandparents data FM (ChampionFlag removed)
+    'fmTitle', 'fmCatName', 'fmCatColor', 'fmJCU',
+    // Grandparents data MF (ChampionFlag removed)
+    'mfTitle', 'mfCatName', 'mfCatColor', 'mfJCU',
+    // Grandparents data MM (ChampionFlag removed)
+    'mmTitle', 'mmCatName', 'mmCatColor', 'mmJCU',
+    // Great-grandparents data FFF (ChampionFlag removed)
+    'fffTitle', 'fffCatName', 'fffCatColor', 'fffJCU',
+    // Great-grandparents data FFM (ChampionFlag removed)
+    'ffmTitle', 'ffmCatName', 'ffmCatColor', 'ffmJCU',
+    // Great-grandparents data FMF (ChampionFlag removed)
+    'fmfTitle', 'fmfCatName', 'fmfCatColor', 'fmfJCU',
+    // Great-grandparents data FMM (ChampionFlag removed)
+    'fmmTitle', 'fmmCatName', 'fmmCatColor', 'fmmJCU',
+    // Great-grandparents data MFF (ChampionFlag removed)
+    'mffTitle', 'mffCatName', 'mffCatColor', 'mffJCU',
+    // Great-grandparents data MFM (ChampionFlag removed)
+    'mfmTitle', 'mfmCatName', 'mfmCatColor', 'mfmJCU',
+    // Great-grandparents data MMF (ChampionFlag removed)
+    'mmfTitle', 'mmfCatName', 'mmfCatColor', 'mmfJCU',
+    // Great-grandparents data MMM (ChampionFlag removed)
+    'mmmTitle', 'mmmCatName', 'mmmCatColor', 'mmmJCU',
     'oldCode'
   ];
-  
+    // Additional fields...
   return new Promise<void>((resolve, reject) => {
     let rowCount = 0;
     
@@ -179,7 +219,6 @@ async function importPedigrees() {
                   where: { pedigreeId: pedigree.pedigreeId.toString() },
                   update: {
                     title: pedigree.title || null,
-                    catteryName: pedigree.catteryName || null,
                     catName: pedigree.catName || '',
                     breedCode,
                     gender,
@@ -194,13 +233,11 @@ async function importPedigrees() {
                     notes: pedigree.notes || null,
                     notes2: pedigree.notes2 || null,
                     otherNo: pedigree.otherNo || null,
-                    championFlag: pedigree.championFlag || null,
                     oldCode: pedigree.oldCode || null,
                   },
                   create: {
                     pedigreeId: pedigree.pedigreeId.toString(),
                     title: pedigree.title || null,
-                    catteryName: pedigree.catteryName || null,
                     catName: pedigree.catName || '',
                     breedCode,
                     gender,
@@ -215,7 +252,6 @@ async function importPedigrees() {
                     notes: pedigree.notes || null,
                     notes2: pedigree.notes2 || null,
                     otherNo: pedigree.otherNo || null,
-                    championFlag: pedigree.championFlag || null,
                     oldCode: pedigree.oldCode || null,
                   },
                 });

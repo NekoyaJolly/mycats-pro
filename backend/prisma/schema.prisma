@@ -208,8 +208,8 @@ model Pedigree {
   
   // Names (multiple parts)
   title                 String?   // 猫名前１
-  catteryName           String?   // 猫名前２  
-  catName               String    // 猫名前３
+  catName2              String?   // 猫名前３ (additional name field)  
+  catName               String    // 猫名前２ (previously catteryName + catName combined)
   
   // Basic info
   breedId               String?
@@ -237,7 +237,6 @@ model Pedigree {
   notes                 String?   // 摘要
   notes2                String?   // 摘要２
   otherNo               String?   // 他団体No
-  championFlag          String?   // GP (Champion flag)
   oldCode               String?   // 旧コード
   
   // Parent relations

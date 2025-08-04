@@ -12,7 +12,6 @@ export class PedigreeService {
       pedigreeId: createPedigreeDto.pedigreeId,
       catName: createPedigreeDto.catName,
       title: createPedigreeDto.title,
-      catteryName: createPedigreeDto.catteryName,
       gender: createPedigreeDto.gender,
       eyeColor: createPedigreeDto.eyeColor,
       birthDate: createPedigreeDto.birthDate ? new Date(createPedigreeDto.birthDate) : undefined,
@@ -24,7 +23,6 @@ export class PedigreeService {
       notes: createPedigreeDto.notes,
       notes2: createPedigreeDto.notes2,
       otherNo: createPedigreeDto.otherNo,
-      championFlag: createPedigreeDto.championFlag,
       oldCode: createPedigreeDto.oldCode,
       catId: createPedigreeDto.catId,
       breedId: createPedigreeDto.breedId,
@@ -71,8 +69,7 @@ export class PedigreeService {
       breedId,
       colorId,
       gender,
-      championFlag,
-      catteryName,
+      catName2,
       eyeColor,
       sortBy = 'createdAt',
       sortOrder = 'desc',
@@ -86,7 +83,6 @@ export class PedigreeService {
       where.OR = [
         { catName: { contains: search, mode: 'insensitive' } },
         { title: { contains: search, mode: 'insensitive' } },
-        { catteryName: { contains: search, mode: 'insensitive' } },
         { breederName: { contains: search, mode: 'insensitive' } },
         { ownerName: { contains: search, mode: 'insensitive' } },
       ];
@@ -96,8 +92,6 @@ export class PedigreeService {
     if (breedId) where.breedId = breedId;
     if (colorId) where.colorId = colorId;
     if (gender) where.gender = parseInt(gender);
-    if (championFlag) where.championFlag = championFlag;
-    if (catteryName) where.catteryName = { contains: catteryName, mode: 'insensitive' };
     if (eyeColor) where.eyeColor = { contains: eyeColor, mode: 'insensitive' };
 
     const [pedigrees, total] = await Promise.all([

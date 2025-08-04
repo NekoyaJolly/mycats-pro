@@ -23,9 +23,9 @@ async function checkPedigreeData() {
       },
       select: {
         pedigreeId: true,
-        catName: true,
+        // Removed: catName: true,
         title: true,
-        catteryName: true,
+        catName: true,
         gender: true,
         birthDate: true,
         breederName: true,
@@ -42,7 +42,7 @@ async function checkPedigreeData() {
     console.log('=' .repeat(120));
     
     sampleData.forEach(data => {
-      const fullName = [data.title, data.catteryName, data.catName].filter(Boolean).join(' ');
+      const fullName = [data.title, data.catName, data.catName].filter(Boolean).join(' ');
       const gender = data.gender === 1 ? '雄' : data.gender === 2 ? '雌' : '不明';
       const birthDate = data.birthDate ? data.birthDate.toISOString().split('T')[0] : '未設定';
       

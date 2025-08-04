@@ -24,7 +24,6 @@ interface PedigreeDetail {
   pedigreeId: string;
   catId: string | null;
   title: string | null;
-  catteryName: string | null;
   catName: string;
   breedCode: number | null;
   gender: number | null;
@@ -39,7 +38,6 @@ interface PedigreeDetail {
   notes: string | null;
   notes2: string | null;
   otherNo: string | null;
-  championFlag: string | null;
   oldCode: string | null;
   breed: { id: string; name: string; code: number } | null;
   color: { id: string; name: string; code: number } | null;
@@ -181,10 +179,6 @@ export default function PedigreeDetailPage() {
                 <Group>
                   <Text fw={600}>猫名:</Text>
                   <Text size="lg" fw={500}>{pedigree.catName || '名前なし'}</Text>
-                </Group>
-                <Group>
-                  <Text fw={600}>キャッテリー名:</Text>
-                  <Text>{pedigree.catteryName || '-'}</Text>
                 </Group>
                 <Group>
                   <Text fw={600}>タイトル:</Text>
@@ -398,10 +392,6 @@ export default function PedigreeDetailPage() {
           <Grid>
             <Grid.Col span={{ base: 12, md: 6 }}>
               <Stack gap="xs">
-                <Group>
-                  <Text fw={600}>チャンピオンフラグ:</Text>
-                  <Text>{pedigree.championFlag || '-'}</Text>
-                </Group>
                 <Group>
                   <Text fw={600}>他団体No:</Text>
                   <Text>{pedigree.otherNo || '-'}</Text>

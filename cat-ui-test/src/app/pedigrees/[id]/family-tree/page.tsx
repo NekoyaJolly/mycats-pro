@@ -23,7 +23,6 @@ interface PedigreeMember {
   id: string;
   pedigreeId: string;
   catName: string;
-  catteryName: string | null;
   breedCode: number | null;
   gender: number | null;
   birthDate: string | null;
@@ -36,7 +35,6 @@ interface FamilyTreeData {
   id: string;
   pedigreeId: string;
   catName: string;
-  catteryName: string | null;
   breedCode: number | null;
   gender: number | null;
   birthDate: string | null;
@@ -155,9 +153,6 @@ export default function FamilyTreePage() {
             <div>
               <Text fw={600} size="sm" lineClamp={1}>
                 {pedigree.catName || '名前なし'}
-              </Text>
-              <Text size="xs" c="dimmed" lineClamp={1}>
-                {pedigree.catteryName || ''}
               </Text>
             </div>
             <Badge size="xs" color={getGenderColor(pedigree.gender)}>

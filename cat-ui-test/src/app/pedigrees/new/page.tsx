@@ -55,7 +55,6 @@ interface PedigreeFormData {
   pedigreeId: string;
   catName: string;
   title?: string;
-  catteryName?: string;
   gender?: number;
   eyeColor?: string;
   birthDate?: Date;
@@ -68,7 +67,6 @@ interface PedigreeFormData {
   notes?: string;
   notes2?: string;
   otherNo?: string;
-  championFlag?: string;
   breedId?: string;
   colorId?: string;
   breedCode?: string;
@@ -145,7 +143,7 @@ export default function NewPedigreePage() {
         const result = await response.json();
         const options = (result.data || []).map((p: any) => ({
           value: p.id,
-          label: `${p.pedigreeId} - ${p.catName || '名前なし'}${p.catteryName ? ` (${p.catteryName})` : ''}`
+          label: `${p.pedigreeId} - ${p.catName || '名前なし'}`
         }));
         setPedigreeOptions(options);
       }
@@ -307,7 +305,7 @@ export default function NewPedigreePage() {
       pedigreeId: '700545', // 新規番号として700545を使用
       catName: 'Jolly Tokuichi',
       title: '',
-      catteryName: 'B.F.C Andres',
+      catName: 'アンドレス B.F.C',
       gender: 1, // Male
       eyeColor: 'Gold',
       birthDate: new Date('2019-01-05'),
@@ -415,14 +413,6 @@ export default function NewPedigreePage() {
                   placeholder="例: Champion"
                   value={formData.title || ''}
                   onChange={(e) => updateFormData('title', e.target.value)}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, md: 6 }}>
-                <TextInput
-                  label="キャッテリー名"
-                  placeholder="例: Hayato Inami"
-                  value={formData.catteryName || ''}
-                  onChange={(e) => updateFormData('catteryName', e.target.value)}
                 />
               </Grid.Col>
               <Grid.Col span={{ base: 12, md: 4 }}>

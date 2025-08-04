@@ -102,7 +102,7 @@ async function importParentPedigrees() {
           data: {
             pedigreeId: record.PedigreeID,
             title: record.Title,
-            catteryName: record.CatteryName,
+            // Removed: catName: record.CatteryName,
             catName: record.CatName,
             breedCode: parseInt(record.BreedCode),
             gender: parseInt(record.Gender),

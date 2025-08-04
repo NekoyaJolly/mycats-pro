@@ -23,7 +23,7 @@ export class CreatePedigreeDto {
   @IsOptional()
   @IsString()
   @MaxLength(200)
-  catteryName?: string;
+  catName2?: string;
 
   @ApiPropertyOptional({ description: '性別 (1: オス, 2: メス)' })
   @IsOptional()
@@ -88,12 +88,6 @@ export class CreatePedigreeDto {
   @IsString()
   @MaxLength(100)
   otherNo?: string;
-
-  @ApiPropertyOptional({ description: 'チャンピオンフラグ' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(10)
-  championFlag?: string;
 
   @ApiPropertyOptional({ description: '旧コード' })
   @IsOptional()

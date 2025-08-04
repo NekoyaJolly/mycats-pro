@@ -35,7 +35,6 @@ export class PedigreeController {
   @ApiQuery({ name: 'breedId', required: false, description: '品種ID' })
   @ApiQuery({ name: 'colorId', required: false, description: '毛色ID' })
   @ApiQuery({ name: 'gender', required: false, description: '性別 (1: オス, 2: メス)' })
-  @ApiQuery({ name: 'championFlag', required: false, description: 'チャンピオンフラグ' })
   @ApiQuery({ name: 'sortBy', required: false, description: 'ソート項目', example: 'createdAt' })
   @ApiQuery({ name: 'sortOrder', required: false, description: 'ソート順', example: 'desc' })
   findAll(@Query() query: PedigreeQueryDto) {

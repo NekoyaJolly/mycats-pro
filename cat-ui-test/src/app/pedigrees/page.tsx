@@ -27,7 +27,6 @@ interface PedigreeData {
   id: string;
   pedigreeId: string;
   catName: string;
-  catteryName: string;
   breedCode: number | null;
   gender: number | null;
   birthDate: string | null;
@@ -159,7 +158,7 @@ export default function PedigreesPage() {
           <Grid>
             <Grid.Col span={{ base: 12, md: 6 }}>
               <TextInput
-                placeholder="猫名、キャッテリー名、繁殖者名で検索..."
+                placeholder="猫名、繁殖者名で検索..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 leftSection={<IconSearch size={16} />}
@@ -202,7 +201,6 @@ export default function PedigreesPage() {
               <Table.Tr>
                 <Table.Th>血統書番号</Table.Th>
                 <Table.Th>猫名</Table.Th>
-                <Table.Th>キャッテリー名</Table.Th>
                 <Table.Th>性別</Table.Th>
                 <Table.Th>品種コード</Table.Th>
                 <Table.Th>生年月日</Table.Th>
@@ -223,11 +221,6 @@ export default function PedigreesPage() {
                   <Table.Td>
                     <Text fw={500}>
                       {pedigree.catName || '名前なし'}
-                    </Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size="sm" c="dimmed">
-                      {pedigree.catteryName || '-'}
                     </Text>
                   </Table.Td>
                   <Table.Td>

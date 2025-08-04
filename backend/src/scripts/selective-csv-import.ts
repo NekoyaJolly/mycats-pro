@@ -118,8 +118,7 @@ async function importSelectedPedigrees(options: ImportOptions = {}) {
         data: {
           pedigreeId: record.ＧＰ || `GP_${record.キー}`,
           title: record.猫名前１ || null,
-          catteryName: record.猫名前２ || null,
-          catName: record.猫名前３ || `Cat_${record.キー}`,
+          catName: ((record.猫名前２ || '') + ' ' + (record.猫名前３ || '')).trim() || `Cat_${record.キー}`,
           breedId: breedId,
           breedCode: parseInt(record.猫種ｺｰﾄﾞ) || null,
           gender: parseInt(record.性別) || null,

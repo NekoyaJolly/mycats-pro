@@ -38,18 +38,12 @@ export class PedigreeQueryDto {
   @ApiPropertyOptional({ description: 'キャッテリー名' })
   @IsOptional()
   @IsString()
-  catteryName?: string;
+  catName2?: string;
 
   @ApiPropertyOptional({ description: '目の色' })
   @IsOptional()
   @IsString()
   eyeColor?: string;
-
-  @ApiPropertyOptional({ description: 'チャンピオンフラグ' })
-  @IsOptional()
-  @IsBoolean()
-  @Transform(({ value }) => value === 'true' || value === true)
-  championFlag?: boolean;
 
   @ApiPropertyOptional({ description: 'ソート項目', default: 'createdAt' })
   @IsOptional()

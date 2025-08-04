@@ -207,7 +207,7 @@ async function importPedigreeSampleData() {
           data: {
             pedigreeId: record.PedigreeID,
             title: record.Title || null,
-            catteryName: record.CatteryName || null,
+            // Removed: catName: record.CatteryName || null,
             catName: record.CatName,
             breedCode: record.BreedCode ? parseInt(record.BreedCode) : null,
             gender: record.Gender ? parseInt(record.Gender) : null,
@@ -222,7 +222,6 @@ async function importPedigreeSampleData() {
             notes: record.Notes || null,
             notes2: record.Notes2 || null,
             otherNo: record.OtherNo || null,
-            championFlag: record.ChampionFlag || null,
             oldCode: record.OldCode || null,
             
             // TODO: 将来的にリレーション情報も処理する
@@ -260,14 +259,14 @@ async function importPedigreeSampleData() {
           pedigreeId: true,
           catName: true,
           title: true,
-          catteryName: true,
+          // Removed: catName: true,
           birthDate: true,
           breederName: true,
         }
       });
       
       samples.forEach(sample => {
-        console.log(`  - ${sample.pedigreeId}: ${sample.title || ''} ${sample.catteryName || ''} ${sample.catName}`);
+        console.log(`  - ${sample.pedigreeId}: ${sample.title || ''} ${sample.catName || ''} ${sample.catName}`);
       });
     }
     

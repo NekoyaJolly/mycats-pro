@@ -1,0 +1,337 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["debian-openssl-1.1.x", "darwin"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  clerkId     String   @unique
+  email       String   @unique
+  firstName   String?
+  lastName    String?
+  role        UserRole @default(USER)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  cats        Cat[]
+  breedingRecords BreedingRecord[]
+  careRecords     CareRecord[]
+  schedules       Schedule[]
+
+  @@map("users")
+}
+
+model Breed {
+  id          String   @id @default(uuid())
+  code        Int      @unique // キー from CSV
+  name        String   @unique // 種類名称 from CSV
+  description String?
+  isActive    Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  cats        Cat[]
+  pedigrees   Pedigree[]
+
+  @@map("breeds")
+}
+
+model CoatColor {
+  id          String   @id @default(uuid())
+  code        Int      @unique // キー from CSV
+  name        String   @unique // 毛色名称 from CSV
+  description String?
+  isActive    Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  cats        Cat[]
+  pedigrees   Pedigree[]
+
+  @@map("coat_colors")
+}
+
+model Cat {
+  id              String    @id @default(uuid())
+  registrationId  String    @unique
+  name            String
+  
+  // Updated breed and color relations
+  breedId         String?
+  breed           Breed?    @relation(fields: [breedId], references: [id])
+  colorId         String?
+  color           CoatColor? @relation(fields: [colorId], references: [id])
+  
+  // Legacy fields for backward compatibility
+  legacyBreed     String?   // Old breed field
+  legacyColor     String?   // Old color field
+  
+  pattern         String?
+  gender          Gender
+  birthDate       DateTime
+  weight          Float?
+  microchipId     String?   @unique
+  isActive        Boolean   @default(true)
+  notes           String?
+  imageUrl        String?
+  
+  // Parent information
+  fatherId        String?
+  motherId        String?
+  father          Cat?      @relation("CatFather", fields: [fatherId], references: [id])
+  mother          Cat?      @relation("CatMother", fields: [motherId], references: [id])
+  
+  // Children relations
+  fatherOf        Cat[]     @relation("CatFather")
+  motherOf        Cat[]     @relation("CatMother")
+  
+  // Owner
+  ownerId         String
+  owner           User      @relation(fields: [ownerId], references: [id])
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  maleBreedingRecords   BreedingRecord[] @relation("MaleBreeding")
+  femaleBreedingRecords BreedingRecord[] @relation("FemaleBreeding")
+  careRecords     CareRecord[]
+  schedules       Schedule[]
+  tags            CatTag[]
+  pedigrees       Pedigree[]
+
+  @@map("cats")
+}
+
+model BreedingRecord {
+  id          String   @id @default(uuid())
+  maleId      String
+  femaleId    String
+  breedingDate DateTime
+  expectedDueDate DateTime?
+  actualDueDate   DateTime?
+  numberOfKittens Int?
+  notes       String?
+  status      BreedingStatus @default(PLANNED)
+  
+  male        Cat      @relation("MaleBreeding", fields: [maleId], references: [id])
+  female      Cat      @relation("FemaleBreeding", fields: [femaleId], references: [id])
+  
+  recordedBy  String
+  recorder    User     @relation(fields: [recordedBy], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("breeding_records")
+}
+
+model CareRecord {
+  id          String   @id @default(uuid())
+  catId       String
+  careType    CareType
+  description String
+  careDate    DateTime
+  nextDueDate DateTime?
+  cost        Float?
+  veterinarian String?
+  notes       String?
+  
+  cat         Cat      @relation(fields: [catId], references: [id])
+  
+  recordedBy  String
+  recorder    User     @relation(fields: [recordedBy], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("care_records")
+}
+
+model Schedule {
+  id          String        @id @default(uuid())
+  title       String
+  description String?
+  scheduleDate DateTime
+  scheduleType ScheduleType
+  status      ScheduleStatus @default(PENDING)
+  priority    Priority      @default(MEDIUM)
+  
+  // Optional cat relation
+  catId       String?
+  cat         Cat?          @relation(fields: [catId], references: [id])
+  
+  assignedTo  String
+  assignee    User          @relation(fields: [assignedTo], references: [id])
+  
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("schedules")
+}
+
+model Tag {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  color       String   @default("#3B82F6")
+  description String?
+  
+  cats        CatTag[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("tags")
+}
+
+model Pedigree {
+  id                    String    @id @default(uuid())
+  pedigreeId            String    @unique // GP from CSV
+  
+  // Cat information
+  catId                 String?
+  cat                   Cat?      @relation(fields: [catId], references: [id])
+  
+  // Names (multiple parts)
+  title                 String?   // 猫名前１
+  catteryName           String?   // 猫名前２  
+  catName               String    // 猫名前３
+  
+  // Basic info
+  breedId               String?
+  breed                 Breed?    @relation(fields: [breedId], references: [id])
+  breedCode             Int?      // 猫種コード
+  gender                Int?      // 性別 (1=male, 2=female)
+  eyeColor              String?   // 目色
+  colorId               String?
+  color                 CoatColor? @relation(fields: [colorId], references: [id])
+  coatColorCode         Int?      // 毛色コード
+  
+  // Dates
+  birthDate             DateTime? // 生年月日
+  registrationDate      DateTime? // 登録年月日
+  
+  // People
+  breederName           String?   // 繁殖者名
+  ownerName             String?   // 所有者名
+  
+  // Siblings
+  brotherCount          Int?      // 兄弟の人数
+  sisterCount           Int?      // 姉妹の人数
+  
+  // Notes and other info
+  notes                 String?   // 摘要
+  notes2                String?   // 摘要２
+  otherNo               String?   // 他団体No
+  championFlag          String?   // GP (Champion flag)
+  oldCode               String?   // 旧コード
+  
+  // Parent relations
+  fatherPedigreeId      String?
+  fatherPedigree        Pedigree? @relation("PedigreeFather", fields: [fatherPedigreeId], references: [id])
+  fatherOf              Pedigree[] @relation("PedigreeFather")
+  
+  motherPedigreeId      String?
+  motherPedigree        Pedigree? @relation("PedigreeMother", fields: [motherPedigreeId], references: [id])
+  motherOf              Pedigree[] @relation("PedigreeMother")
+  
+  // Grandparent relations
+  paternalGrandfatherId String?
+  paternalGrandfather   Pedigree? @relation("PatGrandfather", fields: [paternalGrandfatherId], references: [id])
+  paternalGrandfatherOf Pedigree[] @relation("PatGrandfather")
+  
+  paternalGrandmotherId String?
+  paternalGrandmother   Pedigree? @relation("PatGrandmother", fields: [paternalGrandmotherId], references: [id])
+  paternalGrandmotherOf Pedigree[] @relation("PatGrandmother")
+  
+  maternalGrandfatherId String?
+  maternalGrandfather   Pedigree? @relation("MatGrandfather", fields: [maternalGrandfatherId], references: [id])
+  maternalGrandfatherOf Pedigree[] @relation("MatGrandfather")
+  
+  maternalGrandmotherId String?
+  maternalGrandmother   Pedigree? @relation("MatGrandmother", fields: [maternalGrandmotherId], references: [id])
+  maternalGrandmotherOf Pedigree[] @relation("MatGrandmother")
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("pedigrees")
+}
+
+model CatTag {
+  catId       String
+  tagId       String
+  
+  cat         Cat      @relation(fields: [catId], references: [id], onDelete: Cascade)
+  tag         Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+
+  @@id([catId, tagId])
+  @@map("cat_tags")
+}
+
+// Enums
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum BreedingStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum CareType {
+  VACCINATION
+  HEALTH_CHECK
+  GROOMING
+  DENTAL_CARE
+  MEDICATION
+  SURGERY
+  OTHER
+}
+
+enum ScheduleType {
+  BREEDING
+  CARE
+  APPOINTMENT
+  REMINDER
+  MAINTENANCE
+}
+
+enum ScheduleStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
