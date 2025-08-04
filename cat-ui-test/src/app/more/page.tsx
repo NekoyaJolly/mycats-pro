@@ -34,6 +34,13 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   {
+    title: '血統書管理',
+    description: '血統書データの閲覧・検索・家系図表示',
+    icon: <IconFileExport size={24} />,
+    href: '/pedigrees',
+    color: 'purple'
+  },
+  {
     title: '新規猫登録',
     description: '新しい猫の情報を登録します',
     icon: <IconPlus size={24} />,

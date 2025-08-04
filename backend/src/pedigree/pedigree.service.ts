@@ -7,12 +7,58 @@ export class PedigreeService {
   constructor(private prisma: PrismaService) {}
 
   async create(createPedigreeDto: CreatePedigreeDto) {
+    // Prisma の型に適合するようにデータを準備
+    const createData: any = {
+      pedigreeId: createPedigreeDto.pedigreeId,
+      catName: createPedigreeDto.catName,
+      title: createPedigreeDto.title,
+      catteryName: createPedigreeDto.catteryName,
+      gender: createPedigreeDto.gender,
+      eyeColor: createPedigreeDto.eyeColor,
+      birthDate: createPedigreeDto.birthDate ? new Date(createPedigreeDto.birthDate) : undefined,
+      registrationDate: createPedigreeDto.registrationDate ? new Date(createPedigreeDto.registrationDate) : undefined,
+      breederName: createPedigreeDto.breederName,
+      ownerName: createPedigreeDto.ownerName,
+      brotherCount: createPedigreeDto.brotherCount,
+      sisterCount: createPedigreeDto.sisterCount,
+      notes: createPedigreeDto.notes,
+      notes2: createPedigreeDto.notes2,
+      otherNo: createPedigreeDto.otherNo,
+      championFlag: createPedigreeDto.championFlag,
+      oldCode: createPedigreeDto.oldCode,
+      catId: createPedigreeDto.catId,
+      breedId: createPedigreeDto.breedId,
+      colorId: createPedigreeDto.colorId,
+      pedigreeIssueDate: createPedigreeDto.pedigreeIssueDate ? new Date(createPedigreeDto.pedigreeIssueDate) : undefined,
+      breedCode: createPedigreeDto.breedCode,
+      coatColorCode: createPedigreeDto.coatColorCode,
+      fatherPedigreeId: createPedigreeDto.fatherPedigreeId,
+      motherPedigreeId: createPedigreeDto.motherPedigreeId,
+      paternalGrandfatherId: createPedigreeDto.paternalGrandfatherId,
+      paternalGrandmotherId: createPedigreeDto.paternalGrandmotherId,
+      maternalGrandfatherId: createPedigreeDto.maternalGrandfatherId,
+      maternalGrandmotherId: createPedigreeDto.maternalGrandmotherId,
+    };
+
+    // undefined フィールドを除去
+    Object.keys(createData).forEach(key => {
+      if (createData[key] === undefined) {
+        delete createData[key];
+      }
+    });
+
     return this.prisma.pedigree.create({
-      data: createPedigreeDto,
+      data: createData,
       include: {
         breed: true,
         color: true,
         cat: true,
+        fatherPedigree: true,
+        motherPedigree: true,
+        paternalGrandfather: true,
+        paternalGrandmother: true,
+        maternalGrandfather: true,
+        maternalGrandmother: true,
       },
     });
   }
@@ -177,13 +223,40 @@ export class PedigreeService {
       throw new NotFoundException(`Pedigree with ID ${id} not found`);
     }
 
+    // Prisma の型に適合するようにデータを準備
+    const updateData: any = { ...updatePedigreeDto };
+    
+    // Date文字列をDateオブジェクトに変換
+    if (updateData.birthDate) {
+      updateData.birthDate = new Date(updateData.birthDate);
+    }
+    if (updateData.registrationDate) {
+      updateData.registrationDate = new Date(updateData.registrationDate);
+    }
+    if (updateData.pedigreeIssueDate) {
+      updateData.pedigreeIssueDate = new Date(updateData.pedigreeIssueDate);
+    }
+
+    // undefined フィールドを除去
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] === undefined) {
+        delete updateData[key];
+      }
+    });
+
     return this.prisma.pedigree.update({
       where: { id },
-      data: updatePedigreeDto,
+      data: updateData,
       include: {
         breed: true,
         color: true,
         cat: true,
+        fatherPedigree: true,
+        motherPedigree: true,
+        paternalGrandfather: true,
+        paternalGrandmother: true,
+        maternalGrandfather: true,
+        maternalGrandmother: true,
       },
     });
   }

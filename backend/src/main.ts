@@ -13,7 +13,7 @@ async function bootstrap() {
       cors: {
         origin: process.env.NODE_ENV === 'production' 
           ? ['https://yourdomain.com'] 
-          : ['http://localhost:3000', 'http://localhost:3002'],
+          : ['http://localhost:3000', 'http://localhost:3002', 'http://localhost:3003', 'http://localhost:3005'],
         credentials: true,
       },
     });
@@ -29,6 +29,23 @@ async function bootstrap() {
 
     // API prefix
     app.setGlobalPrefix('api/v1');
+
+    // Root endpoint
+    app.getHttpAdapter().get('/', (req, res) => {
+      res.json({
+        message: '🐱 Cat Management System API',
+        version: '1.0.0',
+        documentation: '/api/docs',
+        health: '/health',
+        timestamp: new Date().toISOString(),
+        endpoints: {
+          cats: '/api/v1/cats',
+          pedigrees: '/api/v1/pedigrees',
+          breeds: '/api/v1/breeds',
+          coatColors: '/api/v1/coat-colors',
+        }
+      });
+    });
 
     // Health check endpoint
     app.getHttpAdapter().get('/health', (req, res) => {

@@ -105,4 +105,64 @@ export class CreatePedigreeDto {
   @IsOptional()
   @IsString()
   catId?: string;
+
+  // 血統関係フィールド
+  @ApiPropertyOptional({ description: '品種ID' })
+  @IsOptional()
+  @IsString()
+  breedId?: string;
+
+  @ApiPropertyOptional({ description: '毛色ID' })
+  @IsOptional()
+  @IsString()
+  colorId?: string;
+
+  @ApiPropertyOptional({ description: '血統書発行日' })
+  @IsOptional()
+  @IsDateString()
+  pedigreeIssueDate?: string;
+
+  @ApiPropertyOptional({ description: '品種コード' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  breedCode?: string;
+
+  @ApiPropertyOptional({ description: '毛色コード' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  coatColorCode?: string;
+
+  // 父母血統書ID
+  @ApiPropertyOptional({ description: '父の血統書ID' })
+  @IsOptional()
+  @IsString()
+  fatherPedigreeId?: string;
+
+  @ApiPropertyOptional({ description: '母の血統書ID' })
+  @IsOptional()
+  @IsString()
+  motherPedigreeId?: string;
+
+  // 祖父母血統書ID
+  @ApiPropertyOptional({ description: '父方祖父の血統書ID' })
+  @IsOptional()
+  @IsString()
+  paternalGrandfatherId?: string;
+
+  @ApiPropertyOptional({ description: '父方祖母の血統書ID' })
+  @IsOptional()
+  @IsString()
+  paternalGrandmotherId?: string;
+
+  @ApiPropertyOptional({ description: '母方祖父の血統書ID' })
+  @IsOptional()
+  @IsString()
+  maternalGrandfatherId?: string;
+
+  @ApiPropertyOptional({ description: '母方祖母の血統書ID' })
+  @IsOptional()
+  @IsString()
+  maternalGrandmotherId?: string;
 }
