@@ -22,7 +22,18 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "ts-node prisma/seed.ts",
+    "csv:preview": "ts-node src/scripts/selective-csv-import.ts --preview --start 701606 --end 701630",
+    "csv:import": "ts-node src/scripts/selective-csv-import.ts",
+    "csv:sample": "ts-node src/scripts/selective-csv-import.ts --start 701606 --end 701630 --max 25",
+    "csv:analyze": "ts-node src/scripts/csv-preview.ts",
+    "pedigree:rename": "ts-node src/scripts/rename-pedigree-csv.ts",
+    "pedigree:import": "ts-node src/scripts/import-pedigree-sample.ts",
+    "pedigree:sample": "ts-node src/scripts/import-pedigree-sample.ts --range=701606-701630",
+    "pedigree:check": "ts-node src/scripts/check-pedigree-data.ts",
+    "pedigree:relations": "ts-node src/scripts/build-pedigree-relations.ts",
+    "pedigree:medium": "ts-node src/scripts/import-medium-dataset.ts",
+    "pedigree:parents": "ts-node src/scripts/import-parent-pedigrees.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -38,6 +49,7 @@
     "bcryptjs": "^2.4.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
+    "csv-parse": "^6.1.0",
     "csv-parser": "^3.2.0",
     "multer": "^1.4.5-lts.1",
     "passport": "^0.7.0",

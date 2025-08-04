@@ -144,7 +144,7 @@
 | フィールド名 | 型 | 制約 | 説明 |
 |-------------|----|----|------|
 | `id` | String | PK, UUID | 血統書ID |
-| `pedigreeId` | String | UNIQUE | 血統書番号（GP） |
+| `pedigreeId` | String | UNIQUE | 血統書番号（GP、6桁キー）|
 | `catId` | String? | FK→cats.id | 関連猫ID |
 | `title` | String? | NULL可 | 猫名前１ |
 | `catteryName` | String? | NULL可 | 猫名前２（キャッテリー名） |
