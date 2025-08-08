@@ -54,16 +54,16 @@
 
 ## 🛠️ 開発環境
 
-### Codespacesネイティブ環境
-- Dockerの二重仮想化を避ける
-- 直接Node.js/PostgreSQL/Redisを使用
+### ローカル開発環境
+- 直接Node.js/PostgreSQLを使用
 - リソース効率を最適化
 
 ### 環境変数ファイル
+
 ```bash
 # .env.local
 DATABASE_URL="postgresql://user:pass@localhost:5432/catdb"
-REDIS_URL="redis://localhost:6379"
+PORT=3004
 ```
 
 ## 📁 ファイル配置

@@ -56,7 +56,7 @@
 
 ### フロントエンド
 - **フレームワーク**: Next.js (React + TypeScript)
-- **UIデザイン**: Tailwind CSS、Chakra UI
+- **UIデザイン**: Tailwind CSS、
 - **認証**: Clerk
 - **状態管理**: React Context
 
@@ -68,24 +68,16 @@
 
 ### データベース・インフラ
 - **データベース**: PostgreSQL 15
-- **キャッシュ**: Redis
-- **コンテナ化**: Docker + Docker Compose
-- **リバースプロキシ**: Nginx
+- **ORM**: Prisma
 
 ## 📁 プロジェクト構造
 
 ```
 cat-management-system/
-├── cat-management/          # メイン管理アプリ (Next.js)
-├── new-pedigree/           # 血統書アプリ (Next.js)
+├── cat-ui-test/            # フロントエンド (Next.js)
 ├── backend/                # API サーバー (NestJS)
-├── nginx/                  # Nginx設定
-├── database/               # DB初期化スクリプト
-├── docker-compose.yml      # 開発環境用
-├── docker-compose.production.yml  # 本番環境用
 ├── package.json            # npm scripts統合管理
 ├── .env                    # 開発環境変数
-├── .env.production         # 本番環境変数
 └── README.md               # このファイル
 ```
 
@@ -129,69 +121,65 @@ curl http://localhost:3001/health
 ## 🚀 クイックスタート
 
 ### 前提条件
-- Docker Desktop がインストールされていること
-- Node.js がインストールされていること (npm scriptsを使用)
+
+- Node.js 18+ がインストールされていること
+- PostgreSQL がインストールされていること  
 - Git がインストールされていること
 
 ### 1. リポジトリのクローン
+
 ```bash
 git clone <repository-url>
 cd cat-management-system
 ```
 
 ### 2. 環境変数の設定
+
 `.env`ファイルを編集して、必要な環境変数を設定してください：
 
 ```env
 # Database Configuration
-POSTGRES_USER=catuser
-POSTGRES_PASSWORD=your-password
-POSTGRES_DB=catmanagement
+DATABASE_URL="postgresql://username:password@localhost:5432/catmanagement"
 
 # JWT Configuration
 JWT_SECRET=your-jwt-secret
 
-# Clerk Authentication
-CLERK_SECRET_KEY=your-clerk-secret-key
-CLERK_PUBLISHABLE_KEY=your-clerk-publishable-key
+# API Configuration
+PORT=3004
 ```
 
 ### 3. 開発環境の起動
 
 ```bash
+# 依存関係をインストール
+npm run backend:install
+npm run frontend:install
+
 # 開発環境を起動
 npm run dev
-
-# または
-npm start
 ```
 
 ### 4. アプリケーションへのアクセス
 
-- **Cat Management**: http://localhost:3000
-- **New Pedigree**: http://localhost:3002
-- **API Documentation**: http://localhost:3001/api/docs
-- **Nginx Proxy**: http://localhost
+- **フロントエンド**: <http://localhost:3000>
+- **バックエンドAPI**: <http://localhost:3004>
+- **API Documentation**: <http://localhost:3004/api/docs>
 
 ## 🔧 利用可能なコマンド
 
 ### 基本操作
+
 ```bash
-npm run dev          # 開発環境を起動
-npm start            # 開発環境を起動 (devのエイリアス)
-npm run stop         # 全サービスを停止
-npm run restart      # 全サービスを再起動
-npm run logs         # 全サービスのログを表示
-npm run status       # サービス状態を確認
-npm run clean        # 環境をクリーンアップ
-npm run help         # 利用可能なコマンド一覧
+npm run dev              # 開発環境を起動
+npm start                # 開発環境を起動 (devのエイリアス)
+npm run help             # 利用可能なコマンド一覧
 ```
 
 ### バックエンド管理
+
 ```bash
-npm run backend:logs     # バックエンドのログのみ表示
-npm run backend:restart  # バックエンドのみ再起動
-npm run backend:shell    # バックエンドコンテナ内でシェル実行
+npm run backend:dev      # バックエンドサーバーを起動
+npm run backend:install  # バックエンドの依存関係をインストール
 ```
 
 ### データベース管理
@@ -235,90 +223,80 @@ npm run db:studio
 
 ### データベース直接接続
 ```bash
-npm run db:shell
+npm run db:studio
 ```
-
-## 🐳 Docker サービス
-
-| サービス | ポート | 説明 |
-|---------|-------|------|
-| frontend-cat-management | 3000 | メイン管理アプリ |
-| frontend-new-pedigree | 3002 | 血統書アプリ |
-| backend | 3001 | NestJS API サーバー |
-| postgres | 5432 | PostgreSQL データベース |
-| redis | 6379 | Redis キャッシュ |
-| nginx | 80, 443 | リバースプロキシ |
 
 ## 🔒 セキュリティ
 
-- **認証**: Clerk による認証・認可
+- **認証**: JWT による認証・認可
 - **CORS**: 開発・本番環境別の設定
-- **Rate Limiting**: Nginx でのレート制限
-- **Security Headers**: セキュリティヘッダーの設定
 - **Input Validation**: NestJSでのバリデーション
+- **Type Safety**: TypeScript による型安全性
 
 ## 📝 API ドキュメント
 
 Swagger UIが自動生成されます：
-- 開発環境: http://localhost:3001/api/docs
-- コンテナ内: http://backend:3001/api/docs
+
+- 開発環境: <http://localhost:3004/api/docs>
 
 ## 🚢 本番環境デプロイ
 
 ### 1. 本番環境変数の設定
+
 `.env.production`ファイルを作成し、本番用の設定を行ってください。
 
-### 2. 本番環境の起動
+### 2. アプリケーションのビルド
+
 ```bash
-npm run production
+npm run frontend:build
+npm run backend:build
 ```
 
-### 3. 本番環境の停止
-```bash
-npm run production:stop
-```
+### 3. 本番環境での起動
 
-### 4. SSL証明書の設定
-`nginx/ssl/`ディレクトリにSSL証明書を配置してください。
+```bash
+npm run frontend:start
+npm run backend:start
+```
 
 ## 🔍 トラブルシューティング
 
 ### よくある問題
 
 1. **ポートが既に使用されている**
+
    ```bash
-   # 使用中のポートを確認
-   netstat -ano | findstr :3000
+   # 使用中のポートを確認 (macOS/Linux)
+   lsof -i :3000
    
    # プロセスを終了
-   taskkill /PID <PID> /F
+   kill -9 <PID>
    ```
 
-2. **Docker ボリュームの問題**
-   ```bash
-   # ボリュームをクリーンアップ
-   docker volume prune
-   ```
+2. **データベース接続エラー**
 
-3. **データベース接続エラー**
    ```bash
-   # データベースサービスの状態確認
-   docker compose ps postgres
+   # PostgreSQLサービスの状態確認
+   brew services list | grep postgresql
    
-   # ログの確認
-   docker compose logs postgres
+   # PostgreSQLを起動
+   brew services start postgresql
+   ```
+
+3. **依存関係の問題**
+
+   ```bash
+   # node_modulesを再インストール
+   rm -rf node_modules package-lock.json
+   npm install
    ```
 
 ### ログの確認
 
-```bash
-# 全サービスのログ
-npm run logs
+アプリケーションが正常に動作しない場合は、コンソールログを確認してください：
 
-# 特定のサービスのログ
-npm run backend:logs
-npm run db:logs
-```
+- **バックエンド**: サーバー起動時のターミナル出力
+- **フロントエンド**: ブラウザの開発者ツール（Console）
 
 ## 🤝 開発への参加
 
@@ -345,7 +323,8 @@ npm run test:health
 npm run test:api
 
 # 5. テストの実行
-docker compose exec backend npm run test
+cd backend
+npm run test
 ```
 
 ## 📄 ライセンス

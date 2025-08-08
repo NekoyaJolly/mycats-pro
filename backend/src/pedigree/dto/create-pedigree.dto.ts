@@ -118,15 +118,15 @@ export class CreatePedigreeDto {
 
   @ApiPropertyOptional({ description: '品種コード' })
   @IsOptional()
-  @IsString()
-  @MaxLength(10)
-  breedCode?: string;
+  @IsInt()
+  @Type(() => Number)
+  breedCode?: number;
 
   @ApiPropertyOptional({ description: '毛色コード' })
   @IsOptional()
-  @IsString()
-  @MaxLength(10)
-  coatColorCode?: string;
+  @IsInt()
+  @Type(() => Number)
+  coatColorCode?: number;
 
   // 父母血統書ID
   @ApiPropertyOptional({ description: '父の血統書ID' })

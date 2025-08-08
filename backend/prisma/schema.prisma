@@ -224,6 +224,7 @@ model Pedigree {
   // Dates
   birthDate             DateTime? // 生年月日
   registrationDate      DateTime? // 登録年月日
+  pedigreeIssueDate     DateTime? // 血統書発行日
   
   // People
   breederName           String?   // 繁殖者名

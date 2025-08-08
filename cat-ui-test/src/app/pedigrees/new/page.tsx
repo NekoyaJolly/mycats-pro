@@ -54,6 +54,7 @@ interface Color {
 interface PedigreeFormData {
   pedigreeId: string;
   catName: string;
+  CatName2?: string;
   title?: string;
   gender?: number;
   eyeColor?: string;
@@ -71,6 +72,7 @@ interface PedigreeFormData {
   colorId?: string;
   breedCode?: string;
   coatColorCode?: string;
+  championFlag?: string;
   fatherPedigreeId?: string;
   motherPedigreeId?: string;
   paternalGrandfatherId?: string;
@@ -103,6 +105,32 @@ export default function NewPedigreePage() {
     motherId: ''
   });
 
+  // デバウンス用の状態
+  const [searchTimeouts, setSearchTimeouts] = useState<{[key: string]: NodeJS.Timeout}>({});
+
+  // デバウンス機能付きの血統データ検索
+  const debouncedFetchPedigree = (pedigreeId: string, type: 'father' | 'mother' | 'both', delay = 800) => {
+    // 既存のタイムアウトをクリア
+    if (searchTimeouts[type]) {
+      clearTimeout(searchTimeouts[type]);
+    }
+
+    // 新しいタイムアウトを設定
+    const timeoutId = setTimeout(async () => {
+      if (pedigreeId.trim()) {
+        if (type === 'father') {
+          await handleFatherIdChangeInternal(pedigreeId);
+        } else if (type === 'mother') {
+          await handleMotherIdChangeInternal(pedigreeId);
+        } else if (type === 'both') {
+          await handleBothParentsIdChangeInternal(pedigreeId);
+        }
+      }
+    }, delay);
+
+    setSearchTimeouts(prev => ({ ...prev, [type]: timeoutId }));
+  };
+
   useEffect(() => {
     setMounted(true);
     fetchBreeds();
@@ -112,7 +140,7 @@ export default function NewPedigreePage() {
 
   const fetchBreeds = async () => {
     try {
-      const response = await fetch('http://localhost:3004/api/v1/breeds');
+      const response = await fetch('http://localhost:3004/api/v1/breeds?limit=100');
       if (response.ok) {
         const result = await response.json();
         setBreeds(result.data || []);
@@ -125,7 +153,7 @@ export default function NewPedigreePage() {
 
   const fetchColors = async () => {
     try {
-      const response = await fetch('http://localhost:3004/api/v1/coat-colors');
+      const response = await fetch('http://localhost:3004/api/v1/coat-colors?limit=100');
       if (response.ok) {
         const result = await response.json();
         setColors(result.data || []);
@@ -138,7 +166,7 @@ export default function NewPedigreePage() {
 
   const fetchPedigreeOptions = async () => {
     try {
-      const response = await fetch('http://localhost:3004/api/v1/pedigrees?limit=1000');
+      const response = await fetch('http://localhost:3004/api/v1/pedigrees?limit=100');
       if (response.ok) {
         const result = await response.json();
         const options = (result.data || []).map((p: any) => ({
@@ -168,9 +196,7 @@ export default function NewPedigreePage() {
   };
 
   // 父猫IDが変更された時の処理（Accessのtxt父猫ID_AfterUpdateに相当）
-  const handleFatherIdChange = async (fatherId: string) => {
-    setCallIdData(prev => ({ ...prev, fatherId }));
-    
+  const handleFatherIdChangeInternal = async (fatherId: string) => {
     if (fatherId) {
       const fatherData = await fetchPedigreeById(fatherId);
       if (fatherData) {
@@ -190,14 +216,23 @@ export default function NewPedigreePage() {
           message: `${fatherData.catName}の血統情報を取得しました`,
           color: 'blue',
         });
+      } else {
+        notifications.show({
+          title: '検索結果なし',
+          message: `血統書番号 ${fatherId} が見つかりませんでした`,
+          color: 'yellow',
+        });
       }
     }
   };
 
+  const handleFatherIdChange = async (fatherId: string) => {
+    setCallIdData(prev => ({ ...prev, fatherId }));
+    debouncedFetchPedigree(fatherId, 'father');
+  };
+
   // 母猫IDが変更された時の処理（Accessのtxt母猫ID_AfterUpdateに相当）
-  const handleMotherIdChange = async (motherId: string) => {
-    setCallIdData(prev => ({ ...prev, motherId }));
-    
+  const handleMotherIdChangeInternal = async (motherId: string) => {
     if (motherId) {
       const motherData = await fetchPedigreeById(motherId);
       if (motherData) {
@@ -217,14 +252,23 @@ export default function NewPedigreePage() {
           message: `${motherData.catName}の血統情報を取得しました`,
           color: 'blue',
         });
+      } else {
+        notifications.show({
+          title: '検索結果なし',
+          message: `血統書番号 ${motherId} が見つかりませんでした`,
+          color: 'yellow',
+        });
       }
     }
   };
 
+  const handleMotherIdChange = async (motherId: string) => {
+    setCallIdData(prev => ({ ...prev, motherId }));
+    debouncedFetchPedigree(motherId, 'mother');
+  };
+
   // 両親IDが変更された時の処理（Accessのtxt両親ID_AfterUpdateに相当）
-  const handleBothParentsIdChange = async (bothParentsId: string) => {
-    setCallIdData(prev => ({ ...prev, bothParentsId }));
-    
+  const handleBothParentsIdChangeInternal = async (bothParentsId: string) => {
     if (bothParentsId) {
       const bothParentsData = await fetchPedigreeById(bothParentsId);
       if (bothParentsData) {
@@ -241,7 +285,65 @@ export default function NewPedigreePage() {
           message: '血統情報を一括取得しました',
           color: 'green',
         });
+      } else {
+        notifications.show({
+          title: '検索結果なし',
+          message: `血統書番号 ${bothParentsId} が見つかりませんでした`,
+          color: 'yellow',
+        });
       }
+    }
+  };
+
+  const handleBothParentsIdChange = async (bothParentsId: string) => {
+    setCallIdData(prev => ({ ...prev, bothParentsId }));
+    debouncedFetchPedigree(bothParentsId, 'both');
+  };
+
+  // バリデーション関数
+  const validateForm = () => {
+    const errors: string[] = [];
+
+    // 必須フィールドチェック
+    if (!formData.pedigreeId.trim()) {
+      errors.push('血統書番号は必須です');
+    }
+    
+    if (!formData.catName.trim()) {
+      errors.push('猫の名前は必須です');
+    }
+
+    // 血統書番号の形式チェック（数字のみ）
+    if (formData.pedigreeId && !/^\d+$/.test(formData.pedigreeId.trim())) {
+      errors.push('血統書番号は数字のみで入力してください');
+    }
+
+    // 日付の妥当性チェック
+    if (formData.birthDate && formData.registrationDate) {
+      if (formData.birthDate > formData.registrationDate) {
+        errors.push('生年月日は登録年月日より前である必要があります');
+      }
+    }
+
+    // 兄弟姉妹数の妥当性チェック
+    if (formData.brotherCount && formData.brotherCount < 0) {
+      errors.push('兄弟の人数は0以上である必要があります');
+    }
+
+    if (formData.sisterCount && formData.sisterCount < 0) {
+      errors.push('姉妹の人数は0以上である必要があります');
+    }
+
+    return errors;
+  };
+
+  // 血統書番号の重複チェック
+  const checkPedigreeIdDuplicate = async (pedigreeId: string) => {
+    try {
+      const response = await fetch(`http://localhost:3004/api/v1/pedigrees/pedigree-id/${pedigreeId}`);
+      return response.ok;
+    } catch (error) {
+      return false;
     }
   };
 
@@ -250,8 +352,34 @@ export default function NewPedigreePage() {
     setLoading(true);
 
     try {
+      // フォームバリデーション
+      const validationErrors = validateForm();
+      if (validationErrors.length > 0) {
+        notifications.show({
+          title: 'バリデーションエラー',
+          message: validationErrors.join('\n'),
+          color: 'red',
+        });
+        setLoading(false);
+        return;
+      }
+
+      // 血統書番号の重複チェック
+      const isDuplicate = await checkPedigreeIdDuplicate(formData.pedigreeId.trim());
+      if (isDuplicate) {
+        notifications.show({
+          title: '重複エラー',
+          message: `血統書番号 ${formData.pedigreeId} は既に登録されています`,
+          color: 'red',
+        });
+        setLoading(false);
+        return;
+      }
+
       const submitData = {
         ...formData,
+        pedigreeId: formData.pedigreeId.trim(),
+        catName: formData.catName.trim(),
         birthDate: formData.birthDate?.toISOString(),
         registrationDate: formData.registrationDate?.toISOString(),
         pedigreeIssueDate: formData.pedigreeIssueDate?.toISOString(),
@@ -273,13 +401,14 @@ export default function NewPedigreePage() {
         });
         router.push('/pedigrees');
       } else {
-        throw new Error('登録に失敗しました');
+        const errorData = await response.json();
+        throw new Error(errorData.message || '登録に失敗しました');
       }
     } catch (error) {
       console.error('登録エラー:', error);
       notifications.show({
         title: '登録エラー',
-        message: '血統書の登録に失敗しました',
+        message: error instanceof Error ? error.message : '血統書の登録に失敗しました',
         color: 'red',
       });
     } finally {
@@ -303,9 +432,9 @@ export default function NewPedigreePage() {
   const fillSampleData = () => {
     setFormData({
       pedigreeId: '700545', // 新規番号として700545を使用
-      catName: 'Jolly Tokuichi',
       title: '',
       catName: 'アンドレス B.F.C',
+      CatName2:"アンドレス B.F.C",
       gender: 1, // Male
       eyeColor: 'Gold',
       birthDate: new Date('2019-01-05'),
@@ -318,7 +447,6 @@ export default function NewPedigreePage() {
       notes: '血統書サンプルデータ（Accessフォーム参考）',
       notes2: '',
       otherNo: '',
-      championFlag: '',
       breedId: '',
       colorId: '',
       breedCode: '92', // Minuet(LH)
