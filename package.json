@@ -4,7 +4,8 @@
   "description": "Cat Management System - Development Scripts",
   "scripts": {
     "predev": "kill-port 3004 3000 || echo ok",
-    "dev": "run-p backend:dev frontend:dev:wait",
+    "dev": "run-p backend:dev frontend:dev:wait prisma:sync",
+    "dev:full": "run-p backend:dev frontend:dev:wait prisma:sync db:studio",
     "start": "npm run dev",
 
     "backend:dev": "cross-env PORT=3004 npm --prefix backend run start:dev",
@@ -13,6 +14,7 @@
     "db:generate": "npm --prefix backend run prisma:generate",
     "db:seed": "npm --prefix backend run seed",
     "db:studio": "npm --prefix backend run prisma:studio",
+    "prisma:sync": "npm --prefix backend run prisma:sync:watch",
 
     "frontend:install": "npm --prefix cat-ui-test install",
     "frontend:dev:wait": "wait-on tcp:3004 && cross-env PORT=3000 npm --prefix cat-ui-test run dev",

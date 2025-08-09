@@ -1,3 +1,6 @@
+// Prisma Schema - Last Updated: 2025-08-09T01:07:37.034Z
+// Auto-generated from schema.prisma
+
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 // 自動同期テスト - 2025年8月9日
