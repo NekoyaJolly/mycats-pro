@@ -12,32 +12,32 @@
 
 ```mermaid
 graph TB
-    subgraph "クライアント層"
-        A[Web Browser<br/>Next.js 15]
-        B[モバイルブラウザ<br/>PWA対応]
+    subgraph Client ["クライアント層"]
+        A["Web Browser<br/>Next.js 15"]
+        B["モバイルブラウザ<br/>PWA対応"]
     end
     
-    subgraph "プレゼンテーション層"
-        C[Next.js Frontend<br/>Port: 3000]
-        D[Mantine UI Components]
+    subgraph Presentation ["プレゼンテーション層"]
+        C["Next.js Frontend<br/>Port: 3000"]
+        D["Mantine UI Components"]
     end
     
-    subgraph "アプリケーション層"
-        E[NestJS API Server<br/>Port: 3004]
-        F[認証・認可<br/>JWT + Passport]
-        G[バリデーション<br/>Class Validator]
+    subgraph Application ["アプリケーション層"]
+        E["NestJS API Server<br/>Port: 3004"]
+        F["認証・認可<br/>JWT + Passport"]
+        G["バリデーション<br/>Class Validator"]
     end
     
-    subgraph "ビジネスロジック層"
-        H[猫管理サービス]
-        I[血統管理サービス]
-        J[繁殖管理サービス]
-        K[ケア管理サービス]
+    subgraph Business ["ビジネスロジック層"]
+        H["猫管理サービス"]
+        I["血統管理サービス"]
+        J["繁殖管理サービス"]
+        K["ケア管理サービス"]
     end
     
-    subgraph "データアクセス層"
-        L[Prisma ORM]
-        M[PostgreSQL Database]
+    subgraph DataAccess ["データアクセス層"]
+        L["Prisma ORM"]
+        M["PostgreSQL Database"]
     end
     
     A --> C
@@ -240,18 +240,18 @@ interface ApiError {
 
 ```mermaid
 graph LR
-    A[User Action] --> B[React Component]
-    B --> C[API Call]
-    C --> D[NestJS Controller]
-    D --> E[Service Layer]
-    E --> F[Prisma ORM]
-    F --> G[PostgreSQL]
+    A["User Action"] --> B["React Component"]
+    B --> C["API Call"]
+    C --> D["NestJS Controller"]
+    D --> E["Service Layer"]
+    E --> F["Prisma ORM"]
+    F --> G["PostgreSQL"]
     G --> F
     F --> E
     E --> D
     D --> C
     C --> B
-    B --> H[UI Update]
+    B --> H["UI Update"]
 ```
 
 ### キャッシュ戦略
@@ -313,13 +313,13 @@ Footer
 
 ```mermaid
 graph TB
-    A[アプリケーション] --> B[ログ出力]
-    B --> C[ログ集約]
-    C --> D[監視ダッシュボード]
-    D --> E[アラート通知]
+    A["アプリケーション"] --> B["ログ出力"]
+    B --> C["ログ集約"]
+    C --> D["監視ダッシュボード"]
+    D --> E["アラート通知"]
     
-    F[ヘルスチェック] --> G[死活監視]
-    G --> H[自動復旧]
+    F["ヘルスチェック"] --> G["死活監視"]
+    G --> H["自動復旧"]
 ```
 
 ### デプロイメント戦略
