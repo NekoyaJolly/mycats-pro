@@ -1,6 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreatePedigreeDto, UpdatePedigreeDto, PedigreeQueryDto } from './dto';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
+import { CreatePedigreeDto, UpdatePedigreeDto, PedigreeQueryDto } from "./dto";
 
 @Injectable()
 export class PedigreeService {
@@ -14,8 +18,12 @@ export class PedigreeService {
       title: createPedigreeDto.title,
       gender: createPedigreeDto.gender,
       eyeColor: createPedigreeDto.eyeColor,
-      birthDate: createPedigreeDto.birthDate ? new Date(createPedigreeDto.birthDate) : undefined,
-      registrationDate: createPedigreeDto.registrationDate ? new Date(createPedigreeDto.registrationDate) : undefined,
+      birthDate: createPedigreeDto.birthDate
+        ? new Date(createPedigreeDto.birthDate)
+        : undefined,
+      registrationDate: createPedigreeDto.registrationDate
+        ? new Date(createPedigreeDto.registrationDate)
+        : undefined,
       breederName: createPedigreeDto.breederName,
       ownerName: createPedigreeDto.ownerName,
       brotherCount: createPedigreeDto.brotherCount,
@@ -27,7 +35,9 @@ export class PedigreeService {
       catId: createPedigreeDto.catId,
       breedId: createPedigreeDto.breedId,
       colorId: createPedigreeDto.colorId,
-      pedigreeIssueDate: createPedigreeDto.pedigreeIssueDate ? new Date(createPedigreeDto.pedigreeIssueDate) : undefined,
+      pedigreeIssueDate: createPedigreeDto.pedigreeIssueDate
+        ? new Date(createPedigreeDto.pedigreeIssueDate)
+        : undefined,
       breedCode: createPedigreeDto.breedCode,
       coatColorCode: createPedigreeDto.coatColorCode,
       fatherPedigreeId: createPedigreeDto.fatherPedigreeId,
@@ -39,7 +49,7 @@ export class PedigreeService {
     };
 
     // undefined フィールドを除去
-    Object.keys(createData).forEach(key => {
+    Object.keys(createData).forEach((key) => {
       if (createData[key] === undefined) {
         delete createData[key];
       }
@@ -71,8 +81,8 @@ export class PedigreeService {
       gender,
       catName2,
       eyeColor,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      sortBy = "createdAt",
+      sortOrder = "desc",
     } = query;
 
     const skip = (page - 1) * limit;
@@ -81,10 +91,10 @@ export class PedigreeService {
     // Search functionality
     if (search) {
       where.OR = [
-        { catName: { contains: search, mode: 'insensitive' } },
-        { title: { contains: search, mode: 'insensitive' } },
-        { breederName: { contains: search, mode: 'insensitive' } },
-        { ownerName: { contains: search, mode: 'insensitive' } },
+        { catName: { contains: search, mode: "insensitive" } },
+        { title: { contains: search, mode: "insensitive" } },
+        { breederName: { contains: search, mode: "insensitive" } },
+        { ownerName: { contains: search, mode: "insensitive" } },
       ];
     }
 
@@ -92,7 +102,7 @@ export class PedigreeService {
     if (breedId) where.breedId = breedId;
     if (colorId) where.colorId = colorId;
     if (gender) where.gender = parseInt(gender);
-    if (eyeColor) where.eyeColor = { contains: eyeColor, mode: 'insensitive' };
+    if (eyeColor) where.eyeColor = { contains: eyeColor, mode: "insensitive" };
 
     const [pedigrees, total] = await Promise.all([
       this.prisma.pedigree.findMany({
@@ -202,7 +212,9 @@ export class PedigreeService {
     });
 
     if (!pedigree) {
-      throw new NotFoundException(`Pedigree with pedigree ID ${pedigreeId} not found`);
+      throw new NotFoundException(
+        `Pedigree with pedigree ID ${pedigreeId} not found`,
+      );
     }
 
     return pedigree;
@@ -219,7 +231,7 @@ export class PedigreeService {
 
     // Prisma の型に適合するようにデータを準備
     const updateData: any = { ...updatePedigreeDto };
-    
+
     // Date文字列をDateオブジェクトに変換
     if (updateData.birthDate) {
       updateData.birthDate = new Date(updateData.birthDate);
@@ -232,7 +244,7 @@ export class PedigreeService {
     }
 
     // undefined フィールドを除去
-    Object.keys(updateData).forEach(key => {
+    Object.keys(updateData).forEach((key) => {
       if (updateData[key] === undefined) {
         delete updateData[key];
       }
@@ -276,9 +288,12 @@ export class PedigreeService {
 
   async getFamily(id: string, generations: number = 3) {
     const pedigree = await this.findOne(id);
-    
+
     // Build family tree recursively
-    const buildFamilyTree = async (pedigreeData: any, currentGeneration: number): Promise<any> => {
+    const buildFamilyTree = async (
+      pedigreeData: any,
+      currentGeneration: number,
+    ): Promise<any> => {
       if (currentGeneration >= generations) {
         return pedigreeData;
       }
@@ -327,13 +342,10 @@ export class PedigreeService {
 
   async getDescendants(id: string) {
     const pedigree = await this.findOne(id);
-    
+
     const descendants = await this.prisma.pedigree.findMany({
       where: {
-        OR: [
-          { fatherPedigreeId: id },
-          { motherPedigreeId: id },
-        ],
+        OR: [{ fatherPedigreeId: id }, { motherPedigreeId: id }],
       },
       include: {
         breed: true,

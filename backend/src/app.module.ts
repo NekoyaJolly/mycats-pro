@@ -1,17 +1,18 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
-import { PrismaModule } from './prisma/prisma.module';
-import { AuthModule } from './auth/auth.module';
-import { CatsModule } from './cats/cats.module';
-import { PedigreeModule } from './pedigree/pedigree.module';
-import { BreedsModule } from './breeds/breeds.module';
-import { CoatColorsModule } from './coat-colors/coat-colors.module';
-import { BreedingModule } from './breeding/breeding.module';
-import { CareModule } from './care/care.module';
-import { ScheduleModule } from './schedule/schedule.module';
-import { UsersModule } from './users/users.module';
-import { UploadModule } from './upload/upload.module';
+import { Module } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
+import { ThrottlerModule } from "@nestjs/throttler";
+import { PrismaModule } from "./prisma/prisma.module";
+import { AuthModule } from "./auth/auth.module";
+import { CatsModule } from "./cats/cats.module";
+import { PedigreeModule } from "./pedigree/pedigree.module";
+import { BreedsModule } from "./breeds/breeds.module";
+import { CoatColorsModule } from "./coat-colors/coat-colors.module";
+import { BreedingModule } from "./breeding/breeding.module";
+import { CareModule } from "./care/care.module";
+import { ScheduleModule } from "./schedule/schedule.module";
+import { UsersModule } from "./users/users.module";
+import { UploadModule } from "./upload/upload.module";
+import { TagsModule } from "./tags/tags.module";
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { UploadModule } from './upload/upload.module';
     CareModule,
     ScheduleModule,
     UploadModule,
+    TagsModule,
   ],
   controllers: [],
   providers: [],

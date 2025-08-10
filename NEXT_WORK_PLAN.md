@@ -29,6 +29,7 @@
 ## 🎯 次回作業の優先順位
 
 ### **Priority 1: UI/UX改善**
+
 1. **血統書登録フォームの機能強化**
    - Call ID検索機能のパフォーマンス改善
    - 自動入力機能の精度向上
@@ -40,6 +41,7 @@
    - ページネーション改善
 
 ### **Priority 2: データ連携強化**
+
 1. **親子関係の自動構築**
    - CSVインポート時の親子関係自動検出
    - 血統図の自動生成改善
@@ -51,6 +53,7 @@
    - データメンテナンス機能
 
 ### **Priority 3: パフォーマンス最適化**
+
 1. **APIレスポンス改善**
    - データベースクエリ最適化
    - インデックス追加
@@ -66,28 +69,33 @@
 ## 📂 重要ファイル一覧
 
 ### **データファイル**
-```
+
+,,,
+
 /backend/NewPedigree/
 ├── 血統書データRenamed.csv          # メインデータ（77カラム）
 ├── 血統書データRenamed_backup_*.csv  # バックアップファイル群
 ├── 猫種データUTF8Ver.csv            # 品種マスター（111件）
 └── 色柄データUTF8Ver.csv            # 毛色マスター（400件）
-```
+,,,
 
 ### **設定ファイル**
-```
+
+,,,
+
 /backend/prisma/schema.prisma        # データベーススキーマ
 /backend/src/scripts/import-csv-data.ts  # データインポートスクリプト
-```
+,,,
 
 ### **主要コンポーネント**
-```
+
+,,,
 /cat-ui-test/src/app/pedigrees/
 ├── new/page.tsx                     # 血統書登録フォーム
 ├── page.tsx                         # 血統書一覧
 ├── [id]/page.tsx                    # 血統書詳細
 └── [id]/family-tree/page.tsx        # 血統図表示
-```
+,,,
 
 ---
 
@@ -112,8 +120,8 @@ npx prisma studio
 
 ## 🔍 API エンドポイント
 
-```
-Base URL: http://localhost:3004/api/v1
+,,,
+Base URL: <http://localhost:3004/api/v1>
 
 GET  /pedigrees              # 血統書一覧
 GET  /pedigrees/:id          # 血統書詳細  
@@ -121,7 +129,7 @@ POST /pedigrees              # 血統書登録
 GET  /pedigrees/pedigree-id/:pedigreeId  # Call ID検索
 GET  /breeds                 # 品種一覧
 GET  /coat-colors           # 毛色一覧
-```
+,,,
 
 ---
 

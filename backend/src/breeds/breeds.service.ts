@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateBreedDto, UpdateBreedDto, BreedQueryDto } from './dto';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
+import { CreateBreedDto, UpdateBreedDto, BreedQueryDto } from "./dto";
 
 @Injectable()
 export class BreedsService {
@@ -17,8 +17,8 @@ export class BreedsService {
       page = 1,
       limit = 50,
       search,
-      sortBy = 'name',
-      sortOrder = 'asc',
+      sortBy = "name",
+      sortOrder = "asc",
     } = query;
 
     const skip = (page - 1) * limit;
@@ -26,8 +26,8 @@ export class BreedsService {
 
     if (search) {
       where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
       ];
     }
 
@@ -71,7 +71,7 @@ export class BreedsService {
             color: true,
           },
           orderBy: {
-            name: 'asc',
+            name: "asc",
           },
         },
         pedigrees: {
@@ -79,7 +79,7 @@ export class BreedsService {
             color: true,
           },
           orderBy: {
-            catName: 'asc',
+            catName: "asc",
           },
         },
         _count: {
@@ -140,38 +140,35 @@ export class BreedsService {
   }
 
   async getStatistics() {
-    const [
-      totalBreeds,
-      mostPopularBreeds,
-      breedDistribution,
-    ] = await Promise.all([
-      this.prisma.breed.count(),
-      this.prisma.breed.findMany({
-        include: {
-          _count: {
-            select: {
-              cats: true,
-              pedigrees: true,
+    const [totalBreeds, mostPopularBreeds, breedDistribution] =
+      await Promise.all([
+        this.prisma.breed.count(),
+        this.prisma.breed.findMany({
+          include: {
+            _count: {
+              select: {
+                cats: true,
+                pedigrees: true,
+              },
             },
           },
-        },
-        orderBy: {
-          cats: {
-            _count: 'desc',
+          orderBy: {
+            cats: {
+              _count: "desc",
+            },
           },
-        },
-        take: 10,
-      }),
-      this.prisma.cat.groupBy({
-        by: ['breedId'],
-        _count: true,
-        orderBy: {
-          _count: {
-            breedId: 'desc',
+          take: 10,
+        }),
+        this.prisma.cat.groupBy({
+          by: ["breedId"],
+          _count: true,
+          orderBy: {
+            _count: {
+              breedId: "desc",
+            },
           },
-        },
-      }),
-    ]);
+        }),
+      ]);
 
     return {
       totalBreeds,

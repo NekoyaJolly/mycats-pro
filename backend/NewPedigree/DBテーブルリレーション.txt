@@ -1,0 +1,82 @@
+
+―――◆ 本猫基本情報 ◆―――
+
+txt本猫ID = PedigreeID
+txt本猫名前 = "CatName"
+txt目色 = "EyeColor"
+txt猫種コード = "BreedCode"
+txt猫種名称 = ""
+txt色柄コード = "CoatColorCode"
+txt色柄名称 = ""
+txt性別コード = ""
+txt性別名称 = ""
+txt誕生日 = BirthDate
+txt登録日 = RegistrationDate
+txt繁殖者 = "BreederName"
+txt所有者 = "OwnerName"
+txt兄妹M = "BrotherCount"
+txt兄妹F = "SisterCount"
+txt摘要1 = "Notes"
+txt摘要2 = "Notes2"
+txt他団体No = "OtherNo"
+
+'―――◆ Generation 1 : 直接の親（2グループ）――――――――――
+
+txtFCH登録 = "FatherTitle"
+txtF名前 = "FatherName"
+txtF色柄 = "FatherCoatColor"
+txtF目色 = "FatherEyeColor"
+txtFナンバー = "FatherJCU"
+
+txtMCH登録 = "MotherTitle"
+txtM名前 = "MotherCatName"
+txtM色柄 = "MotherCoatColor"
+txtM目色 = "MotherEyeColor"
+txtMナンバー = "MotherJCU"
+
+
+―――◆ Generation 2 : 祖父母（4グループ）―――――
+
+txtFFCH登録 = "FFTitle"
+txtFF名前 = "FFCatName"
+txtFF色柄 = "FFCatColor"
+txtFFナンバー = "FFJCU"
+txtFMCH登録 = "FMTitle"
+txtFM名前 = "FMCatName"
+txtFM色柄 = "FMCatColor"
+txtFMナンバー = "FMJCU"
+txtMFCH登録 = "MFTitle"
+txtMF名前 = "MFCatName"
+txtMF色柄 = "MFCatColor"
+txtMFナンバー = "MFJCU"
+txtMMCH登録 = "MMTitle"
+txtMM名前 = "MMCatName"
+txtMM色柄 = "MMCatColor"
+txtMMナンバー = "MMJCU"
+
+―――◆ Generation 3 : 曾祖父母（8グループ）―――
+
+txtMFFCH登録 = "MFFTitle"
+txtMFF名前 = "MFFCatName"
+txtMFFナンバー = "MFFJCU"
+txtMFMCH登録 = "MFMTitle"
+txtMFM名前 = "MFMCatName"
+txtMFMナンバー = "MFMJCU"
+txtMMFCH登録 = "MMFTitle"
+txtMMF名前 = "MMFCatName"
+txtMMFナンバー = "MMFJCU"
+txtMMMCH登録 = "MMMTitle"
+txtMMM名前 = "MMMCatName"
+txtMMMナンバー = "MMMJCU"
+txtFFFCH登録 = "FFFTitle"
+txtFFF名前 = "FFFCatName"
+txtFFFナンバー = "FFFJCU"
+txtFFMCH登録 = "FFMTitle"
+txtFFM名前 = "FFMCatName"
+txtFFMナンバー = "FFMJCU"
+txtFMFCH登録 = "FMFTitle"
+txtFMF名前 = "FMFCatName"
+txtFMFナンバー = "FMFJCU"
+txtFMMCH登録 = "FMMTitle"
+txtFMM名前 = "FMMCatName"
+txtFMMナンバー = "FMMJCU"

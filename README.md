@@ -144,7 +144,7 @@ appproject/
 DATABASE_URL="postgresql://postgres:password@localhost:5432/cat_management?schema=public"
 
 # ヘルスチェック
-curl http://localhost:3001/health
+curl http://localhost:3004/health
 ```
 
 ## 🚀 クイックスタート

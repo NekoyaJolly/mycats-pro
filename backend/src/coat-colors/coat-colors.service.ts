@@ -1,6 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateCoatColorDto, UpdateCoatColorDto, CoatColorQueryDto } from './dto';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
+import {
+  CreateCoatColorDto,
+  UpdateCoatColorDto,
+  CoatColorQueryDto,
+} from "./dto";
 
 @Injectable()
 export class CoatColorsService {
@@ -17,8 +21,8 @@ export class CoatColorsService {
       page = 1,
       limit = 50,
       search,
-      sortBy = 'name',
-      sortOrder = 'asc',
+      sortBy = "name",
+      sortOrder = "asc",
     } = query;
 
     const skip = (page - 1) * limit;
@@ -26,8 +30,8 @@ export class CoatColorsService {
 
     if (search) {
       where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
       ];
     }
 
@@ -71,7 +75,7 @@ export class CoatColorsService {
             breed: true,
           },
           orderBy: {
-            name: 'asc',
+            name: "asc",
           },
         },
         pedigrees: {
@@ -79,7 +83,7 @@ export class CoatColorsService {
             breed: true,
           },
           orderBy: {
-            catName: 'asc',
+            catName: "asc",
           },
         },
         _count: {
@@ -140,38 +144,35 @@ export class CoatColorsService {
   }
 
   async getStatistics() {
-    const [
-      totalColors,
-      mostPopularColors,
-      colorDistribution,
-    ] = await Promise.all([
-      this.prisma.coatColor.count(),
-      this.prisma.coatColor.findMany({
-        include: {
-          _count: {
-            select: {
-              cats: true,
-              pedigrees: true,
+    const [totalColors, mostPopularColors, colorDistribution] =
+      await Promise.all([
+        this.prisma.coatColor.count(),
+        this.prisma.coatColor.findMany({
+          include: {
+            _count: {
+              select: {
+                cats: true,
+                pedigrees: true,
+              },
             },
           },
-        },
-        orderBy: {
-          cats: {
-            _count: 'desc',
+          orderBy: {
+            cats: {
+              _count: "desc",
+            },
           },
-        },
-        take: 10,
-      }),
-      this.prisma.cat.groupBy({
-        by: ['colorId'],
-        _count: true,
-        orderBy: {
-          _count: {
-            colorId: 'desc',
+          take: 10,
+        }),
+        this.prisma.cat.groupBy({
+          by: ["colorId"],
+          _count: true,
+          orderBy: {
+            _count: {
+              colorId: "desc",
+            },
           },
-        },
-      }),
-    ]);
+        }),
+      ]);
 
     return {
       totalColors,

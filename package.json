@@ -10,7 +10,8 @@
 
     "backend:dev": "cross-env PORT=3004 npm --prefix backend run start:dev",
     "backend:install": "npm --prefix backend install",
-    "db:migrate": "npm --prefix backend run prisma:migrate",
+  "db:migrate": "npm --prefix backend run prisma:migrate",
+  "db:deploy": "npm --prefix backend run prisma:deploy",
     "db:generate": "npm --prefix backend run prisma:generate",
     "db:seed": "npm --prefix backend run seed",
     "db:studio": "npm --prefix backend run prisma:studio",
@@ -21,8 +22,10 @@
     "frontend:build": "npm --prefix cat-ui-test run build",
     "frontend:start": "npm --prefix cat-ui-test run start",
 
-    "test:health": "curl -s http://localhost:3004/health",
-    "test:api": "curl -s http://localhost:3004/api/v1/pedigrees",
+  "test:health": "curl -s http://localhost:3004/health",
+  "test:api": "curl -s http://localhost:3004/api/v1/pedigrees",
+  "test:e2e": "npm --prefix backend run test:e2e -- --passWithNoTests",
+  "api:smoke": "(curl -sS -X POST http://localhost:3004/api/v1/auth/register -H 'Content-Type: application/json' -d '{\"email\":\"dev1@example.com\",\"password\":\"Passw0rd!\"}' || true) && TOKEN=$(curl -sS -X POST http://localhost:3004/api/v1/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"dev1@example.com\",\"password\":\"Passw0rd!\"}' | sed -n 's/.*\"access_token\":\"\\([^\\\"]*\\)\".*/\\1/p'); curl -sS -X POST http://localhost:3004/api/v1/tags -H \"Authorization: Bearer $TOKEN\" -H 'Content-Type: application/json' -d '{\"name\":\"indoor\",\"color\":\"#10B981\"}'",
     "help": "echo \"Available commands: dev, start, backend:*, db:*, test:*, frontend:*\"",
     "install:all": "run-p backend:install frontend:install"
   },
@@ -32,6 +35,6 @@
     "npm-run-all": "^4.1.5",
     "wait-on": "^8.0.4"
   },
-  "engines": { "node": ">=20 <21" },
+  "engines": { "node": ">=20 <23" },
   "private": true
 }

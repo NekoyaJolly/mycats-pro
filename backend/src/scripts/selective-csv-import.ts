@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
-import * as fs from 'fs';
-import * as path from 'path';
-import { parse } from 'csv-parse/sync';
+import { PrismaClient } from "@prisma/client";
+import * as fs from "fs";
+import * as path from "path";
+import { parse } from "csv-parse/sync";
 
 const prisma = new PrismaClient();
 
@@ -48,16 +48,19 @@ interface ImportOptions {
  * CSVから特定範囲のキーを抽出してサンプルデータを作成
  */
 async function importSelectedPedigrees(options: ImportOptions = {}) {
-  const csvPath = path.join(__dirname, '../../NewPedigree/血統書データUTFVer.csv');
-  
+  const csvPath = path.join(
+    __dirname,
+    "../../NewPedigree/血統書データUTFVer.csv",
+  );
+
   if (!fs.existsSync(csvPath)) {
-    console.error('❌ CSVファイルが見つかりません:', csvPath);
+    console.error("❌ CSVファイルが見つかりません:", csvPath);
     return;
   }
 
-  console.log('📂 CSVファイルを読み込み中...');
-  const csvContent = fs.readFileSync(csvPath, 'utf-8');
-  
+  console.log("📂 CSVファイルを読み込み中...");
+  const csvContent = fs.readFileSync(csvPath, "utf-8");
+
   // ヘッダー行をスキップして2行目から開始
   const records = parse(csvContent, {
     columns: true,
@@ -72,14 +75,14 @@ async function importSelectedPedigrees(options: ImportOptions = {}) {
 
   if (options.specificKeys && options.specificKeys.length > 0) {
     // 特定のキーのみ
-    filteredRecords = records.filter(record => {
+    filteredRecords = records.filter((record) => {
       const key = parseInt(record.キー);
       return options.specificKeys!.includes(key);
     });
-    console.log(`🔍 特定キー抽出: ${options.specificKeys.join(', ')}`);
+    console.log(`🔍 特定キー抽出: ${options.specificKeys.join(", ")}`);
   } else if (options.keyStart && options.keyEnd) {
     // 範囲指定
-    filteredRecords = records.filter(record => {
+    filteredRecords = records.filter((record) => {
       const key = parseInt(record.キー);
       return key >= options.keyStart! && key <= options.keyEnd!;
     });
@@ -95,15 +98,17 @@ async function importSelectedPedigrees(options: ImportOptions = {}) {
 
   if (options.preview) {
     // プレビューモード：実際のインポートは行わない
-    console.log('\n🔍 プレビューモード - 最初の5件:');
+    console.log("\n🔍 プレビューモード - 最初の5件:");
     filteredRecords.slice(0, 5).forEach((record, index) => {
-      console.log(`${index + 1}. キー: ${record.キー}, GP: ${record.ＧＰ}, 名前: ${record.猫名前３}`);
+      console.log(
+        `${index + 1}. キー: ${record.キー}, GP: ${record.ＧＰ}, 名前: ${record.猫名前３}`,
+      );
     });
     return;
   }
 
   // データベースにインポート
-  console.log('💾 データベースへインポート中...');
+  console.log("💾 データベースへインポート中...");
   let successCount = 0;
   let errorCount = 0;
 
@@ -118,7 +123,9 @@ async function importSelectedPedigrees(options: ImportOptions = {}) {
         data: {
           pedigreeId: record.ＧＰ || `GP_${record.キー}`,
           title: record.猫名前１ || null,
-          catName: ((record.猫名前２ || '') + ' ' + (record.猫名前３ || '')).trim() || `Cat_${record.キー}`,
+          catName:
+            ((record.猫名前２ || "") + " " + (record.猫名前３ || "")).trim() ||
+            `Cat_${record.キー}`,
           breedId: breedId,
           breedCode: parseInt(record.猫種ｺｰﾄﾞ) || null,
           gender: parseInt(record.性別) || null,
@@ -155,26 +162,26 @@ async function importSelectedPedigrees(options: ImportOptions = {}) {
  */
 async function getOrCreateBreed(breedCode: string): Promise<string | null> {
   if (!breedCode) return null;
-  
+
   try {
     const code = parseInt(breedCode);
     const breed = await prisma.breed.findFirst({
-      where: { code: code }
+      where: { code: code },
     });
-    
+
     if (breed) {
       return breed.id;
     }
-    
+
     // 新しい猫種を作成
     const newBreed = await prisma.breed.create({
       data: {
         code: code,
         name: `Breed_${code}`,
-        description: 'Imported from CSV',
+        description: "Imported from CSV",
       },
     });
-    
+
     return newBreed.id;
   } catch (error) {
     console.error(`猫種作成エラー (${breedCode}):`, error);
@@ -187,26 +194,26 @@ async function getOrCreateBreed(breedCode: string): Promise<string | null> {
  */
 async function getOrCreateCoatColor(colorCode: string): Promise<string | null> {
   if (!colorCode) return null;
-  
+
   try {
     const code = parseInt(colorCode);
     const color = await prisma.coatColor.findFirst({
-      where: { code: code }
+      where: { code: code },
     });
-    
+
     if (color) {
       return color.id;
     }
-    
+
     // 新しい毛色を作成
     const newColor = await prisma.coatColor.create({
       data: {
         code: code,
         name: `Color_${code}`,
-        description: 'Imported from CSV',
+        description: "Imported from CSV",
       },
     });
-    
+
     return newColor.id;
   } catch (error) {
     console.error(`毛色作成エラー (${colorCode}):`, error);
@@ -219,10 +226,10 @@ async function getOrCreateCoatColor(colorCode: string): Promise<string | null> {
  */
 function parseDate(dateStr: string): Date | null {
   if (!dateStr) return null;
-  
+
   try {
     // YYYY.MM.DD 形式を想定
-    const parts = dateStr.split('.');
+    const parts = dateStr.split(".");
     if (parts.length === 3) {
       const year = parseInt(parts[0]);
       const month = parseInt(parts[1]) - 1; // JSのDateは0ベース
@@ -240,7 +247,7 @@ function parseDate(dateStr: string): Date | null {
  */
 async function main() {
   const args = process.argv.slice(2);
-  
+
   if (args.length === 0) {
     console.log(`
 🐱 CSVデータ選択的インポートツール
@@ -265,23 +272,25 @@ async function main() {
   }
 
   const options: ImportOptions = {};
-  
+
   // コマンドライン引数の解析
   for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
-      case '--start':
+      case "--start":
         options.keyStart = parseInt(args[++i]);
         break;
-      case '--end':
+      case "--end":
         options.keyEnd = parseInt(args[++i]);
         break;
-      case '--keys':
-        options.specificKeys = args[++i].split(',').map(k => parseInt(k.trim()));
+      case "--keys":
+        options.specificKeys = args[++i]
+          .split(",")
+          .map((k) => parseInt(k.trim()));
         break;
-      case '--max':
+      case "--max":
         options.maxRecords = parseInt(args[++i]);
         break;
-      case '--preview':
+      case "--preview":
         options.preview = true;
         break;
     }
@@ -290,7 +299,7 @@ async function main() {
   try {
     await importSelectedPedigrees(options);
   } catch (error) {
-    console.error('❌ インポートエラー:', error);
+    console.error("❌ インポートエラー:", error);
   } finally {
     await prisma.$disconnect();
   }

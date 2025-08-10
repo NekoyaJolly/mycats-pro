@@ -1,35 +1,46 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateCatDto, UpdateCatDto, CatQueryDto } from './dto';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
+import { CreateCatDto, UpdateCatDto, CatQueryDto } from "./dto";
 
 @Injectable()
 export class CatsService {
   constructor(private prisma: PrismaService) {}
 
   async create(createCatDto: CreateCatDto) {
-    const { breedId, colorId, ...catData } = createCatDto;
+    const { breedId, colorId, birthDate, ...catData } = createCatDto as any;
 
     // Validate breed if provided
     if (breedId) {
-      const breed = await this.prisma.breed.findUnique({ where: { id: breedId } });
+      const breed = await this.prisma.breed.findUnique({
+        where: { id: breedId },
+      });
       if (!breed) {
-        throw new BadRequestException('Invalid breed ID');
+        throw new BadRequestException("Invalid breed ID");
       }
     }
 
     // Validate color if provided
     if (colorId) {
-      const color = await this.prisma.coatColor.findUnique({ where: { id: colorId } });
+      const color = await this.prisma.coatColor.findUnique({
+        where: { id: colorId },
+      });
       if (!color) {
-        throw new BadRequestException('Invalid color ID');
+        throw new BadRequestException("Invalid color ID");
       }
     }
 
+    // birthDate は文字列入力（ISO8601想定）をDateに変換して保存
+    const birth = birthDate ? new Date(birthDate) : undefined;
     return this.prisma.cat.create({
       data: {
         ...catData,
         breedId,
         colorId,
+        ...(birth ? { birthDate: birth } : {}),
       },
       include: {
         breed: true,
@@ -40,7 +51,7 @@ export class CatsService {
         maleBreedingRecords: true,
         femaleBreedingRecords: true,
         careRecords: {
-          orderBy: { careDate: 'desc' },
+          orderBy: { careDate: "desc" },
           take: 5,
         },
       },
@@ -57,8 +68,8 @@ export class CatsService {
       gender,
       ageMin,
       ageMax,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      sortBy = "createdAt",
+      sortOrder = "desc",
     } = query;
 
     const skip = (page - 1) * limit;
@@ -67,9 +78,9 @@ export class CatsService {
     // Search functionality
     if (search) {
       where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { microchipId: { contains: search, mode: 'insensitive' } },
-        { notes: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search, mode: "insensitive" } },
+        { microchipId: { contains: search, mode: "insensitive" } },
+        { notes: { contains: search, mode: "insensitive" } },
       ];
     }
 
@@ -82,11 +93,19 @@ export class CatsService {
     if (ageMin || ageMax) {
       const now = new Date();
       if (ageMax) {
-        const minBirthDate = new Date(now.getFullYear() - ageMax, now.getMonth(), now.getDate());
+        const minBirthDate = new Date(
+          now.getFullYear() - ageMax,
+          now.getMonth(),
+          now.getDate(),
+        );
         where.birthDate = { gte: minBirthDate };
       }
       if (ageMin) {
-        const maxBirthDate = new Date(now.getFullYear() - ageMin, now.getMonth(), now.getDate());
+        const maxBirthDate = new Date(
+          now.getFullYear() - ageMin,
+          now.getMonth(),
+          now.getDate(),
+        );
         where.birthDate = { ...where.birthDate, lte: maxBirthDate };
       }
     }
@@ -159,7 +178,7 @@ export class CatsService {
           },
         },
         careRecords: {
-          orderBy: { careDate: 'desc' },
+          orderBy: { careDate: "desc" },
           include: {
             recorder: true,
           },
@@ -183,30 +202,36 @@ export class CatsService {
       throw new NotFoundException(`Cat with ID ${id} not found`);
     }
 
-    const { breedId, colorId, ...catData } = updateCatDto;
+    const { breedId, colorId, birthDate, ...catData } = updateCatDto as any;
 
     // Validate breed if provided
     if (breedId) {
-      const breed = await this.prisma.breed.findUnique({ where: { id: breedId } });
+      const breed = await this.prisma.breed.findUnique({
+        where: { id: breedId },
+      });
       if (!breed) {
-        throw new BadRequestException('Invalid breed ID');
+        throw new BadRequestException("Invalid breed ID");
       }
     }
 
     // Validate color if provided
     if (colorId) {
-      const color = await this.prisma.coatColor.findUnique({ where: { id: colorId } });
+      const color = await this.prisma.coatColor.findUnique({
+        where: { id: colorId },
+      });
       if (!color) {
-        throw new BadRequestException('Invalid color ID');
+        throw new BadRequestException("Invalid color ID");
       }
     }
 
+    const birth = birthDate ? new Date(birthDate) : undefined;
     return this.prisma.cat.update({
       where: { id },
       data: {
         ...catData,
         breedId,
         colorId,
+        ...(birth ? { birthDate: birth } : {}),
       },
       include: {
         breed: true,
@@ -245,10 +270,7 @@ export class CatsService {
 
     const breedingRecords = await this.prisma.breedingRecord.findMany({
       where: {
-        OR: [
-          { maleId: id },
-          { femaleId: id },
-        ],
+        OR: [{ maleId: id }, { femaleId: id }],
       },
       include: {
         male: {
@@ -266,7 +288,7 @@ export class CatsService {
         recorder: true,
       },
       orderBy: {
-        breedingDate: 'desc',
+        breedingDate: "desc",
       },
     });
 
@@ -285,7 +307,7 @@ export class CatsService {
         recorder: true,
       },
       orderBy: {
-        careDate: 'desc',
+        careDate: "desc",
       },
     });
 
@@ -296,35 +318,32 @@ export class CatsService {
   }
 
   async getStatistics() {
-    const [
-      totalCats,
-      totalMales,
-      totalFemales,
-      breedStats,
-    ] = await Promise.all([
-      this.prisma.cat.count(),
-      this.prisma.cat.count({ where: { gender: 'MALE' } }),
-      this.prisma.cat.count({ where: { gender: 'FEMALE' } }),
-      this.prisma.cat.groupBy({
-        by: ['breedId'],
-        _count: true,
-        orderBy: {
-          _count: {
-            breedId: 'desc',
+    const [totalCats, totalMales, totalFemales, breedStats] = await Promise.all(
+      [
+        this.prisma.cat.count(),
+        this.prisma.cat.count({ where: { gender: "MALE" } }),
+        this.prisma.cat.count({ where: { gender: "FEMALE" } }),
+        this.prisma.cat.groupBy({
+          by: ["breedId"],
+          _count: true,
+          orderBy: {
+            _count: {
+              breedId: "desc",
+            },
           },
-        },
-        take: 10,
-      }),
-    ]);
+          take: 10,
+        }),
+      ],
+    );
 
     // Get breed names for statistics
-    const breedIds = breedStats.map(stat => stat.breedId).filter(Boolean);
+    const breedIds = breedStats.map((stat) => stat.breedId).filter(Boolean);
     const breeds = await this.prisma.breed.findMany({
       where: { id: { in: breedIds as string[] } },
     });
 
-    const breedStatsWithNames = breedStats.map(stat => ({
-      breed: breeds.find(breed => breed.id === stat.breedId),
+    const breedStatsWithNames = breedStats.map((stat) => ({
+      breed: breeds.find((breed) => breed.id === stat.breedId),
       count: stat._count,
     }));
 
