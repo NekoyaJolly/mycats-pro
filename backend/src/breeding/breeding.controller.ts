@@ -7,11 +7,8 @@ import {
   Param,
   Delete,
   Query,
-  HttpStatus,
+  HttpStatus, UseGuards 
 } from "@nestjs/common";
-import { UseGuards } from "@nestjs/common";
-import { JwtAuthGuard } from "../auth/jwt-auth.guard";
-import { GetUser } from "../auth/get-user.decorator";
 import {
   ApiTags,
   ApiOperation,
@@ -19,6 +16,11 @@ import {
   ApiParam,
   ApiBearerAuth,
 } from "@nestjs/swagger";
+
+import { GetUser } from "../auth/get-user.decorator";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+
+
 import { BreedingService } from "./breeding.service";
 import { BreedingQueryDto, CreateBreedingDto, UpdateBreedingDto } from "./dto";
 

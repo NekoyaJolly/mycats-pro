@@ -16,8 +16,9 @@ import {
   ApiParam,
   ApiQuery,
 } from "@nestjs/swagger";
-import { PedigreeService } from "./pedigree.service";
+
 import { CreatePedigreeDto, UpdatePedigreeDto, PedigreeQueryDto } from "./dto";
+import { PedigreeService } from "./pedigree.service";
 
 @ApiTags("Pedigrees")
 @Controller("pedigrees")

@@ -1,18 +1,19 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { ThrottlerModule } from "@nestjs/throttler";
-import { PrismaModule } from "./prisma/prisma.module";
+
 import { AuthModule } from "./auth/auth.module";
-import { CatsModule } from "./cats/cats.module";
-import { PedigreeModule } from "./pedigree/pedigree.module";
-import { BreedsModule } from "./breeds/breeds.module";
-import { CoatColorsModule } from "./coat-colors/coat-colors.module";
 import { BreedingModule } from "./breeding/breeding.module";
+import { BreedsModule } from "./breeds/breeds.module";
 import { CareModule } from "./care/care.module";
+import { CatsModule } from "./cats/cats.module";
+import { CoatColorsModule } from "./coat-colors/coat-colors.module";
+import { PedigreeModule } from "./pedigree/pedigree.module";
+import { PrismaModule } from "./prisma/prisma.module";
 import { ScheduleModule } from "./schedule/schedule.module";
-import { UsersModule } from "./users/users.module";
-import { UploadModule } from "./upload/upload.module";
 import { TagsModule } from "./tags/tags.module";
+import { UploadModule } from "./upload/upload.module";
+import { UsersModule } from "./users/users.module";
 
 @Module({
   imports: [

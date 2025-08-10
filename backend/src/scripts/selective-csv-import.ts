@@ -1,6 +1,7 @@
-import { PrismaClient } from "@prisma/client";
 import * as fs from "fs";
 import * as path from "path";
+
+import { PrismaClient } from "@prisma/client";
 import { parse } from "csv-parse/sync";
 
 const prisma = new PrismaClient();
@@ -66,7 +67,7 @@ async function importSelectedPedigrees(options: ImportOptions = {}) {
     columns: true,
     skip_empty_lines: true,
     from_line: 2, // 1行目は日本語ヘッダー、2行目は英語ヘッダー
-  }) as PedigreeRow[];
+  });
 
   console.log(`📊 総レコード数: ${records.length}`);
 
@@ -77,14 +78,14 @@ async function importSelectedPedigrees(options: ImportOptions = {}) {
     // 特定のキーのみ
     filteredRecords = records.filter((record) => {
       const key = parseInt(record.キー);
-      return options.specificKeys!.includes(key);
+      return options.specificKeys.includes(key);
     });
     console.log(`🔍 特定キー抽出: ${options.specificKeys.join(", ")}`);
   } else if (options.keyStart && options.keyEnd) {
     // 範囲指定
     filteredRecords = records.filter((record) => {
       const key = parseInt(record.キー);
-      return key >= options.keyStart! && key <= options.keyEnd!;
+      return key >= options.keyStart && key <= options.keyEnd;
     });
     console.log(`🔍 範囲抽出: ${options.keyStart} - ${options.keyEnd}`);
   }

@@ -9,11 +9,12 @@ import {
   Post,
   UseGuards,
 } from "@nestjs/common";
-import { ApiBearerAuth } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags  } from "@nestjs/swagger";
+
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { TagsService } from "./tags.service";
+
 import { AssignTagDto, CreateTagDto } from "./dto";
+import { TagsService } from "./tags.service";
 
 @ApiTags("Tags")
 @Controller("tags")

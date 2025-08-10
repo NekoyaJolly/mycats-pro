@@ -1,8 +1,10 @@
 import { Injectable } from "@nestjs/common";
+
 import { PrismaService } from "../prisma/prisma.service";
+
 import { CareQueryDto } from "./dto/care-query.dto";
-import { CreateCareScheduleDto } from "./dto/create-care-schedule.dto";
 import { CompleteCareDto } from "./dto/complete-care.dto";
+import { CreateCareScheduleDto } from "./dto/create-care-schedule.dto";
 
 @Injectable()
 export class CareService {
@@ -76,7 +78,7 @@ export class CareService {
     // 実績として CareRecord を残す
     await this.prisma.careRecord.create({
       data: {
-        catId: updated.catId!,
+        catId: updated.catId,
         careType: "HEALTH_CHECK", // 簡易実装: 詳細種別は後で拡張
         description: updated.title,
         careDate: dto.completedDate ? new Date(dto.completedDate) : new Date(),

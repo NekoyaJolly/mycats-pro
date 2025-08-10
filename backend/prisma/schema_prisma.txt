@@ -1,4 +1,4 @@
-// Prisma Schema - Last Updated: 2025-08-09T15:11:43.873Z
+// Prisma Schema - Last Updated: 2025-08-10T21:59:07.537Z
 // Auto-generated from schema.prisma
 
 // This is your Prisma schema file,
@@ -23,6 +23,10 @@ model User {
   lastName    String?
   role        UserRole @default(USER)
   isActive    Boolean  @default(true)
+  passwordHash String?
+  failedLoginAttempts Int @default(0)
+  lockedUntil DateTime?
+  lastLoginAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -31,8 +35,25 @@ model User {
   breedingRecords BreedingRecord[]
   careRecords     CareRecord[]
   schedules       Schedule[]
+  loginAttempts   LoginAttempt[]
 
   @@map("users")
+}
+
+model LoginAttempt {
+  id        String   @id @default(uuid())
+  userId    String?
+  email     String
+  ipAddress String?
+  userAgent String?
+  success   Boolean
+  reason    String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("login_attempts")
 }
 
 model Breed {

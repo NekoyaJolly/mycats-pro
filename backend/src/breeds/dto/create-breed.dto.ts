@@ -1,6 +1,6 @@
-import { IsString, IsOptional, MaxLength, IsInt } from "class-validator";
-import { Type } from "class-transformer";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { Type } from "class-transformer";
+import { IsString, IsOptional, MaxLength, IsInt } from "class-validator";
 
 export class CreateBreedDto {
   @ApiProperty({ description: "品種コード" })

@@ -90,7 +90,7 @@
 ### **主要コンポーネント**
 
 ,,,
-/cat-ui-test/src/app/pedigrees/
+/frontend/src/app/pedigrees/
 ├── new/page.tsx                     # 血統書登録フォーム
 ├── page.tsx                         # 血統書一覧
 ├── [id]/page.tsx                    # 血統書詳細
@@ -107,7 +107,7 @@ cd /Users/nekoya/appproject/backend
 PORT=3004 npm run start:dev
 
 # 2. フロントエンド起動  
-cd /Users/nekoya/appproject/cat-ui-test
+cd /Users/nekoya/appproject/frontend
 npm run dev
 # => http://localhost:3006
 

@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { CareType } from "@prisma/client";
 import {
   IsDateString,
   IsEnum,
@@ -6,7 +7,6 @@ import {
   IsString,
   IsUUID,
 } from "class-validator";
-import { CareType } from "@prisma/client";
 
 export class CreateCareScheduleDto {
   @ApiProperty({

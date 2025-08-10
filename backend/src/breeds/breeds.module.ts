@@ -1,7 +1,9 @@
 import { Module } from "@nestjs/common";
-import { BreedsService } from "./breeds.service";
-import { BreedsController } from "./breeds.controller";
+
 import { PrismaModule } from "../prisma/prisma.module";
+
+import { BreedsController } from "./breeds.controller";
+import { BreedsService } from "./breeds.service";
 
 @Module({
   imports: [PrismaModule],

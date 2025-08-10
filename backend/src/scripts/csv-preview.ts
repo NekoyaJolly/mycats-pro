@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+
 import { parse } from "csv-parse/sync";
 
 interface PedigreeRow {
@@ -36,7 +37,7 @@ async function previewCSV() {
     columns: true,
     skip_empty_lines: true,
     from_line: 2, // ヘッダーをスキップ
-  }) as PedigreeRow[];
+  });
 
   console.log(`📊 総レコード数: ${records.length}`);
 

@@ -16,6 +16,7 @@ import {
   ApiParam,
   ApiQuery,
 } from "@nestjs/swagger";
+
 import { CatsService } from "./cats.service";
 import { CreateCatDto, UpdateCatDto, CatQueryDto } from "./dto";
 

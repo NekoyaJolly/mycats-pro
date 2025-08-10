@@ -3,7 +3,9 @@ import {
   NotFoundException,
   BadRequestException,
 } from "@nestjs/common";
+
 import { PrismaService } from "../prisma/prisma.service";
+
 import { CreateCatDto, UpdateCatDto, CatQueryDto } from "./dto";
 
 @Injectable()
@@ -339,7 +341,7 @@ export class CatsService {
     // Get breed names for statistics
     const breedIds = breedStats.map((stat) => stat.breedId).filter(Boolean);
     const breeds = await this.prisma.breed.findMany({
-      where: { id: { in: breedIds as string[] } },
+      where: { id: { in: breedIds } },
     });
 
     const breedStatsWithNames = breedStats.map((stat) => ({

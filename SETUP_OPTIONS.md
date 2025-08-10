@@ -18,18 +18,18 @@
   "scripts": {
     "dev": "run-p backend:dev frontend:dev",
     "backend:dev": "cd backend && PORT=3004 npm run start:dev",
-    "frontend:dev": "cd cat-ui-test && npm run dev",
+    "frontend:dev": "cd frontend && npm run dev",
     "backend:build": "cd backend && npm run build",
-    "frontend:build": "cd cat-ui-test && npm run build",
+    "frontend:build": "cd frontend && npm run build",
     "backend:start": "cd backend && npm run start",
-    "frontend:start": "cd cat-ui-test && npm run start",
+    "frontend:start": "cd frontend && npm run start",
     "test:backend": "cd backend && npm test",
-    "test:frontend": "cd cat-ui-test && npm test",
+    "test:frontend": "cd frontend && npm test",
     "db:migrate": "cd backend && npm run prisma:migrate",
     "db:generate": "cd backend && npm run prisma:generate",
     "db:seed": "cd backend && npm run seed",
     "db:studio": "cd backend && npm run prisma:studio",
-    "install:all": "npm install && cd backend && npm install && cd ../cat-ui-test && npm install"
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
   }
 }
 ```

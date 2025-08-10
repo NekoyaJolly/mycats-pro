@@ -1,7 +1,9 @@
 import { Module } from "@nestjs/common";
-import { PedigreeService } from "./pedigree.service";
-import { PedigreeController } from "./pedigree.controller";
+
 import { PrismaModule } from "../prisma/prisma.module";
+
+import { PedigreeController } from "./pedigree.controller";
+import { PedigreeService } from "./pedigree.service";
 
 @Module({
   imports: [PrismaModule],

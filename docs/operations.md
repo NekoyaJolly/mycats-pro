@@ -56,7 +56,7 @@ cd backend
 npm run start:prod
 
 # フロントエンドサーバー起動（別ターミナル）
-cd cat-ui-test
+cd frontend
 npm run start
 ```
 
@@ -156,7 +156,7 @@ pg_dump mycats > backup/mycats_$(date +%Y%m%d).sql
 #### キャッシュ・一時ファイル清理
 ```bash
 # Next.jsビルドキャッシュ削除
-rm -rf cat-ui-test/.next
+rm -rf frontend/.next
 
 # npm キャッシュ清理
 npm cache clean --force

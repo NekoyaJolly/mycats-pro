@@ -6,11 +6,15 @@ export class LoginDto {
     description: "ログインに使用するメールアドレス",
     example: "user@example.com",
   })
-  @IsEmail()
+  @IsEmail({}, { message: "有効なメールアドレスを入力してください" })
   email: string;
 
-  @ApiProperty({ description: "パスワード (6文字以上)", example: "Passw0rd!" })
+  @ApiProperty({
+    description: "パスワード (8文字以上推奨)",
+    example: "SecurePassword123!",
+    minLength: 6,
+  })
   @IsString()
-  @MinLength(6)
+  @MinLength(6, { message: "パスワードは6文字以上である必要があります" })
   password: string;
 }

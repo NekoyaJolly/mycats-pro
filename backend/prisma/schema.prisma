@@ -21,6 +21,9 @@ model User {
   role        UserRole @default(USER)
   isActive    Boolean  @default(true)
   passwordHash String?
+  failedLoginAttempts Int @default(0)
+  lockedUntil DateTime?
+  lastLoginAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -29,8 +32,25 @@ model User {
   breedingRecords BreedingRecord[]
   careRecords     CareRecord[]
   schedules       Schedule[]
+  loginAttempts   LoginAttempt[]
 
   @@map("users")
+}
+
+model LoginAttempt {
+  id        String   @id @default(uuid())
+  userId    String?
+  email     String
+  ipAddress String?
+  userAgent String?
+  success   Boolean
+  reason    String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("login_attempts")
 }
 
 model Breed {

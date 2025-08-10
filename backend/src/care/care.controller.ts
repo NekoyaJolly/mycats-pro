@@ -6,7 +6,7 @@ import {
   Param,
   Patch,
   Post,
-  Query,
+  Query, UseGuards 
 } from "@nestjs/common";
 import {
   ApiBearerAuth,
@@ -15,10 +15,11 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
-import { CareService } from "./care.service";
-import { UseGuards } from "@nestjs/common";
-import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+
 import { GetUser } from "../auth/get-user.decorator";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+
+import { CareService } from "./care.service";
 import { CareQueryDto } from "./dto/care-query.dto";
 import { CompleteCareDto } from "./dto/complete-care.dto";
 import { CreateCareScheduleDto } from "./dto/create-care-schedule.dto";

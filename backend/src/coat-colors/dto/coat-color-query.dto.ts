@@ -1,6 +1,6 @@
-import { IsOptional, IsString, IsInt, IsIn, Min, Max } from "class-validator";
-import { Type } from "class-transformer";
 import { ApiPropertyOptional } from "@nestjs/swagger";
+import { Type } from "class-transformer";
+import { IsOptional, IsString, IsInt, IsIn, Min, Max } from "class-validator";
 
 export class CoatColorQueryDto {
   @ApiPropertyOptional({ description: "ページ番号", default: 1 })

@@ -1,3 +1,5 @@
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { Transform, Type } from "class-transformer";
 import {
   IsString,
   IsOptional,
@@ -6,8 +8,6 @@ import {
   IsDateString,
   MaxLength,
 } from "class-validator";
-import { Transform, Type } from "class-transformer";
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class CreatePedigreeDto {
   @ApiProperty({ description: "血統書番号" })

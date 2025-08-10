@@ -89,7 +89,7 @@
 
 ```text
 appproject/
-├── cat-ui-test/                # フロントエンド (Next.js 15)
+├── frontend/                # フロントエンド (Next.js 15)
 │   ├── src/app/               # App Router ページ
 │   ├── src/components/        # 再利用可能コンポーネント
 │   ├── package.json           # フロントエンド依存関係
@@ -281,7 +281,7 @@ npm run frontend:start
 
 ### ビルド成果物
 
-- **フロントエンド**: `cat-ui-test/.next/`ディレクトリ
+- **フロントエンド**: `frontend/.next/`ディレクトリ
 - **バックエンド**: `backend/dist/`ディレクトリ（`npm run build`実行時）
 
 ## 🔍 トラブルシューティング
@@ -320,7 +320,7 @@ npm run frontend:start
    ```bash
    # node_modulesを再インストール
    rm -rf node_modules package-lock.json
-   rm -rf cat-ui-test/node_modules cat-ui-test/package-lock.json
+   rm -rf frontend/node_modules frontend/package-lock.json
    rm -rf backend/node_modules backend/package-lock.json
    
    # 依存関係を再インストール
@@ -338,7 +338,7 @@ npm run frontend:start
 
    ```bash
    # legacy-peer-depsでインストール
-   cd cat-ui-test
+   cd frontend
    npm install --legacy-peer-deps
    ```
 

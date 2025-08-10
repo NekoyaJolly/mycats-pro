@@ -1,7 +1,9 @@
 import { Module } from "@nestjs/common";
-import { CoatColorsService } from "./coat-colors.service";
-import { CoatColorsController } from "./coat-colors.controller";
+
 import { PrismaModule } from "../prisma/prisma.module";
+
+import { CoatColorsController } from "./coat-colors.controller";
+import { CoatColorsService } from "./coat-colors.service";
 
 @Module({
   imports: [PrismaModule],
