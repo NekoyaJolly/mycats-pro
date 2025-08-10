@@ -20,6 +20,15 @@
     "resolveJsonModule": true,
     "esModuleInterop": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts"]
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": [
+    "node_modules", 
+    "dist",
+    "src/scripts/csv-preview.ts",
+    "src/scripts/selective-csv-import.ts",
+    "src/scripts/import-*.ts",
+    "src/scripts/check-*.ts",
+    "src/scripts/build-*.ts",
+    "src/scripts/rename-*.ts"
+  ]
 }
