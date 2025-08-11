@@ -47,20 +47,23 @@ jobs:
         run: pnpm install --frozen-lockfile
       
       - name: Generate Prisma Client
-        run: pnpm --filter backend run prisma:generate
+        working-directory: backend
+        run: npx prisma generate
       
       - name: TypeScript type check - Backend
-        run: pnpm --filter backend run type-check
+        working-directory: backend
+        run: npx tsc --noEmit
       
       - name: TypeScript type check - Frontend  
         run: pnpm --filter frontend run type-check
       
       - name: Lint - Backend
-        run: pnpm --filter backend run lint --max-warnings=300
+        working-directory: backend
+        run: npm run lint -- --max-warnings=300
         continue-on-error: false
       
       - name: Lint - Frontend
-        run: pnpm --filter frontend run lint --max-warnings=100
+        run: pnpm --filter frontend run lint -- --max-warnings=100
         continue-on-error: false
 
   # ジョブ2: ユニットテスト
@@ -129,7 +132,8 @@ jobs:
         run: pnpm --filter backend run prisma:deploy
       
       - name: Run backend unit tests
-        run: pnpm --filter backend run test
+        working-directory: backend
+        run: npm run test
       
       - name: Run frontend unit tests
         run: pnpm --filter frontend run test
@@ -194,13 +198,16 @@ jobs:
         run: pnpm install --frozen-lockfile
       
       - name: Generate Prisma Client
-        run: pnpm --filter backend run prisma:generate
+        working-directory: backend
+        run: npx prisma generate
       
       - name: Run database migrations
-        run: pnpm --filter backend run prisma:deploy
+        working-directory: backend
+        run: npx prisma migrate deploy
       
       - name: Run E2E tests
-        run: pnpm --filter backend run test:e2e
+        working-directory: backend
+        run: npm run test:e2e
 
   # ジョブ4: ビルド確認
   build:
@@ -238,10 +245,12 @@ jobs:
         run: pnpm install --frozen-lockfile
       
       - name: Generate Prisma Client
-        run: pnpm --filter backend run prisma:generate
+        working-directory: backend
+        run: npx prisma generate
       
       - name: Build backend
-        run: pnpm --filter backend run build
+        working-directory: backend
+        run: npm run build
       
       - name: Build frontend
         run: pnpm --filter frontend run build
