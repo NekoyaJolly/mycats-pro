@@ -168,7 +168,7 @@ jobs:
       ARGON2_PARALLELISM: 4
       MAX_LOGIN_ATTEMPTS: 5
       LOGIN_LOCKOUT_DURATION_MINUTES: 15
-    
+      PRISMA_CLIENT_ENGINE_TYPE: library
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -199,14 +199,31 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       
-      - name: Generate Prisma Client
+      - name: Clean Prisma engines
+        run: |
+          rm -rf node_modules/.prisma || true
+          rm -rf backend/node_modules/.prisma || true
+
+      - name: Generate Prisma Client (Node-API)
         working-directory: backend
-        run: npx prisma generate
+        env:
+          PRISMA_CLIENT_ENGINE_TYPE: library
+        run: pnpm exec prisma generate
       
       - name: Run database migrations
         working-directory: backend
         run: npx prisma migrate deploy
       
+      - name: Debug Prisma client
+        run: |
+          node -e "console.log('openssl:', process.versions.openssl)"
+          echo '--- backend/.prisma ---'
+          ls -la backend/node_modules/.prisma || true
+          echo '--- root/.prisma ---'
+          ls -la node_modules/.prisma || true
+          echo '--- schema check ---'
+          grep -n 'binaryTargets' backend/prisma/schema.prisma || true
+
       - name: Run E2E tests
         working-directory: backend
         run: npm run test:e2e
