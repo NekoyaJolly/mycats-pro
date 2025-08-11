@@ -1,5 +1,7 @@
 # 🐱 猫生体管理システム (My Cats)
 
+[![CI](https://github.com/NekoyaJolly/mycats/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/NekoyaJolly/mycats/actions/workflows/ci.yml)
+
 フロントエンド (Next.js 15 + Mantine UI) とバックエンド (NestJS + Prisma) を組み合わせた包括的な猫生体管理アプリケーションです。血統書管理、交配記録、ケアスケジュール、健康管理などの機能を提供します。
 
 ## 📋 目次
@@ -426,6 +428,6 @@ MIT License
 
 ---
 
-**最終更新**: 2025年8月9日  
+**最終更新**: 2025年8月12日  
 **プロジェクト状態**: アクティブ開発中  
 **主要バージョン**: フロントエンド（Next.js 15）、バックエンド（NestJS + Prisma 5）
