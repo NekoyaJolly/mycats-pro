@@ -63,7 +63,7 @@ jobs:
         continue-on-error: false
       
       - name: Lint - Frontend
-        run: pnpm --filter frontend run lint 
+        run: pnpm --filter frontend run lint -- --max-warnings=150
         continue-on-error: false
 
   # ジョブ2: ユニットテスト

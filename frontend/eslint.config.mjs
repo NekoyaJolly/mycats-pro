@@ -1,3 +1,14 @@
+/**
+ * ESLint設定ファイル (フロントエンド)
+ * Next.js + React + TypeScript 用フラット設定
+ * 
+ * 設定方針:
+ * - 開発効率を重視し、警告レベルでの運用
+ * - TypeScript型安全性は段階的改善
+ * - Next.js/React のベストプラクティスに準拠
+ * - Import順序は簡素化してメンテナンス性重視
+ */
+
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
@@ -6,10 +17,14 @@ import importX from 'eslint-plugin-import-x';
 import prettier from 'eslint-config-prettier';
 
 const eslintConfig = [
+  // === 基本設定 ===
   js.configs.recommended,
-  ...tseslint.configs.recommended, // recommendedTypeChecked から recommended に変更
+  ...tseslint.configs.recommended,
   prettier,
+  
+  // === メイン設定 ===
   {
+    name: 'frontend-main-config',
     files: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
     plugins: {
       'react-hooks': reactHooks,
@@ -18,42 +33,46 @@ const eslintConfig = [
     },
     languageOptions: {
       parserOptions: {
-        project: './tsconfig.json', // projectService から project に変更
+        project: './tsconfig.json',
         tsconfigRootDir: import.meta.dirname
       }
     },
     rules: {
-      // TypeScript rules
+      // === TypeScript Rules ===
+      // 開発段階では警告レベルで運用、段階的にerrorに移行
       '@typescript-eslint/no-unused-vars': ['warn', { 
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_'
       }],
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unsafe-assignment': 'warn', // error から warn に変更
-      '@typescript-eslint/no-unsafe-member-access': 'warn', // error から warn に変更
-      '@typescript-eslint/no-unsafe-call': 'warn', // error から warn に変更
-      '@typescript-eslint/no-unsafe-return': 'warn', // error から warn に変更
-      '@typescript-eslint/no-unsafe-argument': 'warn', // error から warn に変更
+      '@typescript-eslint/no-explicit-any': 'warn', // TODO: 長期的にerrorに
+      '@typescript-eslint/no-unsafe-assignment': 'warn',
+      '@typescript-eslint/no-unsafe-member-access': 'warn',
+      '@typescript-eslint/no-unsafe-call': 'warn',
+      '@typescript-eslint/no-unsafe-return': 'warn',
+      '@typescript-eslint/no-unsafe-argument': 'warn',
       
-      // Import/Export rules  
+      // === Import/Export Rules ===
+      // 簡素化してメンテナンス性重視
       'import-x/order': ['warn', {
         'groups': ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
-        'newlines-between': 'always',
+        'newlines-between': 'never', // 空行なしで統一
         'alphabetize': { 'order': 'asc', 'caseInsensitive': true }
       }],
       'import-x/no-duplicates': 'error',
-      'import-x/no-unresolved': 'warn', // error から warn に変更
-      'import-x/no-unused-modules': 'warn',
+      'import-x/no-unresolved': 'off', // TypeScriptで解決するため無効化
+      'import-x/no-unused-modules': 'off', // 開発段階では無効化
       
-      // React hooks rules
+      // === React/Next.js Rules ===
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
-      
-      // Next.js specific rules
-      '@next/next/no-img-element': 'off',
+      '@next/next/no-img-element': 'off', // Next.js Image component推奨だが強制しない
       '@next/next/no-html-link-for-pages': 'error',
       '@next/next/no-page-custom-font': 'warn',
-      '@next/next/no-unwanted-polyfillio': 'warn'
+      '@next/next/no-unwanted-polyfillio': 'warn',
+      
+      // === 一般的なJavaScript Rules ===
+      'no-console': 'warn', // 開発時は許可、本番前に確認
+      'no-debugger': 'warn',
     },
     settings: {
       next: {
@@ -68,16 +87,38 @@ const eslintConfig = [
       }
     }
   },
+  
+  // === テストファイル専用設定 ===
   {
+    name: 'frontend-test-config',
+    files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
+    rules: {
+      // テストファイルではany型使用を許可
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      'no-console': 'off', // テスト時のデバッグ用
+    }
+  },
+  
+  // === 除外設定 ===
+  {
+    name: 'frontend-ignores',
     ignores: [
       ".next/**",
       "out/**", 
       "dist/**",
       "node_modules/**",
+      "coverage/**",
       "**/*_old.tsx",
       "**/*page_old.tsx", 
       "**/*page_new.tsx",
-      "**/*_old.ts"
+      "**/*_old.ts",
+      "*.config.js",
+      "*.config.mjs"
     ]
   }
 ];

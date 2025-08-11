@@ -1,10 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AuthService } from './auth.service';
-import { PrismaService } from '../prisma/prisma.service';
-import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { PasswordService } from './password.service';
+import { JwtService } from '@nestjs/jwt';
+import { Test, TestingModule } from '@nestjs/testing';
+
+import { PrismaService } from '../prisma/prisma.service';
+
+import { AuthService } from './auth.service';
 import { LoginAttemptService } from './login-attempt.service';
+import { PasswordService } from './password.service';
 
 describe('AuthService', () => {
   let service: AuthService;
