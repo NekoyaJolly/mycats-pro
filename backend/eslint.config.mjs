@@ -13,7 +13,7 @@ export default [
       ecmaVersion: 2020,
       sourceType: 'module',
       parserOptions: {
-        project: './tsconfig.json', // projectService から project に変更
+        project: './tsconfig.eslint.json', // ESLint専用tsconfig使用
         tsconfigRootDir: import.meta.dirname
       },
       globals: {
@@ -56,7 +56,7 @@ export default [
       'import-x/resolver': {
         typescript: {
           alwaysTryTypes: true,
-          project: './tsconfig.json'
+          project: './tsconfig.eslint.json'
         },
         node: true
       }
@@ -66,7 +66,7 @@ export default [
     files: ['test/**/*.ts', 'src/**/*.spec.ts', 'src/**/*.test.ts'],
     languageOptions: {
       parserOptions: {
-        project: './tsconfig.json', // projectService から project に変更
+        project: './tsconfig.eslint.json', // ESLint専用tsconfig使用
         tsconfigRootDir: import.meta.dirname
       },
       globals: {
