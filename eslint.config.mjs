@@ -24,7 +24,7 @@ export default [
   // === ルートレベル設定 ===
   {
     name: 'root-project-config',
-    files: ['*.js', '*.mjs', '*.ts', '*.json'],
+    files: ['*.js', '*.mjs', '*.ts'],
     languageOptions: {
       ecmaVersion: 2020,
       sourceType: 'module',
@@ -48,6 +48,9 @@ export default [
   {
     name: 'root-ignores',
     ignores: [
+  // root JSON configs should be ignored
+  '*.json',
+  'package.json',
       // サブプロジェクトディレクトリ（個別設定を使用）
       'frontend/**',
       'backend/**',

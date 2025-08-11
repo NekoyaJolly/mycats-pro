@@ -7,6 +7,7 @@
     "dev": "run-p backend:dev frontend:dev:wait prisma:sync",
     "dev:full": "run-p backend:dev frontend:dev:wait prisma:sync db:studio",
     "start": "npm run dev",
+  "build": "run-s backend:build frontend:build",
 
     "backend:dev": "cross-env PORT=3004 pnpm --filter backend run start:dev",
     "backend:install": "pnpm --filter backend install",
@@ -27,7 +28,7 @@
     "frontend:lint": "pnpm --filter frontend run lint",
 
     "lint": "run-p lint:*",
-    "lint:root": "eslint *.js *.mjs *.ts --fix",
+  "lint:root": "eslint . --ext .js,.mjs,.ts --fix",
     "lint:backend": "npm run backend:lint",
     "lint:frontend": "npm run frontend:lint",
 

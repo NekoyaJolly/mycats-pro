@@ -25,7 +25,7 @@ describe("Auth -> Breeding (e2e)", () => {
 
   it("register, login, create breeding", async () => {
     const email = `test_${Date.now()}@example.com`;
-    const password = "secret123";
+  const password = "Secret123!";
 
     // register
     await request(app.getHttpServer())

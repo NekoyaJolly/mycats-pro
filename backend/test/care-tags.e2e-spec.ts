@@ -24,7 +24,7 @@ describe("Care & Tags flows (e2e)", () => {
 
   it("tags: register -> login -> create cat -> create tag -> assign/unassign", async () => {
     const email = `care_${Date.now()}@example.com`;
-    const password = "secret123";
+  const password = "Secret123!";
 
     // register
     const reg = await request(app.getHttpServer())
@@ -88,7 +88,7 @@ describe("Care & Tags flows (e2e)", () => {
 
   it("care: register -> login -> create cat -> create schedule -> complete", async () => {
     const email = `care2_${Date.now()}@example.com`;
-    const password = "secret123";
+  const password = "Secret123!";
 
     // register & login
     const reg = await request(app.getHttpServer())

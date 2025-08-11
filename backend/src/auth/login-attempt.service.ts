@@ -1,3 +1,5 @@
+import { randomUUID } from "crypto";
+
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 
@@ -44,9 +46,10 @@ export class LoginAttemptService {
       });
 
       // ログイン試行を記録（rawクエリ使用）
+      const id = randomUUID();
       await this.prisma.$executeRaw`
-        INSERT INTO login_attempts (id, user_id, email, ip_address, user_agent, success, reason, created_at)
-        VALUES (gen_random_uuid()::text, ${user?.id}, ${data.email}, ${data.ipAddress}, ${data.userAgent}, ${data.success}, ${data.reason}, NOW())
+        INSERT INTO "login_attempts" ("id", "userId", "email", "ipAddress", "userAgent", "success", "reason", "createdAt")
+        VALUES (${id}, ${user?.id}, ${data.email}, ${data.ipAddress}, ${data.userAgent}, ${data.success}, ${data.reason}, NOW())
       `;
 
       // 失敗の場合、ユーザーの失敗カウントを更新
@@ -75,12 +78,12 @@ export class LoginAttemptService {
     try {
       const result = await this.prisma.$queryRaw<Array<{
         id: string;
-        failed_login_attempts: number;
-        locked_until: Date | null;
+        failedLoginAttempts: number;
+        lockedUntil: Date | null;
       }>>`
-        SELECT id, failed_login_attempts, locked_until
-        FROM users 
-        WHERE email = ${email}
+        SELECT "id", "failedLoginAttempts", "lockedUntil"
+        FROM "users"
+        WHERE "email" = ${email}
       `;
 
       if (!result || result.length === 0) {
@@ -90,18 +93,18 @@ export class LoginAttemptService {
       const user = result[0];
 
       // ロック期限が設定されており、まだ有効な場合
-      if (user.locked_until && user.locked_until > new Date()) {
+  if (user.lockedUntil && user.lockedUntil > new Date()) {
         return true;
       }
 
       // ロック期限が過ぎている場合、ロックを解除
-      if (user.locked_until && user.locked_until <= new Date()) {
+      if (user.lockedUntil && user.lockedUntil <= new Date()) {
         await this.resetFailedLoginCount(user.id);
         return false;
       }
 
       // 最大試行回数に達している場合
-      return user.failed_login_attempts >= this.maxAttempts;
+  return user.failedLoginAttempts >= this.maxAttempts;
     } catch (error) {
       this.logger.error("Failed to check account lock status:", error);
       return false; // エラーの場合はロックされていないとみなす
@@ -114,19 +117,19 @@ export class LoginAttemptService {
   async getLockoutRemainingMinutes(email: string): Promise<number> {
     try {
       const result = await this.prisma.$queryRaw<Array<{
-        locked_until: Date | null;
+        lockedUntil: Date | null;
       }>>`
-        SELECT locked_until 
-        FROM users 
-        WHERE email = ${email}
+        SELECT "lockedUntil"
+        FROM "users"
+        WHERE "email" = ${email}
       `;
 
-      if (!result || result.length === 0 || !result[0].locked_until) {
+  if (!result || result.length === 0 || !result[0].lockedUntil) {
         return 0;
       }
 
       const now = new Date();
-      const lockoutEnd = result[0].locked_until;
+  const lockoutEnd = result[0].lockedUntil;
 
       if (lockoutEnd <= now) {
         return 0;
@@ -148,16 +151,16 @@ export class LoginAttemptService {
   ): Promise<void> {
     try {
       const result = await this.prisma.$queryRaw<Array<{
-        failed_login_attempts: number;
+        failedLoginAttempts: number;
       }>>`
-        SELECT failed_login_attempts 
-        FROM users 
-        WHERE id = ${userId}
+        SELECT "failedLoginAttempts"
+        FROM "users"
+        WHERE "id" = ${userId}
       `;
 
       if (!result || result.length === 0) return;
 
-      const newFailedAttempts = (result[0].failed_login_attempts || 0) + 1;
+  const newFailedAttempts = (result[0].failedLoginAttempts || 0) + 1;
       const shouldLock = newFailedAttempts >= this.maxAttempts;
 
       if (shouldLock) {
@@ -167,9 +170,9 @@ export class LoginAttemptService {
         );
 
         await this.prisma.$executeRaw`
-          UPDATE users 
-          SET failed_login_attempts = ${newFailedAttempts}, locked_until = ${lockoutEnd}
-          WHERE id = ${userId}
+          UPDATE "users"
+          SET "failedLoginAttempts" = ${newFailedAttempts}, "lockedUntil" = ${lockoutEnd}
+          WHERE "id" = ${userId}
         `;
 
         this.logger.warn(
@@ -177,9 +180,9 @@ export class LoginAttemptService {
         );
       } else {
         await this.prisma.$executeRaw`
-          UPDATE users 
-          SET failed_login_attempts = ${newFailedAttempts}
-          WHERE id = ${userId}
+          UPDATE "users"
+          SET "failedLoginAttempts" = ${newFailedAttempts}
+          WHERE "id" = ${userId}
         `;
       }
     } catch (error) {
@@ -193,9 +196,9 @@ export class LoginAttemptService {
   private async resetFailedLoginCount(userId: string): Promise<void> {
     try {
       await this.prisma.$executeRaw`
-        UPDATE users 
-        SET failed_login_attempts = 0, locked_until = NULL, last_login_at = NOW()
-        WHERE id = ${userId}
+        UPDATE "users"
+        SET "failedLoginAttempts" = 0, "lockedUntil" = NULL, "lastLoginAt" = NOW()
+        WHERE "id" = ${userId}
       `;
     } catch (error) {
       this.logger.error("Failed to reset failed login count:", error);
@@ -226,18 +229,18 @@ export class LoginAttemptService {
       if (email) {
         return await this.prisma.$queryRaw`
           SELECT la.*, u.id as user_id, u.email as user_email, u."firstName", u."lastName"
-          FROM login_attempts la
-          LEFT JOIN users u ON la.user_id = u.id
-          WHERE la.email = ${email}
-          ORDER BY la.created_at DESC
+          FROM "login_attempts" la
+          LEFT JOIN "users" u ON la."userId" = u."id"
+          WHERE la."email" = ${email}
+          ORDER BY la."createdAt" DESC
           LIMIT ${limit}
         `;
       } else {
         return await this.prisma.$queryRaw`
           SELECT la.*, u.id as user_id, u.email as user_email, u."firstName", u."lastName"
-          FROM login_attempts la
-          LEFT JOIN users u ON la.user_id = u.id
-          ORDER BY la.created_at DESC
+          FROM "login_attempts" la
+          LEFT JOIN "users" u ON la."userId" = u."id"
+          ORDER BY la."createdAt" DESC
           LIMIT ${limit}
         `;
       }
@@ -256,8 +259,8 @@ export class LoginAttemptService {
       cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
 
       const _result = await this.prisma.$executeRaw`
-        DELETE FROM login_attempts 
-        WHERE created_at < ${cutoffDate}
+        DELETE FROM "login_attempts"
+        WHERE "createdAt" < ${cutoffDate}
       `;
 
       this.logger.log(

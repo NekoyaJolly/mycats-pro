@@ -14,8 +14,7 @@ import * as bcrypt from "bcryptjs";
 
 import { PrismaService } from "../prisma/prisma.service";
 
-import { LoginAttemptServiceImproved } from "./login-attempt.service.improved";
-import { LoginAttemptData } from "./login-attempt.service.improved";
+import { LoginAttemptServiceImproved, LoginAttemptData  } from "./login-attempt.service.improved";
 import { PasswordService } from "./password.service";
 
 @Injectable()
