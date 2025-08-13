@@ -159,7 +159,9 @@ export class AuthService {
   }
 
   async register(email: string, password: string) {
-    const existing = await this.prisma.user.findUnique({ where: { email } });
+  // 一部の環境で findUnique にユニークでない条件が混入したと解釈され 500 になるケースを回避
+  // email はスキーマ上 unique だが、安全側に findFirst を使用
+  const existing = await this.prisma.user.findFirst({ where: { email } });
     if (existing)
       throw new BadRequestException("このメールアドレスは既に登録されています");
 
@@ -186,7 +188,7 @@ export class AuthService {
   }
 
   async requestPasswordReset(email: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+  const user = await this.prisma.user.findFirst({ where: { email } });
     if (!user) {
       // セキュリティのため、存在しないメールでも成功レスポンスを返す
       return {
