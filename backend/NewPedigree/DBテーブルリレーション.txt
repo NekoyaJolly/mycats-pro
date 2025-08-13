@@ -23,7 +23,7 @@ txt他団体No = "OtherNo"
 '―――◆ Generation 1 : 直接の親（2グループ）――――――――――
 
 txtFCH登録 = "FatherTitle"
-txtF名前 = "FatherName"
+txtF名前 = "FatherCatName"
 txtF色柄 = "FatherCoatColor"
 txtF目色 = "FatherEyeColor"
 txtFナンバー = "FatherJCU"
