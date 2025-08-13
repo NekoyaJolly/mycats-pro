@@ -29,19 +29,34 @@ describe("Care & Tags flows (e2e)", () => {
   const password = "Secret123!";
 
     // register & login
-    await request(server)
+    const reg = await request(server)
       .post("/api/v1/auth/register")
       .send({ email, password })
       .expect(201);
+    const ownerId = reg.body.data.id as string;
     const login = await request(server)
       .post("/api/v1/auth/login")
       .send({ email, password })
       .expect(201);
     const token = login.body.data.access_token as string;
 
-    // fetch cats and pick one (assumes seed provides at least one)
-    const catsRes = await request(server).get("/api/v1/cats").expect(200);
-    const catId = catsRes.body.data?.[0]?.id;
+    // create a cat owned by the registered user (avoid seed dependency)
+    const catRes = await request(server)
+      .post("/api/v1/cats")
+      .send({
+        registrationId: `REG-${Date.now()}`,
+        name: "E2E Kitty",
+        gender: "FEMALE",
+        birthDate: "2024-01-01T00:00:00.000Z",
+        ownerId,
+      })
+      .expect(201);
+    const catId =
+      catRes.body.id ??
+      catRes.body.data?.id ??
+      catRes.body?.data?.cat?.id ??
+      catRes.body?.cat?.id ??
+      catRes.body?.data?.catId;
     expect(catId).toBeDefined();
 
     // create schedule
