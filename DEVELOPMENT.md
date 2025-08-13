@@ -6,6 +6,9 @@
 
 - Node.js 20.x（22.x でも動作想定）
 - PostgreSQL 15+
+- Prisma 6.14.0
+- Next.js 15.4.5
+- NestJS 10.0.0
 
 ## 初回セットアップ
 
