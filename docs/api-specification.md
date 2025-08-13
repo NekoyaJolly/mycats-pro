@@ -13,24 +13,36 @@
 
 すべてのAPI（認証エンドポイント除く）はAuthorizationヘッダーにJWTトークンが必要です。
 
-```http
-Authorization: Bearer <JWT_TOKEN>
-```
-
+````http
 ### 認証エンドポイント
+
+#### 共通ポリシー
+
+- emailは受信時に trim + lowercase 正規化します（大文字小文字・前後空白の差異を許容）。
+- ユーザー検索は unique 制約に従い findUnique(email) を使用します。
+- パスワードは強度検証後に Argon2 でハッシュ化保存します（旧bcryptからはログイン成功時に自動移行）。
+### 認証エンドポイント
+
+リクエスト
+
+- emailは受信時に trim + lowercase 正規化します（大文字小文字・前後空白の差異を許容）。
+- ユーザー検索は unique 制約に従い findUnique(email) を使用します。
+- パスワードは強度検証後に Argon2 でハッシュ化保存します（旧bcryptからはログイン成功時に自動移行）。
 
 #### POST /auth/login
 ユーザーログイン
 
-**リクエスト**
+レスポンス
+
 ```json
 {
   "email": "user@example.com",
   "password": "password123"
 }
-```
+````
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -40,7 +52,8 @@ Authorization: Bearer <JWT_TOKEN>
     "user": {
       "id": "user-123",
       "email": "user@example.com",
-      "name": "田中太郎",
+リクエスト
+
       "role": "breeder"
     }
   }
@@ -48,9 +61,57 @@ Authorization: Bearer <JWT_TOKEN>
 ```
 
 #### POST /auth/refresh
+
 トークンリフレッシュ
 
+#### POST /auth/register
+
+- メールは正規化後に一意制約で重複を検出し、既存の場合 409(CONFLICT) を返します。
+- 作成時に内部用の clerkId を自動採番（例: `local_<uuid>`）。
+  ポリシー:
+- メールは正規化後に一意制約で重複を検出し、既存の場合 409(CONFLICT) を返します。
+
+- 作成時に内部用の clerkId を自動採番（例: `local_<uuid>`）。
+
+リクエスト例
+
+```json
+{
+  "email": "User@example.com ",
+  "password": "Secret123!"
+}
+```
+
+レスポンス例
+
+````json
+{
+  "success": true,
+  "data": { "id": "user-123", "email": "user@example.com" }
+}
+- 409 CONFLICT: 既に登録済みのメール
+- 400 BAD_REQUEST: パスワード強度不足
+エラー
+- 409 CONFLICT: 既に登録済みのメール
+- 400 BAD_REQUEST: パスワード強度不足
+
+#### POST /auth/request-password-reset
+- メールの存在有無に関わらず成功レスポンスを返します（利用者推測防止）。
+
+リクエスト
+
+```json
+{
+  "email": "user@example.com"
+}
+````
+
+ポリシー:
+
+- メールの存在有無に関わらず成功レスポンスを返します（利用者推測防止）。
+
 **リクエスト**
+
 ```json
 {
   "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -60,6 +121,7 @@ Authorization: Bearer <JWT_TOKEN>
 ## 🐱 猫管理API
 
 ### GET /cats
+
 猫一覧取得
 
 **クエリパラメータ**
@@ -73,6 +135,7 @@ Authorization: Bearer <JWT_TOKEN>
 | status | string | - | ステータスでのフィルタ |
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -107,9 +170,11 @@ Authorization: Bearer <JWT_TOKEN>
 ```
 
 ### POST /cats
+
 猫新規登録
 
 **リクエスト**
+
 ```json
 {
   "name": "たま",
@@ -123,6 +188,7 @@ Authorization: Bearer <JWT_TOKEN>
 ```
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -138,9 +204,11 @@ Authorization: Bearer <JWT_TOKEN>
 ```
 
 ### GET /cats/:id
+
 猫詳細取得
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -149,13 +217,21 @@ Authorization: Bearer <JWT_TOKEN>
     "name": "みけ",
     "birth_date": "2023-06-15",
     "gender": "female",
-    "breed": { /* breed info */ },
-    "coat_color": { /* coat color info */ },
+    "breed": {
+      /* breed info */
+    },
+    "coat_color": {
+      /* coat color info */
+    },
     "pedigree": {
       "id": "ped-123",
       "registration_number": "JCR2023-001234",
-      "father": { /* father cat info */ },
-      "mother": { /* mother cat info */ }
+      "father": {
+        /* father cat info */
+      },
+      "mother": {
+        /* mother cat info */
+      }
     },
     "care_schedules": [
       {
@@ -178,9 +254,11 @@ Authorization: Bearer <JWT_TOKEN>
 ```
 
 ### PUT /cats/:id
+
 猫情報更新
 
 **リクエスト**
+
 ```json
 {
   "name": "みけちゃん",
@@ -190,11 +268,13 @@ Authorization: Bearer <JWT_TOKEN>
 ```
 
 ### DELETE /cats/:id
+
 猫情報削除（論理削除）
 
 ## 📜 血統書管理API
 
 ### GET /pedigrees
+
 血統書一覧取得
 
 **クエリパラメータ**
@@ -206,6 +286,7 @@ Authorization: Bearer <JWT_TOKEN>
 | generation | number | - | 世代での絞り込み |
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -231,14 +312,18 @@ Authorization: Bearer <JWT_TOKEN>
       "created_at": "2024-01-15T10:30:00Z"
     }
   ],
-  "meta": { /* pagination info */ }
+  "meta": {
+    /* pagination info */
+  }
 }
 ```
 
 ### POST /pedigrees
+
 血統書新規登録
 
 **リクエスト**
+
 ```json
 {
   "cat_id": "cat-123",
@@ -251,6 +336,7 @@ Authorization: Bearer <JWT_TOKEN>
 ```
 
 ### GET /pedigrees/:id/family-tree
+
 家系図取得（指定世代まで）
 
 **クエリパラメータ**
@@ -259,6 +345,7 @@ Authorization: Bearer <JWT_TOKEN>
 | generations | number | - | 取得世代数（デフォルト: 3） |
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -292,9 +379,11 @@ Authorization: Bearer <JWT_TOKEN>
 ## 💕 繁殖管理API
 
 ### GET /breeding
+
 繁殖記録一覧取得
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -317,14 +406,18 @@ Authorization: Bearer <JWT_TOKEN>
       "notes": "順調な出産でした"
     }
   ],
-  "meta": { /* pagination info */ }
+  "meta": {
+    /* pagination info */
+  }
 }
 ```
 
 ### POST /breeding
+
 繁殖記録新規登録
 
 **リクエスト**
+
 ```json
 {
   "mother_id": "cat-101",
@@ -338,6 +431,7 @@ Authorization: Bearer <JWT_TOKEN>
 ## 🏥 ケア管理API
 
 ### GET /care/schedules
+
 ケアスケジュール一覧取得
 
 **クエリパラメータ**
@@ -350,6 +444,7 @@ Authorization: Bearer <JWT_TOKEN>
 | date_to | string | - | 終了日（YYYY-MM-DD） |
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -369,14 +464,18 @@ Authorization: Bearer <JWT_TOKEN>
       "reminder_sent": false
     }
   ],
-  "meta": { /* pagination info */ }
+  "meta": {
+    /* pagination info */
+  }
 }
 ```
 
 ### POST /care/schedules
+
 ケアスケジュール新規登録
 
 **リクエスト**
+
 ```json
 {
   "cat_id": "cat-123",
@@ -388,9 +487,11 @@ Authorization: Bearer <JWT_TOKEN>
 ```
 
 ### PUT /care/schedules/:id/complete
+
 ケア完了マーク
 
 **リクエスト**
+
 ```json
 {
   "completed_date": "2024-08-09",
@@ -402,9 +503,11 @@ Authorization: Bearer <JWT_TOKEN>
 ## 🏷️ タグ・マスタデータAPI
 
 ### GET /tags
+
 タグ一覧取得
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -422,9 +525,11 @@ Authorization: Bearer <JWT_TOKEN>
 ```
 
 ### GET /breeds
+
 猫種マスタ取得
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -441,9 +546,11 @@ Authorization: Bearer <JWT_TOKEN>
 ```
 
 ### GET /coat-colors
+
 毛色マスタ取得
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -462,6 +569,7 @@ Authorization: Bearer <JWT_TOKEN>
 ## ⚠️ エラーレスポンス
 
 ### エラー形式
+
 ```json
 {
   "success": false,
@@ -480,14 +588,14 @@ Authorization: Bearer <JWT_TOKEN>
 
 ### エラーコード一覧
 
-| コード | HTTP Status | 説明 |
-|--------|-------------|------|
-| VALIDATION_ERROR | 400 | 入力値検証エラー |
-| AUTHENTICATION_ERROR | 401 | 認証エラー |
-| AUTHORIZATION_ERROR | 403 | 認可エラー |
-| NOT_FOUND | 404 | リソースが見つからない |
-| CONFLICT | 409 | データ競合エラー |
-| INTERNAL_ERROR | 500 | サーバー内部エラー |
+| コード               | HTTP Status | 説明                   |
+| -------------------- | ----------- | ---------------------- |
+| VALIDATION_ERROR     | 400         | 入力値検証エラー       |
+| AUTHENTICATION_ERROR | 401         | 認証エラー             |
+| AUTHORIZATION_ERROR  | 403         | 認可エラー             |
+| NOT_FOUND            | 404         | リソースが見つからない |
+| CONFLICT             | 409         | データ競合エラー       |
+| INTERNAL_ERROR       | 500         | サーバー内部エラー     |
 
 ## 📊 レート制限
 

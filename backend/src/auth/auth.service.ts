@@ -30,7 +30,7 @@ export class AuthService {
 
   async validateUser(email: string, password: string) {
     const user = (await this.prisma.user.findUnique({
-      where: { email },
+    where: { email: email.trim().toLowerCase() },
     })) as unknown as {
       id: string;
       email: string;
@@ -71,6 +71,7 @@ export class AuthService {
     ipAddress?: string,
     userAgent?: string,
   ) {
+  email = email.trim().toLowerCase();
     // アカウントロック状態をチェック
     const isLocked = await this.loginAttemptService.isAccountLocked(email);
     if (isLocked) {
@@ -159,9 +160,10 @@ export class AuthService {
   }
 
   async register(email: string, password: string) {
-  // 一部の環境で findUnique にユニークでない条件が混入したと解釈され 500 になるケースを回避
-  // email はスキーマ上 unique だが、安全側に findFirst を使用
-  const existing = await this.prisma.user.findFirst({ where: { email } });
+    // email の正規化（前後スペース除去＋小文字化）
+    email = email.trim().toLowerCase();
+    // unique 制約に従い findUnique を使用
+    const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing)
       throw new BadRequestException("このメールアドレスは既に登録されています");
 
@@ -174,12 +176,13 @@ export class AuthService {
       });
     }
 
-    const user = await this.prisma.user.create({
+  const user = await this.prisma.user.create({
       data: {
-        email,
+    email,
         role: UserRole.USER,
         isActive: true,
-        clerkId: `local_${randomUUID()}`,
+    // clerkId は nullable、必要時のみ設定
+    clerkId: `local_${randomUUID()}`,
       },
     });
 
@@ -188,7 +191,10 @@ export class AuthService {
   }
 
   async requestPasswordReset(email: string) {
-  const user = await this.prisma.user.findFirst({ where: { email } });
+  // email の正規化
+  email = email.trim().toLowerCase();
+  email = email.trim().toLowerCase();
+  const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
       // セキュリティのため、存在しないメールでも成功レスポンスを返す
       return {
