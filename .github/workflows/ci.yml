@@ -2,20 +2,20 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 env:
-  NODE_VERSION: '20'
-  PNPM_VERSION: '9'
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9"
 
 jobs:
   # ジョブ1: 型チェック・Lint
   lint-and-typecheck:
     name: Lint & Type Check
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -39,9 +39,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.pnpm-cache-dir.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -70,7 +70,7 @@ jobs:
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:15
@@ -85,7 +85,7 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
       JWT_SECRET: test-jwt-secret-key-for-ci
@@ -94,49 +94,49 @@ jobs:
       ARGON2_PARALLELISM: 4
       MAX_LOGIN_ATTEMPTS: 5
       LOGIN_LOCKOUT_DURATION_MINUTES: 15
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-      
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
-      
+
       - name: Get pnpm store directory
         id: pnpm-cache-dir
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-      
+
       - name: Setup pnpm cache
         uses: actions/cache@v4
         with:
           path: ${{ steps.pnpm-cache-dir.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-      
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      
+
       - name: Generate Prisma Client
         working-directory: backend
         run: npx prisma generate
-      
+
       - name: Run database migrations
         working-directory: backend
         run: npx prisma migrate deploy
-      
+
       - name: Run backend unit tests
         working-directory: backend
         run: npm run test
-      
+
       - name: Run frontend unit tests
         run: pnpm --filter frontend run test
 
@@ -144,7 +144,7 @@ jobs:
   e2e-test:
     name: E2E Tests
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:15
@@ -159,7 +159,7 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/e2edb
       JWT_SECRET: test-jwt-secret-key-for-e2e
@@ -172,33 +172,33 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-      
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
-      
+
       - name: Get pnpm store directory
         id: pnpm-cache-dir
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-      
+
       - name: Setup pnpm cache
         uses: actions/cache@v4
         with:
           path: ${{ steps.pnpm-cache-dir.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-      
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      
+
       - name: Clean Prisma engines
         run: |
           rm -rf node_modules/.prisma || true
@@ -209,11 +209,11 @@ jobs:
         env:
           PRISMA_CLIENT_ENGINE_TYPE: library
         run: pnpm exec prisma generate
-      
+
       - name: Run database migrations
         working-directory: backend
         run: npx prisma migrate deploy
-      
+
       - name: Debug Prisma client
         run: |
           node -e "console.log('openssl:', process.versions.openssl)"
@@ -232,48 +232,48 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-      
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
-      
+
       - name: Get pnpm store directory
         id: pnpm-cache-dir
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-      
+
       - name: Setup pnpm cache
         uses: actions/cache@v4
         with:
           path: ${{ steps.pnpm-cache-dir.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-      
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      
+
       - name: Generate Prisma Client
         working-directory: backend
         run: npx prisma generate
-      
+
       - name: Build backend
         working-directory: backend
         run: npm run build
-      
+
       - name: Build frontend
         run: pnpm --filter frontend run build
-      
+
       - name: Upload build artifacts - Backend
         uses: actions/upload-artifact@v4
         with:
