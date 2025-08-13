@@ -9,7 +9,7 @@ import {
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
-import { UserRole } from "@prisma/client";
+import { UserRole, User } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 
 import { PrismaService } from "../prisma/prisma.service";
@@ -112,12 +112,23 @@ export class AuthService {
     }
 
     const payload = { sub: user.id, email: user.email, role: user.role };
-    const access_token = await this.jwt.signAsync(payload);
+    const access_token = await this.jwt.signAsync(payload, { expiresIn: '15m' });
+    const refresh_token = await this.jwt.signAsync(
+      { sub: user.id, type: 'refresh' }, 
+      { expiresIn: '7d' }
+    );
+
+    // リフレッシュトークンをDBに保存
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { refreshToken: refresh_token }
+    });
 
     return {
       success: true,
       data: {
         access_token,
+        refresh_token,
         user: {
           id: user.id,
           email: user.email,
@@ -242,5 +253,54 @@ export class AuthService {
     // 新しいパスワードを設定
     await this.setPassword(userId, newPassword);
     return { success: true, message: "パスワードが正常に変更されました" };
+  }
+
+  async refreshToken(refreshToken: string) {
+    try {
+      const payload = this.jwt.verify(refreshToken, {
+        secret: process.env.JWT_REFRESH_SECRET,
+      });
+      
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub, refreshToken: refreshToken },
+      });
+      
+      if (!user) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+      
+      return this.generateTokens(user);
+    } catch (error) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+  }
+  
+  private async generateTokens(user: User) {
+    const payload = { email: user.email, sub: user.id };
+    const accessToken = this.jwt.sign(payload);
+    const refreshToken = this.jwt.sign(payload, {
+      secret: process.env.JWT_REFRESH_SECRET,
+      expiresIn: '7d',
+    });
+    
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { refreshToken: refreshToken },
+    });
+    
+    return {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    };
+  }
+
+  async logout(userId: string) {
+    // リフレッシュトークンを削除
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshToken: null }
+    });
+
+    return { success: true, message: "ログアウトしました" };
   }
 }

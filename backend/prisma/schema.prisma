@@ -21,6 +21,7 @@ model User {
   role        UserRole @default(USER)
   isActive    Boolean  @default(true)
   passwordHash String?
+  refreshToken String?  // JWT refresh token storage
   failedLoginAttempts Int @default(0)
   lockedUntil DateTime?
   lastLoginAt DateTime?

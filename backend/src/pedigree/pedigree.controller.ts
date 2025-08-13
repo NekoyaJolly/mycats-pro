@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   HttpStatus,
+  UseGuards,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -15,18 +16,27 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from "@nestjs/swagger";
 
 import { CreatePedigreeDto, UpdatePedigreeDto, PedigreeQueryDto } from "./dto";
 import { PedigreeService } from "./pedigree.service";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { RoleGuard } from "../auth/role.guard";
+import { Roles } from "../auth/roles.decorator";
+import { UserRole } from "@prisma/client";
 
 @ApiTags("Pedigrees")
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller("pedigrees")
 export class PedigreeController {
   constructor(private readonly pedigreeService: PedigreeService) {}
 
   @Post()
-  @ApiOperation({ summary: "血統書データを作成" })
+  @UseGuards(RoleGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: "血統書データを作成（管理者のみ）" })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: "血統書データが正常に作成されました",
@@ -34,6 +44,10 @@ export class PedigreeController {
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
     description: "無効なデータです",
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: "管理者権限が必要です",
   })
   create(@Body() createPedigreeDto: CreatePedigreeDto) {
     return this.pedigreeService.create(createPedigreeDto);
@@ -148,7 +162,9 @@ export class PedigreeController {
   }
 
   @Patch(":id")
-  @ApiOperation({ summary: "血統書データを更新" })
+  @UseGuards(RoleGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: "血統書データを更新（管理者のみ）" })
   @ApiResponse({
     status: HttpStatus.OK,
     description: "血統書データが正常に更新されました",
@@ -161,6 +177,10 @@ export class PedigreeController {
     status: HttpStatus.BAD_REQUEST,
     description: "無効なデータです",
   })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: "管理者権限が必要です",
+  })
   @ApiParam({ name: "id", description: "血統書データのID" })
   update(
     @Param("id") id: string,
@@ -170,7 +190,9 @@ export class PedigreeController {
   }
 
   @Delete(":id")
-  @ApiOperation({ summary: "血統書データを削除" })
+  @UseGuards(RoleGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: "血統書データを削除（管理者のみ）" })
   @ApiResponse({
     status: HttpStatus.OK,
     description: "血統書データが正常に削除されました",
@@ -178,6 +200,10 @@ export class PedigreeController {
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: "血統書データが見つかりません",
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: "管理者権限が必要です",
   })
   @ApiParam({ name: "id", description: "血統書データのID" })
   remove(@Param("id") id: string) {

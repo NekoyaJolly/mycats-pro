@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   HttpStatus,
+  UseGuards,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -15,6 +16,7 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from "@nestjs/swagger";
 
 import { CoatColorsService } from "./coat-colors.service";
@@ -23,14 +25,22 @@ import {
   UpdateCoatColorDto,
   CoatColorQueryDto,
 } from "./dto";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { RoleGuard } from "../auth/role.guard";
+import { Roles } from "../auth/roles.decorator";
+import { UserRole } from "@prisma/client";
 
 @ApiTags("Coat Colors")
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller("coat-colors")
 export class CoatColorsController {
   constructor(private readonly coatColorsService: CoatColorsService) {}
 
   @Post()
-  @ApiOperation({ summary: "毛色データを作成" })
+  @UseGuards(RoleGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: "毛色データを作成（管理者のみ）" })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: "毛色データが正常に作成されました",
@@ -38,6 +48,10 @@ export class CoatColorsController {
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
     description: "無効なデータです",
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: "管理者権限が必要です",
   })
   create(@Body() createCoatColorDto: CreateCoatColorDto) {
     return this.coatColorsService.create(createCoatColorDto);
@@ -95,7 +109,9 @@ export class CoatColorsController {
   }
 
   @Patch(":id")
-  @ApiOperation({ summary: "毛色データを更新" })
+  @UseGuards(RoleGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: "毛色データを更新（管理者のみ）" })
   @ApiResponse({
     status: HttpStatus.OK,
     description: "毛色データが正常に更新されました",
@@ -108,6 +124,10 @@ export class CoatColorsController {
     status: HttpStatus.BAD_REQUEST,
     description: "無効なデータです",
   })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: "管理者権限が必要です",
+  })
   @ApiParam({ name: "id", description: "毛色データのID" })
   update(
     @Param("id") id: string,
@@ -117,7 +137,9 @@ export class CoatColorsController {
   }
 
   @Delete(":id")
-  @ApiOperation({ summary: "毛色データを削除" })
+  @UseGuards(RoleGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: "毛色データを削除（管理者のみ）" })
   @ApiResponse({
     status: HttpStatus.OK,
     description: "毛色データが正常に削除されました",
@@ -125,6 +147,10 @@ export class CoatColorsController {
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: "毛色データが見つかりません",
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: "管理者権限が必要です",
   })
   @ApiParam({ name: "id", description: "毛色データのID" })
   remove(@Param("id") id: string) {

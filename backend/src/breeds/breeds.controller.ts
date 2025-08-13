@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   HttpStatus,
+  UseGuards,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -15,18 +16,27 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from "@nestjs/swagger";
 
 import { BreedsService } from "./breeds.service";
 import { CreateBreedDto, UpdateBreedDto, BreedQueryDto } from "./dto";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { RoleGuard } from "../auth/role.guard";
+import { Roles } from "../auth/roles.decorator";
+import { UserRole } from "@prisma/client";
 
 @ApiTags("Breeds")
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller("breeds")
 export class BreedsController {
   constructor(private readonly breedsService: BreedsService) {}
 
   @Post()
-  @ApiOperation({ summary: "品種データを作成" })
+  @UseGuards(RoleGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: "品種データを作成（管理者のみ）" })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: "品種データが正常に作成されました",
@@ -34,6 +44,10 @@ export class BreedsController {
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
     description: "無効なデータです",
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: "管理者権限が必要です",
   })
   create(@Body() createBreedDto: CreateBreedDto) {
     return this.breedsService.create(createBreedDto);
@@ -91,7 +105,9 @@ export class BreedsController {
   }
 
   @Patch(":id")
-  @ApiOperation({ summary: "品種データを更新" })
+  @UseGuards(RoleGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: "品種データを更新（管理者のみ）" })
   @ApiResponse({
     status: HttpStatus.OK,
     description: "品種データが正常に更新されました",
@@ -104,13 +120,19 @@ export class BreedsController {
     status: HttpStatus.BAD_REQUEST,
     description: "無効なデータです",
   })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: "管理者権限が必要です",
+  })
   @ApiParam({ name: "id", description: "品種データのID" })
   update(@Param("id") id: string, @Body() updateBreedDto: UpdateBreedDto) {
     return this.breedsService.update(id, updateBreedDto);
   }
 
   @Delete(":id")
-  @ApiOperation({ summary: "品種データを削除" })
+  @UseGuards(RoleGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: "品種データを削除（管理者のみ）" })
   @ApiResponse({
     status: HttpStatus.OK,
     description: "品種データが正常に削除されました",
@@ -118,6 +140,10 @@ export class BreedsController {
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: "品種データが見つかりません",
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: "管理者権限が必要です",
   })
   @ApiParam({ name: "id", description: "品種データのID" })
   remove(@Param("id") id: string) {

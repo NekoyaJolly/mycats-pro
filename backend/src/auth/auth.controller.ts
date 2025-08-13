@@ -19,6 +19,7 @@ import { AuthService } from "./auth.service";
 import { ChangePasswordDto } from "./dto/change-password.dto";
 import { LoginDto } from "./dto/login.dto";
 import { PasswordResetDto } from "./dto/password-reset.dto";
+import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { GetUser } from "./get-user.decorator";
 import { JwtAuthGuard } from "./jwt-auth.guard";
 
@@ -69,5 +70,21 @@ export class AuthController {
   @ApiResponse({ status: HttpStatus.OK })
   requestPasswordReset(@Body() dto: PasswordResetDto) {
     return this.auth.requestPasswordReset(dto.email);
+  }
+
+  @Post("refresh")
+  @ApiOperation({ summary: "リフレッシュトークンでアクセストークン再取得" })
+  @ApiResponse({ status: HttpStatus.OK })
+  refresh(@Body() dto: RefreshTokenDto) {
+    return this.auth.refreshToken(dto.refreshToken);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post("logout")
+  @ApiOperation({ summary: "ログアウト（リフレッシュトークン削除）" })
+  @ApiResponse({ status: HttpStatus.OK })
+  logout(@GetUser() user: any) {
+    return this.auth.logout(user.userId);
   }
 }
