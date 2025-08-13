@@ -99,7 +99,6 @@ export default function TagsPage() {
   const [tagModalOpened, { open: openTagModal, close: closeTagModal }] = useDisclosure(false);
   const [editingCategory, setEditingCategory] = useState<TagCategory | null>(null);
   const [editingTag, setEditingTag] = useState<Tag | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
 
   // カテゴリフォーム用の状態
   const [categoryForm, setCategoryForm] = useState({

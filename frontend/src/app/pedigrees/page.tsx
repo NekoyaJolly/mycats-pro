@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Title,
@@ -64,7 +64,7 @@ export default function PedigreesPage() {
     { value: '2', label: '雌' },
   ];
 
-  const fetchPedigrees = async (page = 1) => {
+  const fetchPedigrees = useCallback(async (page = 1) => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -94,11 +94,11 @@ export default function PedigreesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [genderFilter, searchTerm]);
 
   useEffect(() => {
     fetchPedigrees(1);
-  }, []);
+  }, [fetchPedigrees]);
 
   const handleSearch = () => {
     setCurrentPage(1);

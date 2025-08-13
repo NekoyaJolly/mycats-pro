@@ -16,7 +16,6 @@ import {
   Badge,
   Tabs,
   Select,
-  SimpleGrid,
 } from '@mantine/core';
 import { IconSearch, IconPlus } from '@tabler/icons-react';
 

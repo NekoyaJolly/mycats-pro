@@ -19,49 +19,49 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-      
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
-      
+
       - name: Get pnpm store directory
-        shell: bash
+        id: pnpm-cache-dir
         run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-      
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
       - name: Setup pnpm cache
         uses: actions/cache@v4
         with:
-          path: ${{ env.STORE_PATH }}
+          path: ${{ steps.pnpm-cache-dir.outputs.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
-      
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      
+
       - name: Generate Prisma Client
         working-directory: backend
         run: npx prisma generate
-      
+
       - name: TypeScript type check - Backend
         working-directory: backend
         run: npx tsc --noEmit
-      
-      - name: TypeScript type check - Frontend  
+
+      - name: TypeScript type check - Frontend
         run: pnpm --filter frontend run type-check
-      
+
       - name: Lint - Backend
         working-directory: backend
         run: npm run lint -- --max-warnings=300
         continue-on-error: false
-      
+
       - name: Lint - Frontend
         run: pnpm --filter frontend run lint
         continue-on-error: false
@@ -110,14 +110,14 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
       
       - name: Get pnpm store directory
-        shell: bash
+        id: pnpm-cache-dir
         run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
       
       - name: Setup pnpm cache
         uses: actions/cache@v4
         with:
-          path: ${{ env.STORE_PATH }}
+          path: ${{ steps.pnpm-cache-dir.outputs.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
@@ -184,14 +184,14 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
       
       - name: Get pnpm store directory
-        shell: bash
+        id: pnpm-cache-dir
         run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
       
       - name: Setup pnpm cache
         uses: actions/cache@v4
         with:
-          path: ${{ env.STORE_PATH }}
+          path: ${{ steps.pnpm-cache-dir.outputs.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
@@ -248,14 +248,14 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
       
       - name: Get pnpm store directory
-        shell: bash
+        id: pnpm-cache-dir
         run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
       
       - name: Setup pnpm cache
         uses: actions/cache@v4
         with:
-          path: ${{ env.STORE_PATH }}
+          path: ${{ steps.pnpm-cache-dir.outputs.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
@@ -280,8 +280,8 @@ jobs:
           name: backend-build
           path: backend/dist/
           retention-days: 7
-      
-      - name: Upload build artifacts - Frontend  
+
+      - name: Upload build artifacts - Frontend
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build

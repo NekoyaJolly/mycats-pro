@@ -117,7 +117,7 @@ const getTypeIcon = (type: string) => {
 };
 
 export default function CarePage() {
-  const [careRecords, setCareRecords] = useState<CareRecord[]>(sampleCareRecords);
+  const [careRecords, _setCareRecords] = useState<CareRecord[]>(sampleCareRecords);
   const [opened, { open, close }] = useDisclosure(false);
   const [activeTab, setActiveTab] = useState<string>('today');
 

@@ -16,20 +16,8 @@ import {
   Grid,
   Select,
 } from '@mantine/core';
-import { IconArrowLeft, IconUser, IconDna } from '@tabler/icons-react';
+import { IconArrowLeft, IconDna } from '@tabler/icons-react';
 import { useRouter, useParams } from 'next/navigation';
-
-interface PedigreeMember {
-  id: string;
-  pedigreeId: string;
-  catName: string;
-  breedCode: number | null;
-  gender: number | null;
-  birthDate: string | null;
-  coatColorCode: number | null;
-  breed?: { name: string } | null;
-  color?: { name: string } | null;
-}
 
 interface FamilyTreeData {
   id: string;
@@ -117,7 +105,7 @@ export default function FamilyTreePage() {
     pedigree: FamilyTreeData | null;
     level: number;
     position?: 'father' | 'mother';
-  }> = ({ pedigree, level, position }) => {
+  }> = ({ pedigree, level: _level, position }) => {
     if (!pedigree) {
       return (
         <Card 

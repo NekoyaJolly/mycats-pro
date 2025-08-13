@@ -16,19 +16,13 @@ import {
   Tabs,
   Table,
   Modal,
-  TextInput,
   Select,
-  Textarea,
   ActionIcon,
   ScrollArea,
-  Notification,
-  MultiSelect,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { 
   IconPlus, 
-  IconEdit, 
-  IconTrash, 
   IconHeart, 
   IconCalendar,
   IconPaw,

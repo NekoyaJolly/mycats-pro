@@ -14,7 +14,7 @@ import {
   SimpleGrid,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconTag, IconPlus } from '@tabler/icons-react';
+import { IconPlus } from '@tabler/icons-react';
 
 // タグ関連の型定義
 interface Tag {

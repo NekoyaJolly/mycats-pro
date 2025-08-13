@@ -18,7 +18,6 @@ import {
   Alert,
   Box,
   Badge,
-  Divider,
   Paper,
   Accordion,
   ActionIcon
@@ -38,7 +37,7 @@ import {
   IconCalendar,
   IconUser,
   IconPlus,
-  IconTrash
+  
 } from '@tabler/icons-react';
 
 interface Breed {
@@ -342,7 +341,7 @@ export default function NewPedigreePage() {
     try {
       const response = await fetch(`http://localhost:3004/api/v1/pedigrees/pedigree-id/${pedigreeId}`);
       return response.ok;
-    } catch (error) {
+    } catch {
       return false;
     }
   };

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   Box,
   Button,
@@ -77,7 +77,6 @@ const CatCard = ({ cat, level = 0 }: { cat: { name: string; color: string } | nu
 
 export default function PedigreePage() {
   const router = useRouter();
-  const params = useParams();
 
   return (
     <Box style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
