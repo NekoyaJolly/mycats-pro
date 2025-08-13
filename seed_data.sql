@@ -7,7 +7,7 @@ VALUES
 ON CONFLICT ("clerkId") DO NOTHING;
 
 -- Insert sample cats
-INSERT INTO "cats" ("id", "registrationId", "name", "breed", "color", "pattern", "gender", "birthDate", "weight", "ownerId", "createdAt", "updatedAt")
+INSERT INTO "cats" ("id", "registrationId", "name", "legacyBreed", "legacyColor", "pattern", "gender", "birthDate", "weight", "ownerId", "createdAt", "updatedAt")
 VALUES 
   ('cat-1', 'REG001', 'Luna', 'Persian', 'White', 'Solid', 'FEMALE', '2020-03-15', 4.2, 'user-1', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
   ('cat-2', 'REG002', 'Shadow', 'Maine Coon', 'Black', 'Solid', 'MALE', '2019-08-22', 6.8, 'user-1', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),

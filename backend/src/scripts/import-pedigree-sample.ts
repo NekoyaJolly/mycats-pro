@@ -13,10 +13,12 @@ const prisma = new PrismaClient();
  * - 全データをインポート: npm run pedigree:import
  * - 範囲指定: npm run pedigree:import -- --range 701606-701630
  * - 特定のIDのみ: npm run pedigree:import -- --ids 701606,701610,701615
+ * - ファイル指定: npm run pedigree:import -- --file ./backend/NewPedigree/testdatepedigree100.csv
  */
 
 interface PedigreeData {
   PedigreeID: string;
+  // CSV（本番仕様80列）の各フィールド。存在しない列は undefined のままでOK。
   ChampionFlag?: string;
   Title?: string;
   CatteryName?: string;
@@ -122,10 +124,29 @@ interface PedigreeData {
 
 async function importPedigreeSampleData() {
   const args = process.argv.slice(2);
-  const csvPath = path.join(
-    __dirname,
-    "../../NewPedigree/血統書データRenamed.csv",
-  );
+  // --file= 指定があれば優先。なければテストCSV、さらに既存の既定ファイルの順で探索。
+  const fileArg = args.find((arg) => arg.startsWith("--file="));
+  const explicitPath = fileArg ? fileArg.split("=")[1] : null;
+  const candidatePaths = [
+    explicitPath ? path.resolve(explicitPath) : null,
+    path.join(__dirname, "../../NewPedigree/testdatepedigree100.csv"),
+    path.join(__dirname, "../../NewPedigree/血統書データRenamed.csv"),
+  ].filter((p): p is string => !!p);
+
+  let csvPath: string | null = null;
+  for (const p of candidatePaths) {
+    if (fs.existsSync(p)) {
+      csvPath = p;
+      break;
+    }
+  }
+  if (!csvPath) {
+    throw new Error(
+      `CSVファイルが見つかりません。--file= で明示指定してください。試行パス: \n- ${candidatePaths.join(
+        "\n- ",
+      )}`,
+    );
+  }
 
   // コマンドライン引数を解析
   const rangeArg = args.find((arg) => arg.startsWith("--range="));
@@ -149,21 +170,13 @@ async function importPedigreeSampleData() {
       .map((id) => id.trim());
     console.log(`📊 個別指定: ${targetIds.join(", ")} (${targetIds.length}件)`);
   } else {
-    // デフォルト: サンプル範囲
-    const start = 701606;
-    const end = 701630;
-    for (let i = start; i <= end; i++) {
-      targetIds.push(i.toString());
-    }
-    console.log(`📊 デフォルト範囲: ${start} - ${end} (${targetIds.length}件)`);
+    // デフォルト: 全件
+    targetIds = [];
+    console.log("📊 デフォルト: 全件インポート");
   }
 
   try {
-    console.log("🔄 CSVファイルを読み込み中...");
-
-    if (!fs.existsSync(csvPath)) {
-      throw new Error(`CSVファイルが見つかりません: ${csvPath}`);
-    }
+  console.log(`🔄 CSVファイルを読み込み中: ${csvPath}`);
 
     const records: PedigreeData[] = [];
 
@@ -175,12 +188,17 @@ async function importPedigreeSampleData() {
             columns: true,
             skip_empty_lines: true,
             trim: true,
+            bom: true,
           }),
         )
         .on("data", (record: PedigreeData) => {
-          // 対象IDに含まれる場合のみ追加
-          if (targetIds.includes(record.PedigreeID)) {
-            records.push(record);
+          // 対象IDフィルタが指定されていれば絞り込み。なければ全件。
+          if (targetIds.length > 0) {
+            if (record.PedigreeID && targetIds.includes(record.PedigreeID)) {
+              records.push(record);
+            }
+          } else {
+            if (record.PedigreeID) records.push(record);
           }
         })
         .on("end", () => {
@@ -197,28 +215,49 @@ async function importPedigreeSampleData() {
       return;
     }
 
-    console.log("🔄 データベースに保存中...");
-
-    // 既存の血統書データを削除（サンプルデータの場合）
-    await prisma.pedigree.deleteMany({
-      where: {
-        pedigreeId: {
-          in: targetIds,
-        },
-      },
-    });
-
+  console.log("🔄 データベースに保存中...");
     let importedCount = 0;
     let errorCount = 0;
 
-    // データを1件ずつ処理
+    // データを1件ずつ処理（重複があれば更新するアップサート）
     for (const record of records) {
       try {
-        await prisma.pedigree.create({
-          data: {
+        await prisma.pedigree.upsert({
+          where: { pedigreeId: record.PedigreeID },
+          create: {
             pedigreeId: record.PedigreeID,
             title: record.Title || null,
             // Removed: catName: record.CatteryName || null,
+            catName: record.CatName,
+            breedCode: record.BreedCode ? parseInt(record.BreedCode) : null,
+            gender: record.Gender ? parseInt(record.Gender) : null,
+            eyeColor: record.EyeColor || null,
+            coatColorCode: record.CoatColorCode
+              ? parseInt(record.CoatColorCode)
+              : null,
+            birthDate: record.BirthDate ? parseDate(record.BirthDate) : null,
+            registrationDate: record.RegistrationDate
+              ? parseDate(record.RegistrationDate)
+              : null,
+            breederName: record.BreederName || null,
+            ownerName: record.OwnerName || null,
+            brotherCount: record.BrotherCount
+              ? parseInt(record.BrotherCount)
+              : null,
+            sisterCount: record.SisterCount
+              ? parseInt(record.SisterCount)
+              : null,
+            notes: record.Notes || null,
+            notes2: record.Notes2 || null,
+            otherNo: record.OtherNo || null,
+            oldCode: record.OldCode || null,
+
+            // 追加で扱えるフィールドがあればここにマッピングを拡張
+            // championFlag: record.ChampionFlag || null,
+            // catteryName: record.CatteryName || null,
+          },
+          update: {
+            title: record.Title || null,
             catName: record.CatName,
             breedCode: record.BreedCode ? parseInt(record.BreedCode) : null,
             gender: record.Gender ? parseInt(record.Gender) : null,
@@ -267,17 +306,19 @@ async function importPedigreeSampleData() {
     // サンプルデータを表示
     if (importedCount > 0) {
       console.log("\n📋 インポートされたサンプルデータ:");
-      const samples = await prisma.pedigree.findMany({
+    const samples = await prisma.pedigree.findMany({
         where: {
           pedigreeId: {
-            in: targetIds.slice(0, 5), // 最初の5件を表示
+            in:
+              targetIds.length > 0
+                ? targetIds.slice(0, 5)
+                : records.slice(0, 5).map((r) => r.PedigreeID),
           },
         },
         select: {
           pedigreeId: true,
           catName: true,
           title: true,
-          // Removed: catName: true,
           birthDate: true,
           breederName: true,
         },
@@ -285,7 +326,7 @@ async function importPedigreeSampleData() {
 
       samples.forEach((sample) => {
         console.log(
-          `  - ${sample.pedigreeId}: ${sample.title || ""} ${sample.catName || ""} ${sample.catName}`,
+      `  - ${sample.pedigreeId}: ${sample.title || ""} ${sample.catName || ""}`,
         );
       });
     }
