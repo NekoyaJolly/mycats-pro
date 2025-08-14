@@ -18,11 +18,12 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "resolveJsonModule": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "types": ["node", "jest"]
   },
   "include": ["src/**/*", "test/**/*"],
   "exclude": [
-    "node_modules", 
+    "node_modules",
     "dist",
     "src/scripts/csv-preview.ts",
     "src/scripts/selective-csv-import.ts",

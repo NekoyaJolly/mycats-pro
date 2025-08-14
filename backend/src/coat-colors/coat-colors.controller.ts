@@ -18,6 +18,11 @@ import {
   ApiQuery,
   ApiBearerAuth,
 } from "@nestjs/swagger";
+import { UserRole } from "@prisma/client";
+
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { RoleGuard } from "../auth/role.guard";
+import { Roles } from "../auth/roles.decorator";
 
 import { CoatColorsService } from "./coat-colors.service";
 import {
@@ -25,10 +30,7 @@ import {
   UpdateCoatColorDto,
   CoatColorQueryDto,
 } from "./dto";
-import { JwtAuthGuard } from "../auth/jwt-auth.guard";
-import { RoleGuard } from "../auth/role.guard";
-import { Roles } from "../auth/roles.decorator";
-import { UserRole } from "@prisma/client";
+
 
 @ApiTags("Coat Colors")
 @ApiBearerAuth()

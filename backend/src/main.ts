@@ -3,6 +3,8 @@ import { NestFactory } from "@nestjs/core";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 
 import { AppModule } from "./app.module";
+import { GlobalExceptionFilter } from "./common/filters/global-exception.filter";
+import { TransformResponseInterceptor } from "./common/interceptors/transform-response.interceptor";
 
 async function bootstrap() {
   const logger = new Logger("Bootstrap");
@@ -34,22 +36,31 @@ async function bootstrap() {
       }),
     );
 
+    // Global response interceptor
+    app.useGlobalInterceptors(new TransformResponseInterceptor());
+
+    // Global exception filter
+    app.useGlobalFilters(new GlobalExceptionFilter());
+
     // API prefix
     app.setGlobalPrefix("api/v1");
 
     // Root endpoint
     app.getHttpAdapter().get("/", (req, res) => {
       res.json({
-        message: "🐱 Cat Management System API",
-        version: "1.0.0",
-        documentation: "/api/docs",
-        health: "/health",
-        timestamp: new Date().toISOString(),
-        endpoints: {
-          cats: "/api/v1/cats",
-          pedigrees: "/api/v1/pedigrees",
-          breeds: "/api/v1/breeds",
-          coatColors: "/api/v1/coat-colors",
+        success: true,
+        data: {
+          message: "🐱 Cat Management System API",
+          version: "1.0.0",
+          documentation: "/api/docs",
+          health: "/health",
+          timestamp: new Date().toISOString(),
+          endpoints: {
+            cats: "/api/v1/cats",
+            pedigrees: "/api/v1/pedigrees",
+            breeds: "/api/v1/breeds",
+            coatColors: "/api/v1/coat-colors",
+          },
         },
       });
     });
@@ -57,10 +68,13 @@ async function bootstrap() {
     // Health check endpoint
     app.getHttpAdapter().get("/health", (req, res) => {
       res.json({
-        status: "ok",
-        timestamp: new Date().toISOString(),
-        service: "Cat Management System API",
-        version: "1.0.0",
+        success: true,
+        data: {
+          status: "ok",
+          timestamp: new Date().toISOString(),
+          service: "Cat Management System API",
+          version: "1.0.0",
+        },
       });
     });
 

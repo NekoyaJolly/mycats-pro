@@ -18,13 +18,15 @@ import {
   ApiQuery,
   ApiBearerAuth,
 } from "@nestjs/swagger";
+import { UserRole } from "@prisma/client";
 
-import { BreedsService } from "./breeds.service";
-import { CreateBreedDto, UpdateBreedDto, BreedQueryDto } from "./dto";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RoleGuard } from "../auth/role.guard";
 import { Roles } from "../auth/roles.decorator";
-import { UserRole } from "@prisma/client";
+
+import { BreedsService } from "./breeds.service";
+import { CreateBreedDto, UpdateBreedDto, BreedQueryDto } from "./dto";
+
 
 @ApiTags("Breeds")
 @ApiBearerAuth()

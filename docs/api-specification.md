@@ -7,55 +7,43 @@
 **データ形式**: JSON  
 **文字エンコーディング**: UTF-8
 
+### 共通レスポンス仕様（グローバル適用）
+
+- 成功時: `{ success: true, data: <payload>, meta?: <pagination> }`
+- 失敗時: `{ success: false, error: { code, message, details? }, timestamp, path }`
+- 備考: NestJS の Global Interceptor/Exception Filter により全エンドポイントへ自動適用。
+  - TransformResponseInterceptor: 任意の戻り値を `{ success: true, data }` へ統一。`{ data, meta }` 構造は `meta` を保持。
+  - GlobalExceptionFilter: 例外を `{ success: false, error: ... }` へ統一。Prisma の代表的なエラー（P2002/2025/2003/2014）をHTTPステータスとコードへマッピング。
+
 ## 🔐 認証
 
-### JWT認証フロー
-
-すべてのAPI（認証エンドポイント除く）はAuthorizationヘッダーにJWTトークンが必要です。
-
-````http
 ### 認証エンドポイント
 
-#### 共通ポリシー
+共通ポリシー:
 
-- emailは受信時に trim + lowercase 正規化します（大文字小文字・前後空白の差異を許容）。
-- ユーザー検索は unique 制約に従い findUnique(email) を使用します。
-- パスワードは強度検証後に Argon2 でハッシュ化保存します（旧bcryptからはログイン成功時に自動移行）。
-### 認証エンドポイント
-
-リクエスト
-
-- emailは受信時に trim + lowercase 正規化します（大文字小文字・前後空白の差異を許容）。
+- emailは受信時に trim + lowercase で正規化します（大文字小文字・前後空白の差異を許容）。
 - ユーザー検索は unique 制約に従い findUnique(email) を使用します。
 - パスワードは強度検証後に Argon2 でハッシュ化保存します（旧bcryptからはログイン成功時に自動移行）。
 
 #### POST /auth/login
+
 ユーザーログイン
 
-レスポンス
+##### リクエスト: POST /auth/login
 
 ```json
-{
-  "email": "user@example.com",
-  "password": "password123"
-}
-````
+{ "email": "user@example.com", "password": "password123" }
+```
 
-**レスポンス**
+##### レスポンス: POST /auth/login
 
 ```json
 {
   "success": true,
   "data": {
-    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "user": {
-      "id": "user-123",
-      "email": "user@example.com",
-リクエスト
-
-      "role": "breeder"
-    }
+    "access_token": "<jwt>",
+    "refresh_token": "<jwt>",
+    "user": { "id": "user-123", "email": "user@example.com", "role": "breeder" }
   }
 }
 ```
@@ -64,58 +52,56 @@
 
 トークンリフレッシュ
 
-#### POST /auth/register
+##### リクエスト: POST /auth/refresh
 
-- メールは正規化後に一意制約で重複を検出し、既存の場合 409(CONFLICT) を返します。
-- 作成時に内部用の clerkId を自動採番（例: `local_<uuid>`）。
-  ポリシー:
-- メールは正規化後に一意制約で重複を検出し、既存の場合 409(CONFLICT) を返します。
+```json
+{ "refresh_token": "<jwt>" }
+```
 
-- 作成時に内部用の clerkId を自動採番（例: `local_<uuid>`）。
-
-リクエスト例
+##### レスポンス: POST /auth/refresh
 
 ```json
 {
-  "email": "User@example.com ",
-  "password": "Secret123!"
+  "success": true,
+  "data": {
+    "access_token": "<jwt>",
+    "refresh_token": "<jwt>"
+  }
 }
 ```
 
-レスポンス例
+#### POST /auth/register
 
-````json
-{
-  "success": true,
-  "data": { "id": "user-123", "email": "user@example.com" }
-}
-- 409 CONFLICT: 既に登録済みのメール
-- 400 BAD_REQUEST: パスワード強度不足
-エラー
+ポリシー:
+
+- メールは正規化後に一意制約で重複を検出し、既存の場合 409(CONFLICT) を返します。
+- 作成時に内部用の clerkId を自動採番（例: `local_<uuid>`）。
+
+##### リクエスト: POST /auth/register
+
+```json
+{ "email": "User@example.com ", "password": "Secret123!" }
+```
+
+##### レスポンス: POST /auth/register
+
+```json
+{ "success": true, "data": { "id": "user-123", "email": "user@example.com" } }
+```
+
+エラー例:
+
 - 409 CONFLICT: 既に登録済みのメール
 - 400 BAD_REQUEST: パスワード強度不足
 
 #### POST /auth/request-password-reset
-- メールの存在有無に関わらず成功レスポンスを返します（利用者推測防止）。
 
-リクエスト
+ポリシー: メールの存在有無に関わらず成功レスポンスを返します（利用者推測防止）。
 
-```json
-{
-  "email": "user@example.com"
-}
-````
-
-ポリシー:
-
-- メールの存在有無に関わらず成功レスポンスを返します（利用者推測防止）。
-
-**リクエスト**
+##### リクエスト: POST /auth/request-password-reset
 
 ```json
-{
-  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
+{ "email": "user@example.com" }
 ```
 
 ## 🐱 猫管理API
@@ -124,17 +110,18 @@
 
 猫一覧取得
 
-**クエリパラメータ**
-| パラメータ | 型 | 必須 | 説明 |
-|------------|----|----|------|
-| page | number | - | ページ番号（デフォルト: 1） |
-| limit | number | - | 取得件数（デフォルト: 20） |
-| search | string | - | 名前での検索 |
-| breed_id | string | - | 猫種でのフィルタ |
-| gender | string | - | 性別でのフィルタ（male/female） |
-| status | string | - | ステータスでのフィルタ |
+#### クエリパラメータ: GET /cats
 
-**レスポンス**
+| パラメータ | 型     | 必須 | 説明                            |
+| ---------- | ------ | ---- | ------------------------------- |
+| page       | number | -    | ページ番号（デフォルト: 1）     |
+| limit      | number | -    | 取得件数（デフォルト: 20）      |
+| search     | string | -    | 名前での検索                    |
+| breed_id   | string | -    | 猫種でのフィルタ                |
+| gender     | string | -    | 性別でのフィルタ（male/female） |
+| status     | string | -    | ステータスでのフィルタ          |
+
+#### レスポンス: GET /cats
 
 ```json
 {
@@ -173,7 +160,7 @@
 
 猫新規登録
 
-**リクエスト**
+#### リクエスト: POST /cats
 
 ```json
 {
@@ -187,7 +174,7 @@
 }
 ```
 
-**レスポンス**
+#### レスポンス: POST /cats
 
 ```json
 {
@@ -207,7 +194,7 @@
 
 猫詳細取得
 
-**レスポンス**
+#### レスポンス: GET /cats/:id
 
 ```json
 {
@@ -257,7 +244,7 @@
 
 猫情報更新
 
-**リクエスト**
+#### リクエスト: PUT /cats/:id
 
 ```json
 {
@@ -277,15 +264,16 @@
 
 血統書一覧取得
 
-**クエリパラメータ**
-| パラメータ | 型 | 必須 | 説明 |
-|------------|----|----|------|
-| page | number | - | ページ番号 |
-| limit | number | - | 取得件数 |
-| search | string | - | 血統書番号・猫名での検索 |
-| generation | number | - | 世代での絞り込み |
+#### クエリパラメータ: GET /pedigrees
 
-**レスポンス**
+| パラメータ | 型     | 必須 | 説明                     |
+| ---------- | ------ | ---- | ------------------------ |
+| page       | number | -    | ページ番号               |
+| limit      | number | -    | 取得件数                 |
+| search     | string | -    | 血統書番号・猫名での検索 |
+| generation | number | -    | 世代での絞り込み         |
+
+#### レスポンス: GET /pedigrees
 
 ```json
 {
@@ -322,7 +310,7 @@
 
 血統書新規登録
 
-**リクエスト**
+#### リクエスト: POST /pedigrees
 
 ```json
 {
@@ -339,12 +327,13 @@
 
 家系図取得（指定世代まで）
 
-**クエリパラメータ**
-| パラメータ | 型 | 必須 | 説明 |
-|------------|----|----|------|
-| generations | number | - | 取得世代数（デフォルト: 3） |
+#### クエリパラメータ: GET /pedigrees/:id/family-tree
 
-**レスポンス**
+| パラメータ  | 型     | 必須 | 説明                        |
+| ----------- | ------ | ---- | --------------------------- |
+| generations | number | -    | 取得世代数（デフォルト: 3） |
+
+#### レスポンス: GET /pedigrees/:id/family-tree
 
 ```json
 {
@@ -382,7 +371,7 @@
 
 繁殖記録一覧取得
 
-**レスポンス**
+#### レスポンス: GET /breeding
 
 ```json
 {
@@ -416,7 +405,7 @@
 
 繁殖記録新規登録
 
-**リクエスト**
+#### リクエスト: POST /breeding
 
 ```json
 {
@@ -434,16 +423,17 @@
 
 ケアスケジュール一覧取得
 
-**クエリパラメータ**
-| パラメータ | 型 | 必須 | 説明 |
-|------------|----|----|------|
-| cat_id | string | - | 特定の猫のスケジュール |
-| care_type | string | - | ケア種別でのフィルタ |
-| status | string | - | ステータスでのフィルタ |
-| date_from | string | - | 開始日（YYYY-MM-DD） |
-| date_to | string | - | 終了日（YYYY-MM-DD） |
+#### クエリパラメータ: GET /care/schedules
 
-**レスポンス**
+| パラメータ | 型     | 必須 | 説明                   |
+| ---------- | ------ | ---- | ---------------------- |
+| cat_id     | string | -    | 特定の猫のスケジュール |
+| care_type  | string | -    | ケア種別でのフィルタ   |
+| status     | string | -    | ステータスでのフィルタ |
+| date_from  | string | -    | 開始日（YYYY-MM-DD）   |
+| date_to    | string | -    | 終了日（YYYY-MM-DD）   |
+
+#### レスポンス: GET /care/schedules
 
 ```json
 {
@@ -474,7 +464,7 @@
 
 ケアスケジュール新規登録
 
-**リクエスト**
+#### リクエスト: POST /care/schedules
 
 ```json
 {
@@ -490,7 +480,7 @@
 
 ケア完了マーク
 
-**リクエスト**
+#### リクエスト: PUT /care/schedules/:id/complete
 
 ```json
 {
@@ -506,7 +496,7 @@
 
 タグ一覧取得
 
-**レスポンス**
+#### レスポンス: GET /tags
 
 ```json
 {
@@ -528,7 +518,7 @@
 
 猫種マスタ取得
 
-**レスポンス**
+#### レスポンス: GET /breeds
 
 ```json
 {
@@ -549,7 +539,7 @@
 
 毛色マスタ取得
 
-**レスポンス**
+#### レスポンス: GET /coat-colors
 
 ```json
 {
@@ -612,5 +602,5 @@
 ---
 
 **API バージョン**: 1.0  
-**最終更新日**: 2025年8月9日  
+**最終更新日**: 2025年8月14日  
 **Swagger UI**: [http://localhost:3004/api/docs](http://localhost:3004/api/docs)
