@@ -83,13 +83,14 @@ describe("Care & Tags flows (e2e)", () => {
 
   it("tags: create -> assign -> unassign", async () => {
     const email = `e2e_${Date.now()}@example.com`;
-  const password = "Secret123!";
+    const password = "Secret123!";
 
     // register & login
-    await request(server)
+    const reg = await request(server)
       .post("/api/v1/auth/register")
       .send({ email, password })
       .expect(201);
+    const ownerId = reg.body.data.id as string;
     const login = await request(server)
       .post("/api/v1/auth/login")
       .send({ email, password })
@@ -106,9 +107,23 @@ describe("Care & Tags flows (e2e)", () => {
     const tagId = tagRes.body.data.id as string;
     expect(tagId).toBeDefined();
 
-    // pick a cat
-    const catsRes = await request(server).get("/api/v1/cats").expect(200);
-    const catId = catsRes.body.data?.[0]?.id;
+    // create a cat (avoid dependency on existing data)
+    const catRes = await request(server)
+      .post("/api/v1/cats")
+      .send({
+        registrationId: `REG-${Date.now()}`,
+        name: "E2E Tag Cat",
+        gender: "FEMALE",
+        birthDate: "2024-01-01T00:00:00.000Z",
+        ownerId,
+      })
+      .expect(201);
+    const catId =
+      catRes.body.id ??
+      catRes.body.data?.id ??
+      catRes.body?.data?.cat?.id ??
+      catRes.body?.cat?.id ??
+      catRes.body?.data?.catId;
     expect(catId).toBeDefined();
 
     // assign
