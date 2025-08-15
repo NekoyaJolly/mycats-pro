@@ -47,10 +47,18 @@ export class LoginAttemptService {
 
       // ログイン試行を記録（rawクエリ使用）
       const id = randomUUID();
-      await this.prisma.$executeRaw`
-        INSERT INTO "login_attempts" ("id", "userId", "email", "ipAddress", "userAgent", "success", "reason", "createdAt")
-        VALUES (${id}, ${user?.id}, ${data.email}, ${data.ipAddress}, ${data.userAgent}, ${data.success}, ${data.reason}, NOW())
-      `;
+      await this.prisma.loginAttempt.create({
+        data: {
+          id,
+          userId: user?.id ?? null,
+          email: data.email,
+          ipAddress: data.ipAddress ?? null,
+          userAgent: data.userAgent ?? null,
+          success: data.success,
+          reason: data.reason ?? null,
+          // createdAt defaults to now()
+        },
+      });
 
       // 失敗の場合、ユーザーの失敗カウントを更新
       if (!data.success && user) {
@@ -76,15 +84,11 @@ export class LoginAttemptService {
    */
   async isAccountLocked(email: string): Promise<boolean> {
     try {
-      const result = await this.prisma.$queryRaw<Array<{
-        id: string;
-        failedLoginAttempts: number;
-        lockedUntil: Date | null;
-      }>>`
-        SELECT "id", "failedLoginAttempts", "lockedUntil"
-        FROM "users"
-        WHERE "email" = ${email}
-      `;
+      const result = await this.prisma.user.findMany({
+        where: { email },
+        select: { id: true, failedLoginAttempts: true, lockedUntil: true },
+        take: 1,
+      });
 
       if (!result || result.length === 0) {
         return false; // ユーザーが存在しない場合はロックされていない
@@ -116,13 +120,11 @@ export class LoginAttemptService {
    */
   async getLockoutRemainingMinutes(email: string): Promise<number> {
     try {
-      const result = await this.prisma.$queryRaw<Array<{
-        lockedUntil: Date | null;
-      }>>`
-        SELECT "lockedUntil"
-        FROM "users"
-        WHERE "email" = ${email}
-      `;
+      const result = await this.prisma.user.findMany({
+        where: { email },
+        select: { lockedUntil: true },
+        take: 1,
+      });
 
   if (!result || result.length === 0 || !result[0].lockedUntil) {
         return 0;
@@ -150,13 +152,11 @@ export class LoginAttemptService {
     email: string,
   ): Promise<void> {
     try {
-      const result = await this.prisma.$queryRaw<Array<{
-        failedLoginAttempts: number;
-      }>>`
-        SELECT "failedLoginAttempts"
-        FROM "users"
-        WHERE "id" = ${userId}
-      `;
+      const result = await this.prisma.user.findMany({
+        where: { id: userId },
+        select: { failedLoginAttempts: true },
+        take: 1,
+      });
 
       if (!result || result.length === 0) return;
 
@@ -169,21 +169,19 @@ export class LoginAttemptService {
           lockoutEnd.getMinutes() + this.lockoutDurationMinutes,
         );
 
-        await this.prisma.$executeRaw`
-          UPDATE "users"
-          SET "failedLoginAttempts" = ${newFailedAttempts}, "lockedUntil" = ${lockoutEnd}
-          WHERE "id" = ${userId}
-        `;
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: { failedLoginAttempts: newFailedAttempts, lockedUntil: lockoutEnd },
+        });
 
         this.logger.warn(
           `Account locked: ${email} - ${newFailedAttempts} failed attempts. Locked until: ${lockoutEnd.toISOString()}`,
         );
       } else {
-        await this.prisma.$executeRaw`
-          UPDATE "users"
-          SET "failedLoginAttempts" = ${newFailedAttempts}
-          WHERE "id" = ${userId}
-        `;
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: { failedLoginAttempts: newFailedAttempts },
+        });
       }
     } catch (error) {
       this.logger.error("Failed to update failed login count:", error);
@@ -195,11 +193,10 @@ export class LoginAttemptService {
    */
   private async resetFailedLoginCount(userId: string): Promise<void> {
     try {
-      await this.prisma.$executeRaw`
-        UPDATE "users"
-        SET "failedLoginAttempts" = 0, "lockedUntil" = NULL, "lastLoginAt" = NOW()
-        WHERE "id" = ${userId}
-      `;
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { failedLoginAttempts: 0, lockedUntil: null, lastLoginAt: new Date() },
+      });
     } catch (error) {
       this.logger.error("Failed to reset failed login count:", error);
     }
@@ -227,22 +224,46 @@ export class LoginAttemptService {
   }>> {
     try {
       if (email) {
-        return await this.prisma.$queryRaw`
-          SELECT la.*, u.id as user_id, u.email as user_email, u."firstName", u."lastName"
-          FROM "login_attempts" la
-          LEFT JOIN "users" u ON la."userId" = u."id"
-          WHERE la."email" = ${email}
-          ORDER BY la."createdAt" DESC
-          LIMIT ${limit}
-        `;
+        const items = await this.prisma.loginAttempt.findMany({
+          where: { email },
+          orderBy: { createdAt: "desc" },
+          take: limit,
+          include: { user: { select: { id: true, email: true, firstName: true, lastName: true } } },
+        });
+        return items.map((la) => ({
+          id: la.id,
+          userId: la.userId ?? undefined,
+          email: la.email,
+          ipAddress: la.ipAddress ?? undefined,
+          userAgent: la.userAgent ?? undefined,
+          success: la.success,
+          reason: la.reason ?? undefined,
+          createdAt: la.createdAt,
+          user_id: la.user?.id,
+          user_email: la.user?.email,
+          firstName: la.user?.firstName ?? undefined,
+          lastName: la.user?.lastName ?? undefined,
+        }));
       } else {
-        return await this.prisma.$queryRaw`
-          SELECT la.*, u.id as user_id, u.email as user_email, u."firstName", u."lastName"
-          FROM "login_attempts" la
-          LEFT JOIN "users" u ON la."userId" = u."id"
-          ORDER BY la."createdAt" DESC
-          LIMIT ${limit}
-        `;
+        const items = await this.prisma.loginAttempt.findMany({
+          orderBy: { createdAt: "desc" },
+          take: limit,
+          include: { user: { select: { id: true, email: true, firstName: true, lastName: true } } },
+        });
+        return items.map((la) => ({
+          id: la.id,
+          userId: la.userId ?? undefined,
+          email: la.email,
+          ipAddress: la.ipAddress ?? undefined,
+          userAgent: la.userAgent ?? undefined,
+          success: la.success,
+          reason: la.reason ?? undefined,
+          createdAt: la.createdAt,
+          user_id: la.user?.id,
+          user_email: la.user?.email,
+          firstName: la.user?.firstName ?? undefined,
+          lastName: la.user?.lastName ?? undefined,
+        }));
       }
     } catch (error) {
       this.logger.error("Failed to get login attempt history:", error);
@@ -258,10 +279,9 @@ export class LoginAttemptService {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
 
-      const _result = await this.prisma.$executeRaw`
-        DELETE FROM "login_attempts"
-        WHERE "createdAt" < ${cutoffDate}
-      `;
+      await this.prisma.loginAttempt.deleteMany({
+        where: { createdAt: { lt: cutoffDate } },
+      });
 
       this.logger.log(
         `Cleaned up old login attempt records (older than ${daysToKeep} days)`,
