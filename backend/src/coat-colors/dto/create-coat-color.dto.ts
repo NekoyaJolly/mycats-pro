@@ -1,10 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsString, IsOptional, MaxLength, IsInt } from "class-validator";
+import { IsString, IsOptional, MaxLength, IsInt, Min, Max } from "class-validator";
 
 export class CreateCoatColorDto {
   @ApiProperty({ description: "毛色コード" })
   @IsInt()
+  @Min(1)
+  @Max(9999)
   @Type(() => Number)
   code: number;
 

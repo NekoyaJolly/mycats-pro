@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
+import type { Prisma } from "@prisma/client";
 
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -27,8 +28,8 @@ export class CoatColorsService {
       sortOrder = "asc",
     } = query;
 
-    const skip = (page - 1) * limit;
-    const where: any = {};
+  const skip = (page - 1) * limit;
+  const where: Prisma.CoatColorWhereInput = {};
 
     if (search) {
       where.OR = [
@@ -36,6 +37,17 @@ export class CoatColorsService {
         { description: { contains: search, mode: "insensitive" } },
       ];
     }
+
+    type Sortable = "name" | "createdAt" | "updatedAt" | "code";
+    const sortMap: Record<string, Sortable> = {
+      name: "name",
+      nameEn: "name", // フィールドがないため name へフォールバック
+      colorCode: "code",
+      category: "name", // モデルにないため name へフォールバック
+      createdAt: "createdAt",
+      updatedAt: "updatedAt",
+    };
+    const sortKey = sortMap[sortBy] ?? "name";
 
     const [colors, total] = await Promise.all([
       this.prisma.coatColor.findMany({
@@ -50,9 +62,7 @@ export class CoatColorsService {
             },
           },
         },
-        orderBy: {
-          [sortBy]: sortOrder,
-        },
+        orderBy: { [sortKey]: sortOrder } as Prisma.CoatColorOrderByWithRelationInput,
       }),
       this.prisma.coatColor.count({ where }),
     ]);

@@ -4,6 +4,8 @@ import * as path from "path";
 import { PrismaClient } from "@prisma/client";
 import { parse } from "csv-parse";
 
+import { batchTransaction } from "./utils/prisma-batch";
+
 const prisma = new PrismaClient();
 
 /**
@@ -62,27 +64,27 @@ async function importParentPedigrees() {
             trim: true,
           }),
         )
-        .on("data", (record: any) => {
+        .on("data", (record: Record<string, string>) => {
           // 親のIDが含まれる血統書のみ処理
           if (parentIds.includes(record.PedigreeID)) {
             records.push({
               PedigreeID: record.PedigreeID,
-              Title: record.Title || null,
-              CatteryName: record.CatteryName || "",
-              CatName: record.CatName || "",
+              Title: record.Title ?? undefined,
+              CatteryName: record.CatteryName ?? "",
+              CatName: record.CatName ?? "",
               BreedCode: record.BreedCode,
               Gender: record.Gender,
-              EyeColor: record.EyeColor || null,
+              EyeColor: record.EyeColor ?? undefined,
               CoatColorCode: record.CoatColorCode,
               BirthDate: record.BirthDate,
-              BreederName: record.BreederName || "",
-              OwnerName: record.OwnerName || "",
+              BreederName: record.BreederName ?? "",
+              OwnerName: record.OwnerName ?? "",
               RegistrationDate: record.RegistrationDate,
-              BrotherCount: record.BrotherCount || "0",
-              SisterCount: record.SisterCount || "0",
-              Notes: record.Notes || null,
-              Notes2: record.Notes2 || null,
-              OtherNo: record.OtherNo || null,
+              BrotherCount: record.BrotherCount ?? "0",
+              SisterCount: record.SisterCount ?? "0",
+              Notes: record.Notes ?? undefined,
+              Notes2: record.Notes2 ?? undefined,
+              OtherNo: record.OtherNo ?? undefined,
             });
           }
         })
@@ -93,22 +95,16 @@ async function importParentPedigrees() {
         .on("error", reject);
     });
 
-    let importCount = 0;
-    let errorCount = 0;
-
-    for (const record of records) {
-      try {
+    const result = await batchTransaction(
+      prisma,
+      records,
+      async (tx, record) => {
         // 既に存在するかチェック
-        const existing = await prisma.pedigree.findUnique({
+        const existing = await tx.pedigree.findUnique({
           where: { pedigreeId: record.PedigreeID },
         });
+        if (existing) return; // スキップ
 
-        if (existing) {
-          console.log(`⏭️  スキップ: ${record.PedigreeID} (既に存在)`);
-          continue;
-        }
-
-        // 日付変換
         const birthDate = record.BirthDate
           ? new Date(record.BirthDate.replace(/\./g, "-"))
           : null;
@@ -116,41 +112,33 @@ async function importParentPedigrees() {
           ? new Date(record.RegistrationDate.replace(/\./g, "-"))
           : null;
 
-        await prisma.pedigree.create({
+        await tx.pedigree.create({
           data: {
             pedigreeId: record.PedigreeID,
-            title: record.Title,
-            // Removed: catName: record.CatteryName,
-            catName: record.CatName,
-            breedCode: parseInt(record.BreedCode),
-            gender: parseInt(record.Gender),
-            eyeColor: record.EyeColor,
-            coatColorCode: parseInt(record.CoatColorCode),
-            birthDate: birthDate,
-            breederName: record.BreederName,
-            ownerName: record.OwnerName,
-            registrationDate: registrationDate,
-            brotherCount: parseInt(record.BrotherCount),
-            sisterCount: parseInt(record.SisterCount),
-            notes: record.Notes,
-            notes2: record.Notes2,
-            otherNo: record.OtherNo,
+            title: record.Title ?? null,
+            catName: record.CatName ?? "",
+            breedCode: parseInt(record.BreedCode, 10),
+            gender: parseInt(record.Gender, 10),
+            eyeColor: record.EyeColor ?? null,
+            coatColorCode: parseInt(record.CoatColorCode, 10),
+            birthDate,
+            breederName: record.BreederName ?? null,
+            ownerName: record.OwnerName ?? null,
+            registrationDate,
+            brotherCount: parseInt(record.BrotherCount, 10),
+            sisterCount: parseInt(record.SisterCount, 10),
+            notes: record.Notes ?? null,
+            notes2: record.Notes2 ?? null,
+            otherNo: record.OtherNo ?? null,
           },
         });
-
-        console.log(
-          `✅ インポート: ${record.PedigreeID} - ${record.CatteryName} ${record.CatName}`,
-        );
-        importCount++;
-      } catch (error) {
-        console.error(`❌ エラー (ID: ${record.PedigreeID}):`, error);
-        errorCount++;
-      }
-    }
+      },
+      { batchSize: 200, logEvery: 1000, label: "parentPedigrees" },
+    );
 
     console.log("\n🎉 親血統書インポート完了！");
-    console.log(`📊 成功: ${importCount}件`);
-    console.log(`❌ エラー: ${errorCount}件`);
+    console.log(`📊 成功: ${result.success}件`);
+    console.log(`❌ エラー: ${result.failed}件`);
   } catch (error) {
     console.error("💥 インポート処理でエラーが発生しました:", error);
     throw error;

@@ -17,6 +17,7 @@ import {
   ApiBearerAuth,
 } from "@nestjs/swagger";
 
+import type { RequestUser } from "../auth/auth.types";
 import { GetUser } from "../auth/get-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
@@ -41,7 +42,10 @@ export class BreedingController {
   @Post()
   @ApiOperation({ summary: "交配記録の新規作成" })
   @ApiResponse({ status: HttpStatus.CREATED })
-  create(@Body() dto: CreateBreedingDto, @GetUser() user?: any) {
+  create(
+    @Body() dto: CreateBreedingDto,
+    @GetUser() user?: RequestUser,
+  ) {
     return this.breedingService.create(dto, user?.userId);
   }
 

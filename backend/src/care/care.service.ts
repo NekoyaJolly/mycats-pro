@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { Prisma, ScheduleType } from "@prisma/client";
 
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -12,13 +13,15 @@ export class CareService {
 
   async findSchedules(query: CareQueryDto) {
     const { page = 1, limit = 20, catId, careType, dateFrom, dateTo } = query;
-    const where: any = {};
+    const where: Prisma.ScheduleWhereInput = {};
     if (catId) where.catId = catId;
-    if (careType) where.scheduleType = "CARE"; // CARE種別のみに絞る
+  // careType が指定された場合はケア系のスケジュールに限定（現在は CARE 固定）
+  if (careType) where.scheduleType = ScheduleType.CARE;
     if (dateFrom || dateTo) {
-      where.scheduleDate = {};
-      if (dateFrom) where.scheduleDate.gte = new Date(dateFrom);
-      if (dateTo) where.scheduleDate.lte = new Date(dateTo);
+      const dateFilter: Prisma.DateTimeFilter = {};
+      if (dateFrom) dateFilter.gte = new Date(dateFrom);
+      if (dateTo) dateFilter.lte = new Date(dateTo);
+      where.scheduleDate = dateFilter;
     }
 
     const [total, data] = await this.prisma.$transaction([
@@ -35,14 +38,14 @@ export class CareService {
     ]);
 
     return {
-      success: true,
+      success: true as const,
       data,
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }
 
   async addSchedule(dto: CreateCareScheduleDto, userId?: string) {
-    const result = await this.prisma.schedule.create({
+  const result = await this.prisma.schedule.create({
       data: {
         catId: dto.catId,
         scheduleType: "CARE",
@@ -57,7 +60,7 @@ export class CareService {
   }
 
   async complete(id: string, dto: CompleteCareDto, userId?: string) {
-    const updated = await this.prisma.schedule.update({
+  const updated = await this.prisma.schedule.update({
       where: { id },
       data: { status: "COMPLETED" },
     });
@@ -87,6 +90,6 @@ export class CareService {
       },
     });
 
-    return { success: true };
+  return { success: true as const };
   }
 }

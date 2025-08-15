@@ -5,6 +5,7 @@ import {
   HttpStatus,
   Param,
   Patch,
+  Put,
   Post,
   Query, UseGuards 
 } from "@nestjs/common";
@@ -16,6 +17,7 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 
+import type { RequestUser } from "../auth/auth.types";
 import { GetUser } from "../auth/get-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
@@ -41,20 +43,24 @@ export class CareController {
   @Post("schedules")
   @ApiOperation({ summary: "ケアスケジュールの追加" })
   @ApiResponse({ status: HttpStatus.CREATED })
-  addSchedule(@Body() dto: CreateCareScheduleDto, @GetUser() user?: any) {
+  addSchedule(
+    @Body() dto: CreateCareScheduleDto,
+    @GetUser() user?: RequestUser,
+  ) {
     return this.careService.addSchedule(dto, user?.userId);
   }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Patch("schedules/:id/complete")
-  @ApiOperation({ summary: "ケア完了処理" })
+  @Put("schedules/:id/complete")
+  @ApiOperation({ summary: "ケア完了処理（PATCH/PUT対応）" })
   @ApiResponse({ status: HttpStatus.OK })
   @ApiParam({ name: "id" })
   complete(
     @Param("id") id: string,
     @Body() dto: CompleteCareDto,
-    @GetUser() user?: any,
+    @GetUser() user?: RequestUser,
   ) {
     return this.careService.complete(id, dto, user?.userId);
   }

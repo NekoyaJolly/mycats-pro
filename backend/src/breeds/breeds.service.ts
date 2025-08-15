@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
+import type { Prisma } from "@prisma/client";
 
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -23,8 +24,8 @@ export class BreedsService {
       sortOrder = "asc",
     } = query;
 
-    const skip = (page - 1) * limit;
-    const where: any = {};
+  const skip = (page - 1) * limit;
+  const where: Prisma.BreedWhereInput = {};
 
     if (search) {
       where.OR = [
@@ -32,6 +33,16 @@ export class BreedsService {
         { description: { contains: search, mode: "insensitive" } },
       ];
     }
+
+    type Sortable = "name" | "createdAt" | "updatedAt" | "code";
+    const sortMap: Record<string, Sortable> = {
+      name: "name",
+      nameEn: "name", // フィールドがないため name へフォールバック
+      createdAt: "createdAt",
+      updatedAt: "updatedAt",
+      code: "code",
+    };
+    const sortKey = sortMap[sortBy] ?? "name";
 
     const [breeds, total] = await Promise.all([
       this.prisma.breed.findMany({
@@ -46,9 +57,7 @@ export class BreedsService {
             },
           },
         },
-        orderBy: {
-          [sortBy]: sortOrder,
-        },
+        orderBy: { [sortKey]: sortOrder } as Prisma.BreedOrderByWithRelationInput,
       }),
       this.prisma.breed.count({ where }),
     ]);

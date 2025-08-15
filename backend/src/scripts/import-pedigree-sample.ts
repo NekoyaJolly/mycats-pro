@@ -363,15 +363,17 @@ function parseDate(dateStr: string): Date | null {
 
 // スクリプト実行
 if (require.main === module) {
-  importPedigreeSampleData()
-    .then(() => {
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  (async () => {
+    try {
+      await importPedigreeSampleData();
       console.log("🎉 血統書サンプルデータのインポートが完了しました！");
       process.exit(0);
-    })
-    .catch((error) => {
+    } catch (error) {
       console.error("💥 インポート処理でエラーが発生しました:", error);
       process.exit(1);
-    });
+    }
+  })();
 }
 
 export { importPedigreeSampleData };

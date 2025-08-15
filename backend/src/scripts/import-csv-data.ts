@@ -152,6 +152,36 @@ async function importCoatColors() {
   });
 }
 
+async function assertCsvHeaders(csvPath: string, expected: string[]): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const rows: string[][] = [];
+    let count = 0;
+    const readStream = fs.createReadStream(csvPath);
+    readStream
+      .pipe(csv({ headers: false }))
+      .on("data", (row: unknown) => {
+        if (Array.isArray(row)) {
+          rows.push(row.map((h) => String(h).trim()));
+          count++;
+          if (count >= 2) {
+            // 2行取得したらクローズ
+            readStream.destroy();
+          }
+        }
+      })
+      .on("end", () => {
+        const header = (rows[1] || rows[0] || []);
+        const missing = expected.filter((k) => !header.includes(k));
+        if (missing.length > 0) {
+          reject(new Error(`CSV header missing keys: ${missing.join(", ")}`));
+          return;
+        }
+        resolve();
+      })
+      .on("error", reject);
+  });
+}
+
 async function importPedigrees() {
   console.log("📜 Importing pedigree data...");
 
@@ -258,6 +288,9 @@ async function importPedigrees() {
     "mmmJCU",
     "oldCode",
   ];
+
+  // Early check: CSV header must include expected columns
+  await assertCsvHeaders(csvPath, headers);
   // Additional fields...
   return new Promise<void>((resolve, reject) => {
     let rowCount = 0;
@@ -435,7 +468,16 @@ async function main() {
 }
 
 if (require.main === module) {
-  main();
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  (async () => {
+    try {
+      await main();
+      process.exit(0);
+    } catch (e) {
+      console.error(e);
+      process.exit(1);
+    }
+  })();
 }
 
 export { importBreeds, importCoatColors, importPedigrees };

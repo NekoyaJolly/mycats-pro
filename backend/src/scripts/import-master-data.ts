@@ -1,12 +1,15 @@
-import fs from 'fs';
+import * as fsSync from 'fs';
+import { promises as fs } from 'fs';
 import path from 'path';
 
 import { PrismaClient } from '@prisma/client';
 
+import { batchTransaction } from './utils/prisma-batch';
+
 const prisma = new PrismaClient();
 
 async function readCsvWithBom(filePath: string): Promise<string[][]> {
-  const fileBuffer = fs.readFileSync(filePath);
+  const fileBuffer = await fs.readFile(filePath);
   
   // BOMを削除（UTF-8 BOM: EF BB BF）
   let content = fileBuffer.toString('utf8');
@@ -34,21 +37,20 @@ async function importBreeds() {
   })).filter(breed => !isNaN(breed.code) && breed.name);
   
   console.log(`投入予定件数: ${breeds.length}`);
-  
-  for (const breed of breeds) {
-    try {
-      await prisma.breed.create({
+  await batchTransaction(
+    prisma,
+    breeds,
+    async (tx, breed) => {
+      await tx.breed.create({
         data: {
           id: crypto.randomUUID(),
           code: breed.code,
           name: breed.name,
         },
       });
-      console.log(`✓ 猫種追加: ${breed.code} - ${breed.name}`);
-    } catch (error) {
-      console.error(`✗ 猫種追加エラー: ${breed.code} - ${breed.name}`, error);
-    }
-  }
+    },
+    { batchSize: 200, logEvery: 1000, label: 'breeds' },
+  );
   
   console.log('🐱 猫種データの投入完了');
 }
@@ -69,21 +71,20 @@ async function importCoatColors() {
   })).filter(color => !isNaN(color.code) && color.name);
   
   console.log(`投入予定件数: ${colors.length}`);
-  
-  for (const color of colors) {
-    try {
-      await prisma.coatColor.create({
+  await batchTransaction(
+    prisma,
+    colors,
+    async (tx, color) => {
+      await tx.coatColor.create({
         data: {
           id: crypto.randomUUID(),
           code: color.code,
           name: color.name,
         },
       });
-      console.log(`✓ 色柄追加: ${color.code} - ${color.name}`);
-    } catch (error) {
-      console.error(`✗ 色柄追加エラー: ${color.code} - ${color.name}`, error);
-    }
-  }
+    },
+    { batchSize: 200, logEvery: 1000, label: 'coatColors' },
+  );
   
   console.log('🎨 色柄データの投入完了');
 }
@@ -114,4 +115,15 @@ async function main() {
   }
 }
 
-main();
+if (require.main === module) {
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  (async () => {
+    try {
+      await main();
+      process.exit(0);
+    } catch (e) {
+      console.error(e);
+      process.exit(1);
+    }
+  })();
+}

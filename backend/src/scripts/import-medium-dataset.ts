@@ -56,16 +56,16 @@ async function importMediumDataset() {
             trim: true,
           }),
         )
-        .on("data", (record: any) => {
+  .on("data", (record: Record<string, string>) => {
           if (processedCount < targetCount) {
             records.push({
               PedigreeID: record.PedigreeID,
-              Title: record.Title || null,
+              Title: record.Title || undefined,
               CatteryName: record.CatteryName || "",
               CatName: record.CatName || "",
               BreedCode: record.BreedCode,
               Gender: record.Gender,
-              EyeColor: record.EyeColor || null,
+              EyeColor: record.EyeColor || undefined,
               CoatColorCode: record.CoatColorCode,
               BirthDate: record.BirthDate,
               BreederName: record.BreederName || "",
@@ -73,9 +73,9 @@ async function importMediumDataset() {
               RegistrationDate: record.RegistrationDate,
               BrotherCount: record.BrotherCount || "0",
               SisterCount: record.SisterCount || "0",
-              Notes: record.Notes || null,
-              Notes2: record.Notes2 || null,
-              OtherNo: record.OtherNo || null,
+              Notes: record.Notes || undefined,
+              Notes2: record.Notes2 || undefined,
+              OtherNo: record.OtherNo || undefined,
             });
             processedCount++;
           }
@@ -181,15 +181,17 @@ async function importMediumDataset() {
 
 // スクリプト実行
 if (require.main === module) {
-  importMediumDataset()
-    .then(() => {
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  (async () => {
+    try {
+      await importMediumDataset();
       console.log("🎉 中規模データインポートが完了しました！");
       process.exit(0);
-    })
-    .catch((error) => {
+    } catch (error) {
       console.error("💥 インポート処理でエラーが発生しました:", error);
       process.exit(1);
-    });
+    }
+  })();
 }
 
 export { importMediumDataset };

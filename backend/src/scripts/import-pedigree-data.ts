@@ -1,4 +1,5 @@
-import * as fs from 'fs';
+import * as fsSync from 'fs';
+import { promises as fs } from 'fs';
 import * as path from 'path';
 
 import { PrismaClient } from '@prisma/client';
@@ -6,7 +7,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function readCsvWithBom(filePath: string): Promise<string[][]> {
-  const fileBuffer = fs.readFileSync(filePath);
+  const fileBuffer = await fs.readFile(filePath);
   
   // BOMを削除（UTF-8 BOM: EF BB BF）
   let content = fileBuffer.toString('utf8');
@@ -97,4 +98,15 @@ async function main() {
   }
 }
 
-main();
+if (require.main === module) {
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  (async () => {
+    try {
+      await main();
+      process.exit(0);
+    } catch (e) {
+      console.error(e);
+      process.exit(1);
+    }
+  })();
+}

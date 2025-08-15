@@ -13,7 +13,7 @@
 - [🚀 クイックスタート](#-クイックスタート)
 - [🔧 利用可能なコマンド](#-利用可能なコマンド)
 - [📊 ビルド・デプロイ](#-ビルドデプロイ)
-- [🔍 トラブルシューティング](#🔍-トラブルシューティング)
+- [🔍 トラブルシューティング](#-トラブルシューティング)
 
 ## 🎯 機能概要
 
@@ -75,7 +75,7 @@
 
 ### バックエンド
 
-- **フレームワーク**: NestJS (TypeScript)
+- **フレームワーク**: NestJS 10 (TypeScript)
 - **ORM**: Prisma 6.14.0
 - **認証**: JWT + Passport
 - **API文書**: Swagger/OpenAPI
@@ -350,15 +350,15 @@ npm run frontend:start
 - **フロントエンドログ**: ブラウザの開発者ツール（Console）
 - **データベースログ**: PostgreSQLのログファイル
 
-### 推奨Node.jsバージョン
+### 推奨Node.js/PNPMバージョン
 
 ```bash
 # 現在のバージョン確認
 node --version
-npm --version
+pnpm --version
 
-# 推奨: Node.js 20.x（package.jsonで指定）
-# 動作確認済み: Node.js 22.x
+# 推奨: Node.js 20.x〜22.x（root package.json engines参照）
+# パッケージマネージャ: PNPM 9系で検証済み
 ```
 
 ## 🤝 開発への参加
@@ -416,6 +416,7 @@ MIT License
 ### 📊 図表・設計資料
 
 - **[システム構成図](./docs/diagrams/system-architecture.md)** - インフラ・ネットワーク図
+- **[プロジェクト全体図（C4/互換）](./docs/diagrams/project-overview.md)** - フロント/バック/API/DBの俯瞰 + 実装/計画マップ
 - **[データベース設計](./DATABASE_SCHEMA.md)** - ER図・テーブル設計
 - **[クイックリファレンス](./DATABASE_QUICK_REF.md)** - 開発時の参照資料
 
@@ -431,6 +432,6 @@ MIT License
 
 ---
 
-**最終更新**: 2025年8月14日  
+**最終更新**: 2025年8月15日  
 **プロジェクト状態**: アクティブ開発中  
-**主要バージョン**: フロントエンド（Next.js 15.4.5 + React 19.1.0）、バックエンド（NestJS 10.0.0 + Prisma 6.14.0）
+**主要バージョン**: フロントエンド（Next.js 15.4.5 + React 19.1.0）、バックエンド（NestJS 10 + Prisma 6.14.0）

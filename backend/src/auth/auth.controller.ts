@@ -16,6 +16,7 @@ import {
 import { Request } from "express";
 
 import { AuthService } from "./auth.service";
+import type { RequestUser } from "./auth.types";
 import { ChangePasswordDto } from "./dto/change-password.dto";
 import { LoginDto } from "./dto/login.dto";
 import { PasswordResetDto } from "./dto/password-reset.dto";
@@ -48,7 +49,7 @@ export class AuthController {
   @Post("set-password")
   @ApiOperation({ summary: "パスワード設定/変更（要JWT）" })
   @ApiResponse({ status: HttpStatus.OK })
-  setPassword(@GetUser() user: any, @Body() dto: LoginDto) {
+  setPassword(@GetUser() user: RequestUser | undefined, @Body() dto: LoginDto) {
     return this.auth.setPassword(user.userId, dto.password);
   }
 
@@ -57,7 +58,10 @@ export class AuthController {
   @Post("change-password")
   @ApiOperation({ summary: "パスワード変更（現在のパスワード確認必要）" })
   @ApiResponse({ status: HttpStatus.OK })
-  changePassword(@GetUser() user: any, @Body() dto: ChangePasswordDto) {
+  changePassword(
+    @GetUser() user: RequestUser | undefined,
+    @Body() dto: ChangePasswordDto,
+  ) {
     return this.auth.changePassword(
       user.userId,
       dto.currentPassword,
@@ -84,7 +88,7 @@ export class AuthController {
   @Post("logout")
   @ApiOperation({ summary: "ログアウト（リフレッシュトークン削除）" })
   @ApiResponse({ status: HttpStatus.OK })
-  logout(@GetUser() user: any) {
+  logout(@GetUser() user: RequestUser | undefined) {
     return this.auth.logout(user.userId);
   }
 }

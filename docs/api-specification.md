@@ -96,6 +96,18 @@
 
 #### POST /auth/request-password-reset
 
+#### POST /auth/set-password
+
+パスワード設定（初回/再設定リンク経由など）
+
+#### POST /auth/change-password
+
+ログイン中ユーザーのパスワード変更
+
+#### POST /auth/logout
+
+リフレッシュトークンの無効化とサインアウト処理
+
 ポリシー: メールの存在有無に関わらず成功レスポンスを返します（利用者推測防止）。
 
 ##### リクエスト: POST /auth/request-password-reset
@@ -256,6 +268,18 @@
 
 ### DELETE /cats/:id
 
+### GET /cats/statistics
+
+統計情報の取得（実装あり）
+
+### GET /cats/:id/breeding-history
+
+個体の繁殖履歴（実装あり）
+
+### GET /cats/:id/care-history
+
+個体のケア履歴（実装あり）
+
 猫情報削除（論理削除）
 
 ## 📜 血統書管理API
@@ -334,6 +358,18 @@
 | generations | number | -    | 取得世代数（デフォルト: 3） |
 
 #### レスポンス: GET /pedigrees/:id/family-tree
+
+### GET /pedigrees/pedigree-id/:pedigreeId
+
+血統書番号から検索（実装あり）
+
+### GET /pedigrees/:id/family
+
+直系の親情報ツリー（実装あり）
+
+### GET /pedigrees/:id/descendants
+
+子孫一覧（実装あり）
 
 ```json
 {
@@ -476,9 +512,9 @@
 }
 ```
 
-### PUT /care/schedules/:id/complete
+### PATCH/PUT /care/schedules/:id/complete（実装あり）
 
-ケア完了マーク
+ケア完了マーク（PATCH/PUTどちらでも可）
 
 #### リクエスト: PUT /care/schedules/:id/complete
 
@@ -493,6 +529,14 @@
 ## 🏷️ タグ・マスタデータAPI
 
 ### GET /tags
+
+### POST /tags（実装あり）
+
+タグの作成（認証必須）
+
+### DELETE /tags/:id（実装あり）
+
+タグの削除（認証必須）
 
 タグ一覧取得
 
@@ -516,6 +560,12 @@
 
 ### GET /breeds
 
+### POST /breeds（実装あり・管理者のみ）
+
+### PATCH /breeds/:id（実装あり・管理者のみ）
+
+### DELETE /breeds/:id（実装あり・管理者のみ）
+
 猫種マスタ取得
 
 #### レスポンス: GET /breeds
@@ -536,6 +586,12 @@
 ```
 
 ### GET /coat-colors
+
+### POST /coat-colors（実装あり・管理者のみ）
+
+### PATCH /coat-colors/:id（実装あり・管理者のみ）
+
+### DELETE /coat-colors/:id（実装あり・管理者のみ）
 
 毛色マスタ取得
 
@@ -589,9 +645,8 @@
 
 ## 📊 レート制限
 
-- **一般API**: 1分間に100リクエスト
-- **認証API**: 1分間に10リクエスト
-- **ファイルアップロード**: 1分間に5リクエスト
+- 現行実装: 全エンドポイント共通で 1分間に100リクエスト（ThrottlerModuleのグローバル設定）。
+- 将来対応: 認証・アップロードに対する個別制限は未実装（仕様上の目標値: 認証10/分、アップロード5/分）。
 
 ## 🔄 バージョニング
 
@@ -602,5 +657,5 @@
 ---
 
 **API バージョン**: 1.0  
-**最終更新日**: 2025年8月14日  
+**最終更新日**: 2025年8月15日（実装差分反映、全体図リンク追加）  
 **Swagger UI**: [http://localhost:3004/api/docs](http://localhost:3004/api/docs)

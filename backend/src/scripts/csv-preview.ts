@@ -37,13 +37,13 @@ async function previewCSV() {
     columns: true,
     skip_empty_lines: true,
     from_line: 2, // ヘッダーをスキップ
-  });
+  }) as PedigreeRow[];
 
   console.log(`📊 総レコード数: ${records.length}`);
 
   // 最初の数件をデバッグ出力
   console.log("\n🔍 デバッグ: 最初の3件の生データ");
-  records.slice(0, 3).forEach((record, i) => {
+  records.slice(0, 3).forEach((record: PedigreeRow, i: number) => {
     console.log(`Record ${i + 1}:`, {
       キー: record.キー,
       ＧＰ: record.ＧＰ,
@@ -53,7 +53,7 @@ async function previewCSV() {
 
   // キー範囲の分析（nullチェック追加）
   const keys = records
-    .map((r) => parseInt(r.キー))
+    .map((r: PedigreeRow) => parseInt(r.キー))
     .filter((k) => !isNaN(k) && k > 0)
     .sort((a, b) => a - b);
 
@@ -72,7 +72,7 @@ async function previewCSV() {
   );
   console.log("─".repeat(100));
 
-  records.slice(0, 10).forEach((record) => {
+  records.slice(0, 10).forEach((record: PedigreeRow) => {
     const key = (record.キー || "").toString().padEnd(6);
     const gp = (record.ＧＰ || "").toString().padEnd(9);
     const name = (record.猫名前３ || "").toString().padEnd(18);
@@ -120,5 +120,14 @@ async function previewCSV() {
 }
 
 if (require.main === module) {
-  previewCSV();
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  (async () => {
+    try {
+      await previewCSV();
+      process.exit(0);
+    } catch (e) {
+      console.error(e);
+      process.exit(1);
+    }
+  })();
 }

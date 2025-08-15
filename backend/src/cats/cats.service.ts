@@ -3,6 +3,8 @@ import {
   NotFoundException,
   BadRequestException,
 } from "@nestjs/common";
+import type { Prisma } from "@prisma/client";
+import { Gender } from "@prisma/client";
 
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -13,7 +15,22 @@ export class CatsService {
   constructor(private prisma: PrismaService) {}
 
   async create(createCatDto: CreateCatDto) {
-    const { breedId, colorId, birthDate, ...catData } = createCatDto as any;
+    const {
+      registrationId,
+      name,
+      breedId,
+      colorId,
+      pattern,
+      gender,
+      birthDate,
+      weight,
+      microchipId,
+      ownerId,
+      fatherId,
+      motherId,
+      imageUrl,
+      notes,
+    } = createCatDto;
 
     // Validate breed if provided
     if (breedId) {
@@ -35,14 +52,24 @@ export class CatsService {
       }
     }
 
-    // birthDate は文字列入力（ISO8601想定）をDateに変換して保存
-    const birth = birthDate ? new Date(birthDate) : undefined;
+  // birthDate は必須。文字列入力（ISO8601想定）を Date に変換して保存
+  const birth = new Date(birthDate);
     return this.prisma.cat.create({
       data: {
-        ...catData,
-        breedId,
-        colorId,
-        ...(birth ? { birthDate: birth } : {}),
+        registrationId,
+        name,
+        pattern,
+        gender: gender as unknown as Gender,
+    birthDate: birth,
+        ...(typeof weight === "number" ? { weight } : {}),
+        ...(microchipId ? { microchipId } : {}),
+        ...(imageUrl ? { imageUrl } : {}),
+        ...(notes ? { notes } : {}),
+        owner: { connect: { id: ownerId } },
+        ...(breedId ? { breed: { connect: { id: breedId } } } : {}),
+        ...(colorId ? { color: { connect: { id: colorId } } } : {}),
+        ...(fatherId ? { father: { connect: { id: fatherId } } } : {}),
+        ...(motherId ? { mother: { connect: { id: motherId } } } : {}),
       },
       include: {
         breed: true,
@@ -74,33 +101,34 @@ export class CatsService {
       sortOrder = "desc",
     } = query;
 
-    const skip = (page - 1) * limit;
-    const where: any = {};
+  const skip = (page - 1) * limit;
+  const where: Prisma.CatWhereInput = {};
 
     // Search functionality
     if (search) {
-      where.OR = [
+  where.OR = [
         { name: { contains: search, mode: "insensitive" } },
         { microchipId: { contains: search, mode: "insensitive" } },
         { notes: { contains: search, mode: "insensitive" } },
-      ];
+  ];
     }
 
     // Filters
     if (breedId) where.breedId = breedId;
     if (colorId) where.colorId = colorId;
-    if (gender) where.gender = gender;
+  if (gender) where.gender = gender as unknown as Gender;
 
     // Age filters
     if (ageMin || ageMax) {
       const now = new Date();
+      const birthFilter: Prisma.DateTimeFilter = {};
       if (ageMax) {
         const minBirthDate = new Date(
           now.getFullYear() - ageMax,
           now.getMonth(),
           now.getDate(),
         );
-        where.birthDate = { gte: minBirthDate };
+        birthFilter.gte = minBirthDate;
       }
       if (ageMin) {
         const maxBirthDate = new Date(
@@ -108,9 +136,17 @@ export class CatsService {
           now.getMonth(),
           now.getDate(),
         );
-        where.birthDate = { ...where.birthDate, lte: maxBirthDate };
+        birthFilter.lte = maxBirthDate;
+      }
+      if (birthFilter.gte || birthFilter.lte) {
+        where.birthDate = birthFilter;
       }
     }
+
+    type Sortable = "createdAt" | "updatedAt" | "name" | "birthDate" | "weight";
+    const orderBy: Prisma.CatOrderByWithRelationInput = {
+      [sortBy as Sortable]: sortOrder,
+    } as Prisma.CatOrderByWithRelationInput;
 
     const [cats, total] = await Promise.all([
       this.prisma.cat.findMany({
@@ -127,9 +163,7 @@ export class CatsService {
             },
           },
         },
-        orderBy: {
-          [sortBy]: sortOrder,
-        },
+        orderBy,
       }),
       this.prisma.cat.count({ where }),
     ]);
@@ -204,7 +238,22 @@ export class CatsService {
       throw new NotFoundException(`Cat with ID ${id} not found`);
     }
 
-    const { breedId, colorId, birthDate, ...catData } = updateCatDto as any;
+    const {
+      registrationId,
+      name,
+      breedId,
+      colorId,
+      pattern,
+      gender,
+      birthDate,
+      weight,
+      microchipId,
+      ownerId,
+      fatherId,
+      motherId,
+      imageUrl,
+      notes,
+    } = updateCatDto;
 
     // Validate breed if provided
     if (breedId) {
@@ -230,10 +279,20 @@ export class CatsService {
     return this.prisma.cat.update({
       where: { id },
       data: {
-        ...catData,
-        breedId,
-        colorId,
+        ...(registrationId ? { registrationId } : {}),
+        ...(name ? { name } : {}),
+        ...(pattern ? { pattern } : {}),
+        ...(typeof weight === "number" ? { weight } : {}),
+        ...(microchipId ? { microchipId } : {}),
+        ...(imageUrl ? { imageUrl } : {}),
+        ...(notes ? { notes } : {}),
+        ...(gender ? { gender: gender as unknown as Gender } : {}),
         ...(birth ? { birthDate: birth } : {}),
+        ...(ownerId ? { owner: { connect: { id: ownerId } } } : {}),
+        ...(breedId ? { breed: { connect: { id: breedId } } } : {}),
+        ...(colorId ? { color: { connect: { id: colorId } } } : {}),
+        ...(fatherId ? { father: { connect: { id: fatherId } } } : {}),
+        ...(motherId ? { mother: { connect: { id: motherId } } } : {}),
       },
       include: {
         breed: true,
@@ -323,8 +382,8 @@ export class CatsService {
     const [totalCats, totalMales, totalFemales, breedStats] = await Promise.all(
       [
         this.prisma.cat.count(),
-        this.prisma.cat.count({ where: { gender: "MALE" } }),
-        this.prisma.cat.count({ where: { gender: "FEMALE" } }),
+  this.prisma.cat.count({ where: { gender: Gender.MALE } }),
+  this.prisma.cat.count({ where: { gender: Gender.FEMALE } }),
         this.prisma.cat.groupBy({
           by: ["breedId"],
           _count: true,

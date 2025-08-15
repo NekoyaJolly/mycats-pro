@@ -194,15 +194,17 @@ function extractPedigreeNumber(jcuString: string): string | null {
 
 // スクリプト実行
 if (require.main === module) {
-  buildPedigreeRelations()
-    .then(() => {
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  (async () => {
+    try {
+      await buildPedigreeRelations();
       console.log("🎉 血統書リレーション構築が完了しました！");
       process.exit(0);
-    })
-    .catch((error) => {
+    } catch (error) {
       console.error("💥 リレーション構築処理でエラーが発生しました:", error);
       process.exit(1);
-    });
+    }
+  })();
 }
 
 export { buildPedigreeRelations };
