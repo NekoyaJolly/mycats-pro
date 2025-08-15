@@ -1,5 +1,9 @@
 -- Create helpful read-only views for quick visualization (snake_case columns)
 
+-- Ensure old versions of the views are removed before recreation to allow column name changes
+DROP VIEW IF EXISTS public.v_cats_summary CASCADE;
+DROP VIEW IF EXISTS public.v_pedigrees_summary CASCADE;
+
 -- Cats summary view
 CREATE OR REPLACE VIEW public.v_cats_summary AS
 SELECT
