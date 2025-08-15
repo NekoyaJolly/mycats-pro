@@ -30,7 +30,7 @@ export class AuthService {
 
   async validateUser(email: string, password: string) {
     const user = (await this.prisma.user.findUnique({
-    where: { email: email.trim().toLowerCase() },
+      where: { email: email.trim().toLowerCase() },
     })) as unknown as {
       id: string;
       email: string;
@@ -71,7 +71,7 @@ export class AuthService {
     ipAddress?: string,
     userAgent?: string,
   ) {
-  email = email.trim().toLowerCase();
+    email = email.trim().toLowerCase();
     // アカウントロック状態をチェック
     const isLocked = await this.loginAttemptService.isAccountLocked(email);
     if (isLocked) {
@@ -165,8 +165,10 @@ export class AuthService {
       hash = await this.passwordService.hashPassword(password);
     }
 
-    await this.prisma
-      .$executeRaw`UPDATE "users" SET "passwordHash" = ${hash} WHERE id = ${userId}`;
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: hash },
+    });
     return { success: true };
   }
 
@@ -186,26 +188,31 @@ export class AuthService {
         errors: validation.errors,
       });
     }
+    // 事前にパスワードをハッシュ化し、作成時に同時保存（UPDATEを回避）
+    const passwordHash = await this.passwordService.hashPassword(password);
 
-  const user = await this.prisma.user.create({
+    const user = await this.prisma.user.create({
       data: {
-    email,
+        email,
         role: UserRole.USER,
         isActive: true,
-    // clerkId は nullable、必要時のみ設定
-    clerkId: `local_${randomUUID()}`,
+        // clerkId は nullable、必要時のみ設定
+        clerkId: `local_${randomUUID()}`,
+        passwordHash,
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+        lastLoginAt: null,
       },
+      select: { id: true, email: true },
     });
 
-    await this.setPassword(user.id, password);
     return { success: true, data: { id: user.id, email: user.email } };
   }
 
   async requestPasswordReset(email: string) {
-  // email の正規化
-  email = email.trim().toLowerCase();
-  email = email.trim().toLowerCase();
-  const user = await this.prisma.user.findUnique({ where: { email } });
+    // email の正規化
+    email = email.trim().toLowerCase();
+    const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
       // セキュリティのため、存在しないメールでも成功レスポンスを返す
       return {
@@ -261,7 +268,7 @@ export class AuthService {
         secret: process.env.JWT_REFRESH_SECRET,
       });
       
-      const user = await this.prisma.user.findUnique({
+      const user = await this.prisma.user.findFirst({
         where: { id: payload.sub, refreshToken: refreshToken },
       });
       
