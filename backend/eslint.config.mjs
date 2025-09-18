@@ -42,7 +42,7 @@ export default [
     rules: {
       // === TypeScript Rules ===
       // サーバーサイドでは型安全性をより重視
-      '@typescript-eslint/no-explicit-any': 'warn', // TODO: 段階的にerrorに
+      '@typescript-eslint/no-explicit-any': 'error', // 厳格化: productionでは any を禁止
       '@typescript-eslint/no-unused-vars': ['warn', { 
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_'

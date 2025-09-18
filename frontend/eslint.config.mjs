@@ -15,21 +15,8 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import nextPlugin from '@next/eslint-plugin-next';
 import importX from 'eslint-plugin-import-x';
 import prettier from 'eslint-config-prettier';
-import { FlatCompat } from "@eslint/eslintrc";
-import { fileURLToPath } from "url";
-import { dirname } from "path";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname
-});
 
 const eslintConfig = [
-  // Next.js configs from the codemod
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
-  
   // === 基本設定 ===
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -47,7 +34,8 @@ const eslintConfig = [
     languageOptions: {
       parserOptions: {
         project: './tsconfig.json',
-        tsconfigRootDir: __dirname
+        ecmaVersion: 2020,
+        sourceType: 'module',
       }
     },
     rules: {
@@ -57,7 +45,7 @@ const eslintConfig = [
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_'
       }],
-      '@typescript-eslint/no-explicit-any': 'warn', // TODO: 長期的にerrorに
+      '@typescript-eslint/no-explicit-any': 'error', // TODO: 長期的にerrorに
       '@typescript-eslint/no-unsafe-assignment': 'warn',
       '@typescript-eslint/no-unsafe-member-access': 'warn',
       '@typescript-eslint/no-unsafe-call': 'warn',
