@@ -7,12 +7,19 @@ import {
 import { PrismaService } from "../prisma/prisma.service";
 
 import { BreedingQueryDto, CreateBreedingDto, UpdateBreedingDto } from "./dto";
+import {
+  BreedingWhereInput,
+  CatWithGender,
+  BreedingListResponse,
+  BreedingCreateResponse,
+  BreedingSuccessResponse,
+} from "./types/breeding.types";
 
 @Injectable()
 export class BreedingService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(query: BreedingQueryDto) {
+  async findAll(query: BreedingQueryDto): Promise<BreedingListResponse> {
     const {
       page = 1,
       limit = 20,
@@ -24,8 +31,7 @@ export class BreedingService {
       sortOrder = "desc",
     } = query;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = {};
+    const where: BreedingWhereInput = {};
     if (motherId) where.femaleId = motherId;
     if (fatherId) where.maleId = fatherId;
     if (dateFrom || dateTo) {
@@ -60,21 +66,27 @@ export class BreedingService {
     };
   }
 
-  async create(dto: CreateBreedingDto, userId?: string) {
+  async create(dto: CreateBreedingDto, userId?: string): Promise<BreedingCreateResponse> {
     // Validate parents existence
     const [female, male] = await Promise.all([
-      this.prisma.cat.findUnique({ where: { id: dto.motherId } }),
-      this.prisma.cat.findUnique({ where: { id: dto.fatherId } }),
+      this.prisma.cat.findUnique({ 
+        where: { id: dto.motherId },
+        select: { id: true, gender: true }
+      }),
+      this.prisma.cat.findUnique({ 
+        where: { id: dto.fatherId },
+        select: { id: true, gender: true }
+      }),
     ]);
 
     if (!female) throw new NotFoundException("motherId not found");
     if (!male) throw new NotFoundException("fatherId not found");
 
     // Basic gender check (optional but useful)
-    if ((female as { gender: string }).gender === "MALE") {
+    if ((female as CatWithGender).gender === "MALE") {
       throw new BadRequestException("motherId must refer to a FEMALE cat");
     }
-    if ((male as { gender: string }).gender === "FEMALE") {
+    if ((male as CatWithGender).gender === "FEMALE") {
       throw new BadRequestException("fatherId must refer to a MALE cat");
     }
 
@@ -98,8 +110,8 @@ export class BreedingService {
     return { success: true, data: result };
   }
 
-  async update(id: string, dto: UpdateBreedingDto) {
-    const result = await this.prisma.breedingRecord.update({
+  async update(id: string, dto: UpdateBreedingDto): Promise<BreedingSuccessResponse> {
+    await this.prisma.breedingRecord.update({
       where: { id },
       data: {
         femaleId: dto.motherId,
@@ -111,10 +123,10 @@ export class BreedingService {
         notes: dto.notes,
       },
     });
-    return { success: true, data: result };
+    return { success: true };
   }
 
-  async remove(id: string) {
+  async remove(id: string): Promise<BreedingSuccessResponse> {
     await this.prisma.breedingRecord.delete({ where: { id } });
     return { success: true };
   }

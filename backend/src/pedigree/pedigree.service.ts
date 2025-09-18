@@ -6,74 +6,71 @@ import {
 import { PrismaService } from "../prisma/prisma.service";
 
 import { CreatePedigreeDto, UpdatePedigreeDto, PedigreeQueryDto } from "./dto";
+import {
+  PedigreeWhereInput,
+  PedigreeCreateResponse,
+  PedigreeListResponse,
+  PedigreeSuccessResponse,
+  PedigreeTreeNode,
+} from "./types/pedigree.types";
 
 @Injectable()
 export class PedigreeService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createPedigreeDto: CreatePedigreeDto) {
+  async create(createPedigreeDto: CreatePedigreeDto): Promise<PedigreeCreateResponse> {
     // Prisma の型に適合するようにデータを準備
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const createData: any = {
+    const createData = {
       pedigreeId: createPedigreeDto.pedigreeId,
       catName: createPedigreeDto.catName,
-      title: createPedigreeDto.title,
-      gender: createPedigreeDto.gender,
-      eyeColor: createPedigreeDto.eyeColor,
-      birthDate: createPedigreeDto.birthDate
-        ? new Date(createPedigreeDto.birthDate)
-        : undefined,
-      registrationDate: createPedigreeDto.registrationDate
-        ? new Date(createPedigreeDto.registrationDate)
-        : undefined,
-      breederName: createPedigreeDto.breederName,
-      ownerName: createPedigreeDto.ownerName,
-      brotherCount: createPedigreeDto.brotherCount,
-      sisterCount: createPedigreeDto.sisterCount,
-      notes: createPedigreeDto.notes,
-      notes2: createPedigreeDto.notes2,
-      otherNo: createPedigreeDto.otherNo,
-      oldCode: createPedigreeDto.oldCode,
-      catId: createPedigreeDto.catId,
-      breedId: createPedigreeDto.breedId,
-      colorId: createPedigreeDto.colorId,
-      pedigreeIssueDate: createPedigreeDto.pedigreeIssueDate
-        ? new Date(createPedigreeDto.pedigreeIssueDate)
-        : undefined,
-      breedCode: createPedigreeDto.breedCode,
-      coatColorCode: createPedigreeDto.coatColorCode,
-      fatherPedigreeId: createPedigreeDto.fatherPedigreeId,
-      motherPedigreeId: createPedigreeDto.motherPedigreeId,
-      paternalGrandfatherId: createPedigreeDto.paternalGrandfatherId,
-      paternalGrandmotherId: createPedigreeDto.paternalGrandmotherId,
-      maternalGrandfatherId: createPedigreeDto.maternalGrandfatherId,
-      maternalGrandmotherId: createPedigreeDto.maternalGrandmotherId,
+      ...(createPedigreeDto.title && { title: createPedigreeDto.title }),
+      ...(createPedigreeDto.gender !== undefined && { gender: createPedigreeDto.gender }),
+      ...(createPedigreeDto.eyeColor && { eyeColor: createPedigreeDto.eyeColor }),
+      ...(createPedigreeDto.birthDate && { 
+        birthDate: new Date(createPedigreeDto.birthDate) 
+      }),
+      ...(createPedigreeDto.registrationDate && { 
+        registrationDate: new Date(createPedigreeDto.registrationDate) 
+      }),
+      ...(createPedigreeDto.breederName && { breederName: createPedigreeDto.breederName }),
+      ...(createPedigreeDto.ownerName && { ownerName: createPedigreeDto.ownerName }),
+      ...(createPedigreeDto.brotherCount !== undefined && { brotherCount: createPedigreeDto.brotherCount }),
+      ...(createPedigreeDto.sisterCount !== undefined && { sisterCount: createPedigreeDto.sisterCount }),
+      ...(createPedigreeDto.notes && { notes: createPedigreeDto.notes }),
+      ...(createPedigreeDto.notes2 && { notes2: createPedigreeDto.notes2 }),
+      ...(createPedigreeDto.otherNo && { otherNo: createPedigreeDto.otherNo }),
+      ...(createPedigreeDto.oldCode && { oldCode: createPedigreeDto.oldCode }),
+      ...(createPedigreeDto.catId && { catId: createPedigreeDto.catId }),
+      ...(createPedigreeDto.breedId && { breedId: createPedigreeDto.breedId }),
+      ...(createPedigreeDto.colorId && { colorId: createPedigreeDto.colorId }),
+      ...(createPedigreeDto.pedigreeIssueDate && { 
+        pedigreeIssueDate: new Date(createPedigreeDto.pedigreeIssueDate) 
+      }),
+      ...(createPedigreeDto.breedCode !== undefined && { breedCode: createPedigreeDto.breedCode }),
+      ...(createPedigreeDto.coatColorCode !== undefined && { coatColorCode: createPedigreeDto.coatColorCode }),
+      ...(createPedigreeDto.fatherPedigreeId && { fatherPedigreeId: createPedigreeDto.fatherPedigreeId }),
+      ...(createPedigreeDto.motherPedigreeId && { motherPedigreeId: createPedigreeDto.motherPedigreeId }),
+      ...(createPedigreeDto.paternalGrandfatherId && { paternalGrandfatherId: createPedigreeDto.paternalGrandfatherId }),
+      ...(createPedigreeDto.paternalGrandmotherId && { paternalGrandmotherId: createPedigreeDto.paternalGrandmotherId }),
+      ...(createPedigreeDto.maternalGrandfatherId && { maternalGrandfatherId: createPedigreeDto.maternalGrandfatherId }),
+      ...(createPedigreeDto.maternalGrandmotherId && { maternalGrandmotherId: createPedigreeDto.maternalGrandmotherId }),
     };
 
-    // undefined フィールドを除去
-    Object.keys(createData).forEach((key) => {
-      if (createData[key] === undefined) {
-        delete createData[key];
-      }
-    });
-
-    return this.prisma.pedigree.create({
+    const result = await this.prisma.pedigree.create({
       data: createData,
       include: {
-        breed: true,
-        color: true,
-        cat: true,
-        fatherPedigree: true,
-        motherPedigree: true,
-        paternalGrandfather: true,
-        paternalGrandmother: true,
-        maternalGrandfather: true,
-        maternalGrandmother: true,
+        breed: { select: { name: true } },
+        color: { select: { name: true } },
+        cat: { select: { id: true, name: true } },
+        fatherPedigree: { select: { id: true, catName: true } },
+        motherPedigree: { select: { id: true, catName: true } },
       },
     });
+
+    return { success: true, data: result };
   }
 
-  async findAll(query: PedigreeQueryDto) {
+  async findAll(query: PedigreeQueryDto): Promise<PedigreeListResponse> {
     const {
       page = 1,
       limit = 10,
@@ -88,8 +85,7 @@ export class PedigreeService {
     } = query;
 
     const skip = (page - 1) * limit;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = {};
+    const where: PedigreeWhereInput = {};
 
     // Search functionality
     if (search) {
@@ -105,7 +101,7 @@ export class PedigreeService {
     if (breedId) where.breedId = breedId;
     if (colorId) where.colorId = colorId;
     if (gender) where.gender = parseInt(gender);
-    if (eyeColor) where.eyeColor = { contains: eyeColor, mode: "insensitive" };
+    if (eyeColor) where.eyeColor = eyeColor;
 
     const [pedigrees, total] = await Promise.all([
       this.prisma.pedigree.findMany({
@@ -113,21 +109,11 @@ export class PedigreeService {
         skip,
         take: limit,
         include: {
-          breed: true,
-          color: true,
-          cat: true,
-          fatherPedigree: {
-            include: {
-              breed: true,
-              color: true,
-            },
-          },
-          motherPedigree: {
-            include: {
-              breed: true,
-              color: true,
-            },
-          },
+          breed: { select: { name: true } },
+          color: { select: { name: true } },
+          cat: { select: { id: true, name: true } },
+          fatherPedigree: { select: { id: true, catName: true } },
+          motherPedigree: { select: { id: true, catName: true } },
         },
         orderBy: {
           [sortBy]: sortOrder,
@@ -137,6 +123,7 @@ export class PedigreeService {
     ]);
 
     return {
+      success: true,
       data: pedigrees,
       meta: {
         total,
@@ -223,7 +210,7 @@ export class PedigreeService {
     return pedigree;
   }
 
-  async update(id: string, updatePedigreeDto: UpdatePedigreeDto) {
+  async update(id: string, updatePedigreeDto: UpdatePedigreeDto): Promise<PedigreeCreateResponse> {
     const existingPedigree = await this.prisma.pedigree.findUnique({
       where: { id },
     });
@@ -233,45 +220,58 @@ export class PedigreeService {
     }
 
     // Prisma の型に適合するようにデータを準備
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const updateData: any = { ...updatePedigreeDto };
+    const updateData = {
+      ...(updatePedigreeDto.pedigreeId && { pedigreeId: updatePedigreeDto.pedigreeId }),
+      ...(updatePedigreeDto.catName && { catName: updatePedigreeDto.catName }),
+      ...(updatePedigreeDto.title && { title: updatePedigreeDto.title }),
+      ...(updatePedigreeDto.gender !== undefined && { gender: updatePedigreeDto.gender }),
+      ...(updatePedigreeDto.eyeColor && { eyeColor: updatePedigreeDto.eyeColor }),
+      ...(updatePedigreeDto.birthDate && { 
+        birthDate: new Date(updatePedigreeDto.birthDate) 
+      }),
+      ...(updatePedigreeDto.registrationDate && { 
+        registrationDate: new Date(updatePedigreeDto.registrationDate) 
+      }),
+      ...(updatePedigreeDto.pedigreeIssueDate && { 
+        pedigreeIssueDate: new Date(updatePedigreeDto.pedigreeIssueDate) 
+      }),
+      ...(updatePedigreeDto.breederName && { breederName: updatePedigreeDto.breederName }),
+      ...(updatePedigreeDto.ownerName && { ownerName: updatePedigreeDto.ownerName }),
+      ...(updatePedigreeDto.brotherCount !== undefined && { brotherCount: updatePedigreeDto.brotherCount }),
+      ...(updatePedigreeDto.sisterCount !== undefined && { sisterCount: updatePedigreeDto.sisterCount }),
+      ...(updatePedigreeDto.notes && { notes: updatePedigreeDto.notes }),
+      ...(updatePedigreeDto.notes2 && { notes2: updatePedigreeDto.notes2 }),
+      ...(updatePedigreeDto.otherNo && { otherNo: updatePedigreeDto.otherNo }),
+      ...(updatePedigreeDto.oldCode && { oldCode: updatePedigreeDto.oldCode }),
+      ...(updatePedigreeDto.catId && { catId: updatePedigreeDto.catId }),
+      ...(updatePedigreeDto.breedId && { breedId: updatePedigreeDto.breedId }),
+      ...(updatePedigreeDto.colorId && { colorId: updatePedigreeDto.colorId }),
+      ...(updatePedigreeDto.breedCode !== undefined && { breedCode: updatePedigreeDto.breedCode }),
+      ...(updatePedigreeDto.coatColorCode !== undefined && { coatColorCode: updatePedigreeDto.coatColorCode }),
+      ...(updatePedigreeDto.fatherPedigreeId && { fatherPedigreeId: updatePedigreeDto.fatherPedigreeId }),
+      ...(updatePedigreeDto.motherPedigreeId && { motherPedigreeId: updatePedigreeDto.motherPedigreeId }),
+      ...(updatePedigreeDto.paternalGrandfatherId && { paternalGrandfatherId: updatePedigreeDto.paternalGrandfatherId }),
+      ...(updatePedigreeDto.paternalGrandmotherId && { paternalGrandmotherId: updatePedigreeDto.paternalGrandmotherId }),
+      ...(updatePedigreeDto.maternalGrandfatherId && { maternalGrandfatherId: updatePedigreeDto.maternalGrandfatherId }),
+      ...(updatePedigreeDto.maternalGrandmotherId && { maternalGrandmotherId: updatePedigreeDto.maternalGrandmotherId }),
+    };
 
-    // Date文字列をDateオブジェクトに変換
-    if (updateData.birthDate) {
-      updateData.birthDate = new Date(updateData.birthDate);
-    }
-    if (updateData.registrationDate) {
-      updateData.registrationDate = new Date(updateData.registrationDate);
-    }
-    if (updateData.pedigreeIssueDate) {
-      updateData.pedigreeIssueDate = new Date(updateData.pedigreeIssueDate);
-    }
-
-    // undefined フィールドを除去
-    Object.keys(updateData).forEach((key) => {
-      if (updateData[key] === undefined) {
-        delete updateData[key];
-      }
-    });
-
-    return this.prisma.pedigree.update({
+    const result = await this.prisma.pedigree.update({
       where: { id },
       data: updateData,
       include: {
-        breed: true,
-        color: true,
-        cat: true,
-        fatherPedigree: true,
-        motherPedigree: true,
-        paternalGrandfather: true,
-        paternalGrandmother: true,
-        maternalGrandfather: true,
-        maternalGrandmother: true,
+        breed: { select: { name: true } },
+        color: { select: { name: true } },
+        cat: { select: { id: true, name: true } },
+        fatherPedigree: { select: { id: true, catName: true } },
+        motherPedigree: { select: { id: true, catName: true } },
       },
     });
+
+    return { success: true, data: result };
   }
 
-  async remove(id: string) {
+  async remove(id: string): Promise<PedigreeSuccessResponse> {
     const existingPedigree = await this.prisma.pedigree.findUnique({
       where: { id },
     });
@@ -280,44 +280,37 @@ export class PedigreeService {
       throw new NotFoundException(`Pedigree with ID ${id} not found`);
     }
 
-    return this.prisma.pedigree.delete({
+    await this.prisma.pedigree.delete({
       where: { id },
-      include: {
-        breed: true,
-        color: true,
-        cat: true,
-      },
     });
+
+    return { success: true };
   }
 
-  async getFamily(id: string, generations: number = 3) {
+  async getFamily(id: string, generations: number = 3): Promise<PedigreeTreeNode> {
     const pedigree = await this.findOne(id);
 
     // Build family tree recursively
     const buildFamilyTree = async (
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      pedigreeData: any,
+      pedigreeData: PedigreeTreeNode,
       currentGeneration: number,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ): Promise<any> => {
+    ): Promise<PedigreeTreeNode> => {
       if (currentGeneration >= generations) {
         return pedigreeData;
       }
 
-      const result = { ...pedigreeData };
+      const result: PedigreeTreeNode = { ...pedigreeData };
 
       if (pedigreeData.fatherPedigreeId) {
         const father = await this.prisma.pedigree.findUnique({
           where: { id: pedigreeData.fatherPedigreeId },
           include: {
-            breed: true,
-            color: true,
-            fatherPedigree: true,
-            motherPedigree: true,
+            breed: { select: { name: true } },
+            color: { select: { name: true } },
           },
         });
         if (father) {
-          result.father = await buildFamilyTree(father, currentGeneration + 1);
+          result.father = await buildFamilyTree(father as PedigreeTreeNode, currentGeneration + 1);
         }
       }
 
@@ -325,24 +318,22 @@ export class PedigreeService {
         const mother = await this.prisma.pedigree.findUnique({
           where: { id: pedigreeData.motherPedigreeId },
           include: {
-            breed: true,
-            color: true,
-            fatherPedigree: true,
-            motherPedigree: true,
+            breed: { select: { name: true } },
+            color: { select: { name: true } },
           },
         });
         if (mother) {
-          result.mother = await buildFamilyTree(mother, currentGeneration + 1);
+          result.mother = await buildFamilyTree(mother as PedigreeTreeNode, currentGeneration + 1);
         }
       }
 
       return result;
     };
 
-    return buildFamilyTree(pedigree, 0);
+    return buildFamilyTree(pedigree as PedigreeTreeNode, 0);
   }
 
-  async getFamilyTree(id: string, generations: number = 3) {
+  async getFamilyTree(id: string, generations: number = 3): Promise<PedigreeTreeNode> {
     return this.getFamily(id, generations);
   }
 
