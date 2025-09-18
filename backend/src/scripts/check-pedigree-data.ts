@@ -94,7 +94,7 @@ async function checkPedigreeData() {
 
 // スクリプト実行
 if (require.main === module) {
-  checkPedigreeData();
+  void checkPedigreeData();
 }
 
 export { checkPedigreeData };

@@ -13,7 +13,8 @@ export class PedigreeService {
 
   async create(createPedigreeDto: CreatePedigreeDto) {
     // Prisma の型に適合するようにデータを準備
-    const createData: Record<string, unknown> = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const createData: any = {
       pedigreeId: createPedigreeDto.pedigreeId,
       catName: createPedigreeDto.catName,
       title: createPedigreeDto.title,
@@ -87,7 +88,8 @@ export class PedigreeService {
     } = query;
 
     const skip = (page - 1) * limit;
-    const where: Record<string, unknown> = {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: any = {};
 
     // Search functionality
     if (search) {
@@ -231,7 +233,8 @@ export class PedigreeService {
     }
 
     // Prisma の型に適合するようにデータを準備
-    const updateData: Record<string, unknown> = { ...updatePedigreeDto };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: any = { ...updatePedigreeDto };
 
     // Date文字列をDateオブジェクトに変換
     if (updateData.birthDate) {
@@ -292,9 +295,11 @@ export class PedigreeService {
 
     // Build family tree recursively
     const buildFamilyTree = async (
-      pedigreeData: Record<string, unknown>,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      pedigreeData: any,
       currentGeneration: number,
-    ): Promise<Record<string, unknown>> => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ): Promise<any> => {
       if (currentGeneration >= generations) {
         return pedigreeData;
       }

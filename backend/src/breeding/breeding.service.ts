@@ -24,13 +24,14 @@ export class BreedingService {
       sortOrder = "desc",
     } = query;
 
-    const where: Record<string, unknown> = {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: any = {};
     if (motherId) where.femaleId = motherId;
     if (fatherId) where.maleId = fatherId;
     if (dateFrom || dateTo) {
       where.breedingDate = {};
-      if (dateFrom) (where.breedingDate as Record<string, unknown>).gte = new Date(dateFrom);
-      if (dateTo) (where.breedingDate as Record<string, unknown>).lte = new Date(dateTo);
+      if (dateFrom) where.breedingDate.gte = new Date(dateFrom);
+      if (dateTo) where.breedingDate.lte = new Date(dateTo);
     }
 
     const [total, data] = await this.prisma.$transaction([

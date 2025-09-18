@@ -8,7 +8,7 @@ export class LoginDto {
     example: "user@example.com",
   })
   @IsEmail({}, { message: "有効なメールアドレスを入力してください" })
-  @Transform(({ value }) => (typeof value === "string" ? value.trim().toLowerCase() : value))
+  @Transform(({ value }: { value: unknown }) => (typeof value === "string" ? value.trim().toLowerCase() : value))
   email: string;
 
   @ApiProperty({

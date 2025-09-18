@@ -51,4 +51,4 @@ async function checkParentPedigrees() {
   }
 }
 
-checkParentPedigrees();
+void checkParentPedigrees();

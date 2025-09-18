@@ -238,7 +238,7 @@ function parseDate(dateStr: string): Date | null {
       return new Date(year, month, day);
     }
     return null;
-  } catch (_error) {
+  } catch {
     return null;
   }
 }

@@ -55,7 +55,7 @@ async function bootstrap() {
     app.setGlobalPrefix("api/v1");
 
     // Root endpoint
-    app.getHttpAdapter().get("/", (req, res) => {
+    app.getHttpAdapter().get("/", (req: unknown, res: { json: (data: unknown) => void }) => {
       res.json({
         success: true,
         data: {
@@ -75,7 +75,7 @@ async function bootstrap() {
     });
 
     // Enhanced health check endpoint
-    app.getHttpAdapter().get("/health", async (req, res) => {
+    app.getHttpAdapter().get("/health", async (req: unknown, res: { status: (code: number) => { json: (data: unknown) => void } }) => {
       const health: {
         success: boolean;
         data: {
