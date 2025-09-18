@@ -11,6 +11,13 @@ const nextConfig: NextConfig = {
     // 本番ビルド時にTypeScriptエラーを無視（開発時は型チェックが有効）
     ignoreBuildErrors: false,
   },
+  // Production optimizations
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  // Build configuration
+  generateEtags: false,
+  poweredByHeader: false,
   async rewrites() {
     return []
   },

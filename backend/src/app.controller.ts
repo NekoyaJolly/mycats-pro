@@ -3,7 +3,7 @@ import { Controller, Get } from "@nestjs/common";
 @Controller()
 export class AppController {
   @Get()
-  getHello(): any {
+  getHello(): Record<string, unknown> {
     return {
       message: "🐱 Cat Management System API",
       version: "1.0.0",
@@ -20,7 +20,7 @@ export class AppController {
   }
 
   @Get("health")
-  getHealth(): any {
+  getHealth(): Record<string, unknown> {
     return {
       status: "ok",
       timestamp: new Date().toISOString(),

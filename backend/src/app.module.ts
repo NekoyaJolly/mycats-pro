@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Module, MiddlewareConsumer, NestModule } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { ThrottlerModule } from "@nestjs/throttler";
 
@@ -8,6 +8,7 @@ import { BreedsModule } from "./breeds/breeds.module";
 import { CareModule } from "./care/care.module";
 import { CatsModule } from "./cats/cats.module";
 import { CoatColorsModule } from "./coat-colors/coat-colors.module";
+import { SecurityMiddleware } from "./common/middleware/security.middleware";
 import { PedigreeModule } from "./pedigree/pedigree.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { ScheduleModule } from "./schedule/schedule.module";
@@ -42,4 +43,11 @@ import { UsersModule } from "./users/users.module";
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    // Apply security middleware globally in production
+    if (process.env.NODE_ENV === 'production') {
+      consumer.apply(SecurityMiddleware).forRoutes('*');
+    }
+  }
+}

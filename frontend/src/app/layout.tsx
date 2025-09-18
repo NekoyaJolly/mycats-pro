@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+// import { Inter } from "next/font/google";
 import "./globals.css";
 import "@mantine/core/styles.css";
 import { Providers } from "./providers";
 import { Box, Text } from '@mantine/core';
 
-const inter = Inter({ subsets: ["latin"] });
+// const inter = Inter({ 
+//   subsets: ["latin"],
+//   display: 'fallback',
+//   fallback: ['system-ui', 'Arial', 'sans-serif']
+// });
 
 export const metadata: Metadata = {
   title: "猫生体管理アプリ",
@@ -21,7 +25,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body className={inter.className}>
+      <body className="font-sans antialiased">
         <Providers>
           <div style={{ minHeight: "100vh", position: "relative", paddingBottom: 72 }}>
             {children}
