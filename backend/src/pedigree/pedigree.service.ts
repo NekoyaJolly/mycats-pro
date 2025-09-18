@@ -1,7 +1,6 @@
 import {
   Injectable,
   NotFoundException,
-  BadRequestException,
 } from "@nestjs/common";
 
 import { PrismaService } from "../prisma/prisma.service";
@@ -14,7 +13,7 @@ export class PedigreeService {
 
   async create(createPedigreeDto: CreatePedigreeDto) {
     // Prisma の型に適合するようにデータを準備
-    const createData: any = {
+    const createData: Record<string, unknown> = {
       pedigreeId: createPedigreeDto.pedigreeId,
       catName: createPedigreeDto.catName,
       title: createPedigreeDto.title,
@@ -81,14 +80,14 @@ export class PedigreeService {
       breedId,
       colorId,
       gender,
-      catName2,
+      catName2: _catName2,
       eyeColor,
       sortBy = "createdAt",
       sortOrder = "desc",
     } = query;
 
     const skip = (page - 1) * limit;
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     // Search functionality
     if (search) {
@@ -232,7 +231,7 @@ export class PedigreeService {
     }
 
     // Prisma の型に適合するようにデータを準備
-    const updateData: any = { ...updatePedigreeDto };
+    const updateData: Record<string, unknown> = { ...updatePedigreeDto };
 
     // Date文字列をDateオブジェクトに変換
     if (updateData.birthDate) {
@@ -293,9 +292,9 @@ export class PedigreeService {
 
     // Build family tree recursively
     const buildFamilyTree = async (
-      pedigreeData: any,
+      pedigreeData: Record<string, unknown>,
       currentGeneration: number,
-    ): Promise<any> => {
+    ): Promise<Record<string, unknown>> => {
       if (currentGeneration >= generations) {
         return pedigreeData;
       }

@@ -24,13 +24,13 @@ export class BreedingService {
       sortOrder = "desc",
     } = query;
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (motherId) where.femaleId = motherId;
     if (fatherId) where.maleId = fatherId;
     if (dateFrom || dateTo) {
       where.breedingDate = {};
-      if (dateFrom) where.breedingDate.gte = new Date(dateFrom);
-      if (dateTo) where.breedingDate.lte = new Date(dateTo);
+      if (dateFrom) (where.breedingDate as Record<string, unknown>).gte = new Date(dateFrom);
+      if (dateTo) (where.breedingDate as Record<string, unknown>).lte = new Date(dateTo);
     }
 
     const [total, data] = await this.prisma.$transaction([
@@ -70,10 +70,10 @@ export class BreedingService {
     if (!male) throw new NotFoundException("fatherId not found");
 
     // Basic gender check (optional but useful)
-    if ((female as any).gender === "MALE") {
+    if ((female as { gender: string }).gender === "MALE") {
       throw new BadRequestException("motherId must refer to a FEMALE cat");
     }
-    if ((male as any).gender === "FEMALE") {
+    if ((male as { gender: string }).gender === "FEMALE") {
       throw new BadRequestException("fatherId must refer to a MALE cat");
     }
 
@@ -87,7 +87,7 @@ export class BreedingService {
           ? new Date(dto.expectedBirthDate)
           : undefined,
         notes: dto.notes,
-        recordedBy: userId ?? (firstUser ? firstUser.id : (undefined as any)),
+        recordedBy: userId ?? (firstUser ? firstUser.id : undefined as string),
       },
       include: {
         male: { select: { id: true, name: true } },

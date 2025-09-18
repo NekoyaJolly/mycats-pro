@@ -48,7 +48,7 @@ export class TagsService {
   async assignToCat(catId: string, tagId: string) {
     try {
       await this.prisma.catTag.create({ data: { catId, tagId } });
-    } catch (e: any) {
+    } catch (_e: unknown) {
       // Unique constraint (already assigned) -> return success idempotently
     }
     return { success: true };
