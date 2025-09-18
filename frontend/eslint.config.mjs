@@ -15,26 +15,13 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import nextPlugin from '@next/eslint-plugin-next';
 import importX from 'eslint-plugin-import-x';
 import prettier from 'eslint-config-prettier';
-import { FlatCompat } from '@eslint/eslintrc';
-
-// FlatCompat を用いて eslintrc 形式の共有設定（next）を取り込む
-const compat = new FlatCompat({
-  baseDirectory: import.meta.dirname,
-});
+// Removed @eslint/eslintrc dependency to fix import error
 
 const eslintConfig = [
   // === 基本設定 ===
   js.configs.recommended,
   ...tseslint.configs.recommended,
   prettier,
-  // 注意: nextPlugin.configs.* はeslintrc形式のためFlat Configに直接は混在させない
-  // 代わりに FlatCompat で eslint-config-next を取り込む（Next.jsプラグイン検出用）
-  ...compat.config({
-    extends: ['next/core-web-vitals'],
-    settings: {
-      next: { rootDir: '.' },
-    },
-  }),
   
   // === メイン設定 ===
   {
