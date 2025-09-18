@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
@@ -6,13 +6,53 @@ on:
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
+    inputs:
+      deploy_to_production:
+        description: "Deploy to production"
+        required: false
+        default: false
+        type: boolean
 
 env:
   NODE_VERSION: "20"
   PNPM_VERSION: "9"
 
 jobs:
-  # ジョブ1: 型チェック・Lint
+  # ジョブ1: セキュリティスキャン
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-results.sarif"
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
+
+      - name: Check for critical vulnerabilities
+        run: |
+          # Check if there are any critical vulnerabilities
+          if trivy fs --severity CRITICAL --quiet . | grep -q "CRITICAL"; then
+            echo "❌ Critical vulnerabilities found!"
+            trivy fs --severity CRITICAL .
+            exit 1
+          else
+            echo "✅ No critical vulnerabilities found"
+          fi
+
+  # ジョブ2: 型チェック・Lint
   lint-and-typecheck:
     name: Lint & Type Check
     runs-on: ubuntu-latest
@@ -67,10 +107,11 @@ jobs:
         run: pnpm --filter frontend run lint
         continue-on-error: false
 
-  # ジョブ2: ユニットテスト
+  # ジョブ3: ユニットテスト
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
+    needs: [security-scan]
 
     services:
       postgres:
@@ -141,10 +182,11 @@ jobs:
       - name: Run frontend unit tests
         run: pnpm --filter frontend run test
 
-  # ジョブ3: E2Eテスト
+  # ジョブ4: E2Eテスト
   e2e-test:
     name: E2E Tests
     runs-on: ubuntu-latest
+    needs: [security-scan]
 
     services:
       postgres:
@@ -229,10 +271,11 @@ jobs:
         working-directory: backend
         run: npm run test:e2e
 
-  # ジョブ4: ビルド確認
+  # ジョブ5: ビルド確認
   build:
     name: Build
     runs-on: ubuntu-latest
+    needs: [lint-and-typecheck]
 
     steps:
       - name: Checkout code
@@ -288,3 +331,102 @@ jobs:
           name: frontend-build
           path: frontend/.next/
           retention-days: 7
+
+  # ジョブ6: 本番環境デプロイ (mainブランチのみ)
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [lint-and-typecheck, test, e2e-test, build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        id: pnpm-cache-dir
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache-dir.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download build artifacts - Backend
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-build
+          path: backend/dist/
+
+      - name: Download build artifacts - Frontend
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/.next/
+
+      - name: Validate production environment
+        run: |
+          node -e "
+          const { validateProductionEnvironment } = require('./backend/dist/common/environment.validation.js');
+          try {
+            validateProductionEnvironment();
+            console.log('✅ Production environment validation passed');
+          } catch (error) {
+            console.error('❌ Production environment validation failed:', error.message);
+            process.exit(1);
+          }
+          "
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.PRODUCTION_JWT_SECRET }}
+          NODE_ENV: production
+          PORT: ${{ vars.PRODUCTION_PORT || '3004' }}
+          CORS_ORIGIN: ${{ vars.PRODUCTION_CORS_ORIGIN }}
+
+      - name: Run database migrations
+        working-directory: backend
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+
+      - name: Production health check
+        run: |
+          # Wait for application startup
+          sleep 30
+
+          # Health check
+          curl -f ${{ vars.PRODUCTION_URL }}/health || exit 1
+
+          # API availability check
+          curl -f ${{ vars.PRODUCTION_URL }}/api/v1/breeds || exit 1
+        timeout-minutes: 5
+
+      - name: Notify deployment status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Production deployment successful"
+          else
+            echo "❌ Production deployment failed"
+          fi

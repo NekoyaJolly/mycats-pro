@@ -269,16 +269,48 @@ npm run frontend:build
 
 ### 本番環境デプロイ
 
+詳細な本番環境デプロイ手順については、[本番環境デプロイガイド](./docs/production-deployment.md) を参照してください。
+
+#### GitHub Actions CI/CD
+
+本プロジェクトでは GitHub Actions を使用した自動CI/CDパイプラインを提供しています：
+
+**CI/CD パイプライン:**
+
+- ✅ セキュリティスキャン（Trivy）
+- ✅ 型チェック・Lint
+- ✅ ユニットテスト
+- ✅ E2Eテスト
+- ✅ ビルド確認
+- ✅ 本番デプロイ（mainブランチのみ）
+
+**必要な環境変数（GitHub Secrets）:**
+
 ```bash
-# 1. 環境変数の設定（.env.production）
-# 2. データベースマイグレーション
-npm run db:migrate
+PRODUCTION_DATABASE_URL    # 本番データベースURL
+PRODUCTION_JWT_SECRET      # 本番JWT秘密鍵
+PRODUCTION_CORS_ORIGIN     # 本番CORS許可オリジン
+PRODUCTION_URL            # 本番アプリケーションURL
+```
 
-# 3. フロントエンドビルド
-npm run frontend:build
+#### 手動デプロイ
 
-# 4. 本番サーバー起動
-npm run frontend:start
+```bash
+# 1. 本番環境変数の設定（.env.production）
+# 2. 依存関係のインストール
+pnpm install --frozen-lockfile
+
+# 3. Prismaクライアント生成
+pnpm -w run db:generate
+
+# 4. データベースマイグレーション
+pnpm -w run db:deploy
+
+# 5. ビルド
+pnpm run build
+
+# 6. 本番サーバー起動
+NODE_ENV=production node backend/dist/main.js
 ```
 
 ### ビルド成果物

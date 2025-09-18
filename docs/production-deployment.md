@@ -1,130 +1,132 @@
-# 🚀 Production Deployment Guide
+# 🚀 本番環境デプロイガイド
 
-This guide provides step-by-step instructions for deploying the Cat Management System to a production environment.
+猫生体管理システムを本番環境にデプロイするための手順書です。
 
-## 📋 Pre-Deployment Checklist
+## 📋 デプロイ前チェックリスト
 
-### ✅ Security Requirements
+### ✅ セキュリティ要件
 
-- [ ] All dependencies updated to latest secure versions
-- [ ] Environment variables properly configured
-- [ ] CORS origins set to production domains only
-- [ ] JWT secrets are strong (32+ characters)
-- [ ] Database credentials are secure
-- [ ] HTTPS is enforced
-- [ ] Security headers are enabled
+- [ ] 全依存関係を最新の安全なバージョンに更新
+- [ ] 環境変数が適切に設定されている
+- [ ] CORSオリジンが本番ドメインのみに制限されている
+- [ ] JWTシークレットが十分に強力（32文字以上）
+- [ ] データベース認証情報が安全
+- [ ] HTTPSが強制されている
+- [ ] セキュリティヘッダーが有効
 
-### ✅ Infrastructure Requirements
+### ✅ インフラ要件
 
-- [ ] Node.js 20.x or 22.x installed
-- [ ] PostgreSQL 15+ running and accessible
-- [ ] Reverse proxy (nginx) configured
-- [ ] SSL certificates installed
-- [ ] Firewall rules configured
-- [ ] Monitoring tools setup
+- [ ] Node.js 20.x または 22.x がインストール済み
+- [ ] PostgreSQL 15+ が稼働中でアクセス可能
+- [ ] リバースプロキシ (nginx) が設定済み
+- [ ] SSL証明書がインストール済み
+- [ ] ファイアウォールルールが設定済み
+- [ ] 監視ツールがセットアップ済み
 
-## 🔧 Environment Configuration
+## 🔧 環境設定
 
-1. **Create production environment file**:
+1. **本番環境設定ファイルの作成**:
 
    ```bash
    cp .env.production.example .env.production
    ```
 
-2. **Configure required variables**:
+2. **必要な変数の設定**:
 
    ```bash
-   # Database
+   # データベース
    DATABASE_URL="postgresql://user:password@host:5432/mycats_prod"
 
-   # Security
+   # セキュリティ
    JWT_SECRET="your-256-bit-production-secret-key-here"
    NODE_ENV=production
 
-   # Network
+   # ネットワーク
    PORT=3004
    CORS_ORIGIN="https://yourdomain.com,https://www.yourdomain.com"
 
-   # Health checks
+   # ヘルスチェック
    HEALTH_CHECK_DATABASE=true
    ```
 
-3. **Validate configuration**:
+3. **設定の検証**:
    ```bash
    node -e "
    require('dotenv').config({ path: '.env.production' });
    const { validateProductionEnvironment } = require('./backend/dist/common/environment.validation');
    try {
      validateProductionEnvironment();
-     console.log('✅ Environment validation passed');
+     console.log('✅ 環境設定の検証に成功しました');
    } catch (error) {
-     console.error('❌ Environment validation failed:', error.message);
+     console.error('❌ 環境設定の検証に失敗しました:', error.message);
      process.exit(1);
    }
    "
    ```
 
-## 🏗️ Build Process
+## 🏗️ ビルドプロセス
 
-1. **Run production build**:
+1. **本番ビルドの実行**:
 
    ```bash
-   ./scripts/build-production.sh
+   pnpm install --frozen-lockfile
+   pnpm -w run db:generate
+   pnpm run build
    ```
 
-2. **Apply database migrations**:
+2. **データベースマイグレーションの適用**:
 
    ```bash
    pnpm -w run db:deploy
    ```
 
-3. **Verify build outputs**:
+3. **ビルド成果物の確認**:
    ```bash
    ls -la backend/dist/
    ls -la frontend/.next/
    ```
 
-## 🚀 Deployment Steps
+## 🚀 デプロイ手順
 
-### 1. Pre-deployment Verification
+### 1. デプロイ前検証
 
 ```bash
-# Security audit
+# セキュリティ監査
 pnpm audit --audit-level moderate
 
-# Health check endpoint test
-curl -f http://localhost:3004/health || echo "Health check failed"
+# ヘルスチェックエンドポイントのテスト
+curl -f http://localhost:3004/health || echo "ヘルスチェックに失敗しました"
 
-# Database connectivity test
+# データベース接続テスト
 pnpm -w run test:api
 ```
 
-### 2. Application Startup
+### 2. アプリケーション起動
 
 ```bash
-# Start backend (production mode)
+# バックエンドの起動（本番モード）
 cd backend && NODE_ENV=production node dist/main.js
 
-# Start frontend (production mode)
+# フロントエンドの起動（本番モード）
 cd frontend && npm run start
 ```
 
-### 3. Post-deployment Verification
+### 3. デプロイ後検証
 
 ```bash
-# Verify API is responding
+# APIが応答することを確認
 curl -f https://yourdomain.com/health
 
-# Check application logs
+# アプリケーションログの確認
 tail -f logs/application.log
 
-# Monitor system resources
+# システムリソースの監視
 htop
 ```
 
-## 🔒 Security Hardening
+## 🔒 セキュリティ強化
 
-### 1. Nginx Configuration
+### 1. Nginx設定
 
 ```nginx
 server {
@@ -134,12 +136,12 @@ server {
     ssl_certificate /path/to/certificate.crt;
     ssl_certificate_key /path/to/private.key;
 
-    # Security headers
+    # セキュリティヘッダー
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload";
     add_header X-Frame-Options DENY;
     add_header X-Content-Type-Options nosniff;
 
-    # Rate limiting
+    # レート制限
     limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
 
     location /api/ {
@@ -159,65 +161,65 @@ server {
 }
 ```
 
-### 2. Firewall Configuration
+### 2. ファイアウォール設定
 
 ```bash
-# Allow only necessary ports
+# 必要なポートのみを許可
 ufw allow 22/tcp   # SSH
-ufw allow 80/tcp   # HTTP (redirect)
+ufw allow 80/tcp   # HTTP (リダイレクト)
 ufw allow 443/tcp  # HTTPS
 ufw enable
 ```
 
-## 📊 Monitoring Setup
+## 📊 監視設定
 
-### 1. Application Monitoring
+### 1. アプリケーション監視
 
 ```bash
-# Health check cron job
-echo "*/5 * * * * curl -f https://yourdomain.com/health || echo 'Health check failed' | mail -s 'API Health Alert' admin@yourdomain.com" | crontab -
+# ヘルスチェック用cronジョブ
+echo "*/5 * * * * curl -f https://yourdomain.com/health || echo 'ヘルスチェック失敗' | mail -s 'API ヘルス アラート' admin@yourdomain.com" | crontab -
 ```
 
-### 2. Log Monitoring
+### 2. ログ監視
 
 ```bash
-# Application logs
+# アプリケーションログ
 tail -f /var/log/mycats/application.log
 
-# Access logs
+# アクセスログ
 tail -f /var/log/nginx/access.log
 
-# Error logs
+# エラーログ
 tail -f /var/log/nginx/error.log
 ```
 
-## 🔄 Maintenance Procedures
+## 🔄 メンテナンス手順
 
-### 1. Updates and Patches
+### 1. アップデートとパッチ
 
 ```bash
-# Security updates
+# セキュリティアップデート
 pnpm audit
 pnpm update
 
-# Rebuild and redeploy
-./scripts/build-production.sh
+# リビルドと再デプロイ
+pnpm run build
 ```
 
-### 2. Database Maintenance
+### 2. データベースメンテナンス
 
 ```bash
-# Backup database
+# データベースバックアップ
 pg_dump $DATABASE_URL > backup_$(date +%Y%m%d_%H%M%S).sql
 
-# Apply new migrations
+# 新しいマイグレーションの適用
 pnpm -w run db:deploy
 ```
 
-### 3. Log Rotation
+### 3. ログローテーション
 
 ```bash
-# Setup logrotate for application logs
+# アプリケーションログ用のlogrotate設定
 cat > /etc/logrotate.d/mycats << EOF
 /var/log/mycats/*.log {
     daily
@@ -234,55 +236,63 @@ cat > /etc/logrotate.d/mycats << EOF
 EOF
 ```
 
-## 🚨 Incident Response
+## 🚨 インシデント対応
 
-### 1. Application Not Starting
+### 1. アプリケーションが起動しない場合
 
 ```bash
-# Check logs
+# ログの確認
 journalctl -u mycats-api -n 50
 
-# Verify environment
+# 環境変数の確認
 env | grep -E "(DATABASE_URL|JWT_SECRET|NODE_ENV)"
 
-# Test database connection
+# データベース接続テスト
 psql $DATABASE_URL -c "SELECT 1"
 ```
 
-### 2. High Memory Usage
+### 2. メモリ使用量が高い場合
 
 ```bash
-# Check memory usage
+# メモリ使用量の確認
 free -h
 ps aux --sort=-%mem | head -10
 
-# Restart services if needed
+# 必要に応じてサービス再起動
 systemctl restart mycats-api
 systemctl restart nginx
 ```
 
-### 3. Database Connection Issues
+### 3. データベース接続問題
 
 ```bash
-# Check PostgreSQL status
+# PostgreSQLステータス確認
 systemctl status postgresql
 
-# Check connection limits
+# 接続数制限の確認
 psql $DATABASE_URL -c "SELECT count(*) FROM pg_stat_activity;"
 
-# Reset connections if needed
+# 必要に応じて接続リセット
 systemctl restart postgresql
 ```
 
-## 📞 Support Contacts
+## 📞 サポート連絡先
 
-- **Technical Lead**: [contact information]
-- **Database Admin**: [contact information]
-- **DevOps Team**: [contact information]
+- **テクニカルリード**: [連絡先情報]
+- **データベース管理者**: [連絡先情報]
+- **DevOpsチーム**: [連絡先情報]
 
-## 📚 Additional Resources
+## 📚 関連リソース
 
-- [System Design Documentation](./docs/system-design.md)
-- [Operations Manual](./docs/operations.md)
+- [システム設計書](./system-design.md)
+- [運用手順書](./operations.md)
+- [API仕様書](./api-specification.md)
+- [トラブルシューティングガイド](./troubleshooting.md)
+
+---
+
+**最終更新**: 2025年1月14日  
+**管理者**: 開発チーム
+
 - [API Documentation](./docs/api-specification.md)
 - [Troubleshooting Guide](./docs/troubleshooting.md)
