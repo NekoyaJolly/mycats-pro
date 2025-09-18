@@ -24,10 +24,18 @@ async function readCsvWithBom(filePath: string): Promise<string[][]> {
 async function importBreeds() {
   console.log('🐱 猫種データの投入開始...');
   
+  const breedPath = path.join(__dirname, '../../NewPedigree/猫種データUTF8Ver.csv');
+  
+  // ファイルの存在確認
+  if (!fsSync.existsSync(breedPath)) {
+    console.log(`⚠️  データファイルが見つかりません: ${breedPath}`);
+    console.log('   データファイルを配置してから実行してください。');
+    return;
+  }
+  
   // 既存データクリア
   await prisma.breed.deleteMany();
   
-  const breedPath = path.join(__dirname, '../../NewPedigree/猫種データUTF8Ver.csv');
   const breedData = await readCsvWithBom(breedPath);
   
   // ヘッダー行をスキップ
@@ -58,10 +66,18 @@ async function importBreeds() {
 async function importCoatColors() {
   console.log('🎨 色柄データの投入開始...');
   
+  const colorPath = path.join(__dirname, '../../NewPedigree/色柄データUTF8Ver.csv');
+  
+  // ファイルの存在確認
+  if (!fsSync.existsSync(colorPath)) {
+    console.log(`⚠️  データファイルが見つかりません: ${colorPath}`);
+    console.log('   データファイルを配置してから実行してください。');
+    return;
+  }
+  
   // 既存データクリア
   await prisma.coatColor.deleteMany();
   
-  const colorPath = path.join(__dirname, '../../NewPedigree/色柄データUTF8Ver.csv');
   const colorData = await readCsvWithBom(colorPath);
   
   // ヘッダー行をスキップ

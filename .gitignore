@@ -78,7 +78,22 @@ playwright-report/
 package-lock.json
 yarn.lock
 
-# Shell files
+# Data files that should not be in version control
+*.csv
+*.xlsx
+*.xls
+*.accdb
+*.mdb
+*.ini
+RegsyDatabase.ini
+
+# Sample/test data directories
+**/NewPedigree/**/*.csv
+**/NewPedigree/**/*.xlsx
+**/data/**/*.csv
+**/database/**/*.csv
+
+# Shell files (personal configs)
 .zsh_history
 .zsh_sessions/
 .zcompdump*
@@ -86,7 +101,6 @@ yarn.lock
 .zshrc
 
 # Personal/temp files
-*.accdb
 Applications/
 Desktop/
 Documents/

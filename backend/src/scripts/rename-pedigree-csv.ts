@@ -52,6 +52,14 @@ async function renamePedigreeCsvFields() {
       : path.resolve(process.cwd(), args.out)
     : path.join(__dirname, "../../NewPedigree/血統書データRenamed.csv");
 
+  // ファイルの存在確認
+  if (!fsSync.existsSync(csvPath)) {
+    console.log(`⚠️  入力ファイルが見つかりません: ${csvPath}`);
+    console.log('   データファイルを配置してから実行してください。');
+    console.log('   使用方法: npm run pedigree:rename -- --in /path/to/input.csv');
+    return;
+  }
+
   try {
   console.log("🔄 CSVファイルを読み込み中...");
   console.log(`📂 入力パス: ${csvPath}`);
