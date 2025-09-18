@@ -49,12 +49,17 @@
     "prettier": "^3.3.3",
     "typescript": "^5",
     "typescript-eslint": "^8",
-    "wait-on": "^8.0.4"
+    "wait-on": "^9.0.0"
   },
   "engines": {
     "node": ">=20 <23"
   },
   "private": true,
+  "pnpm": {
+    "overrides": {
+      "axios": ">=1.12.0"
+    }
+  },
   "lint-staged": {
     "**/*.{js,jsx,ts,tsx}": [
       "pnpm exec eslint --fix"

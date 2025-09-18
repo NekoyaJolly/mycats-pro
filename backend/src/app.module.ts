@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Module, MiddlewareConsumer, NestModule } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { ThrottlerModule } from "@nestjs/throttler";
 
@@ -14,6 +14,7 @@ import { ScheduleModule } from "./schedule/schedule.module";
 import { TagsModule } from "./tags/tags.module";
 import { UploadModule } from "./upload/upload.module";
 import { UsersModule } from "./users/users.module";
+import { SecurityMiddleware } from "./common/middleware/security.middleware";
 
 @Module({
   imports: [
@@ -42,4 +43,11 @@ import { UsersModule } from "./users/users.module";
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    // Apply security middleware globally in production
+    if (process.env.NODE_ENV === 'production') {
+      consumer.apply(SecurityMiddleware).forRoutes('*');
+    }
+  }
+}
