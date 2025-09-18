@@ -114,32 +114,42 @@ appproject/
 
 ## 🗄️ データベース設計
 
-本プロジェクトではPostgreSQLとPrisma 6.14.0 ORMを使用してデータベースを管理しています。
+本プロジェクトではPostgreSQLとPrisma 6.14.0 ORMを使用してデータベースを管理しています。本番環境デプロイ時には、Prismaによって11個のテーブルと複雑なリレーション構造が自動生成されます。
 
 ### 📚 データベースドキュメント
 
-- **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** - 詳細なテーブル構造とリレーション
-- **[DATABASE_QUICK_REF.md](./DATABASE_QUICK_REF.md)** - 開発時のクイックリファレンス
+- **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** - データベース設計概要と本番環境情報
+- **[docs/DATABASE_PRODUCTION_SCHEMA.md](./docs/DATABASE_PRODUCTION_SCHEMA.md)** - 本番環境の完全なテーブル・フィールド・リレーション仕様
+- **[docs/DATABASE_ER_DIAGRAM.md](./docs/DATABASE_ER_DIAGRAM.md)** - ER図とシステム構成の視覚的表現
+- **[DATABASE_QUICK_REF.md](./DATABASE_QUICK_REF.md)** - 開発者向けクイックリファレンス
 
-### 🔗 主要テーブル
+### 🔗 主要テーブル（本番環境で生成）
 
-| テーブル名         | 概要             | 主要フィールド                  |
-| ------------------ | ---------------- | ------------------------------- |
-| `users`            | ユーザー管理     | email, name, role               |
-| `cats`             | 猫の基本情報     | name, birthDate, gender, breed  |
-| `breeds`           | 猫種マスタ       | name_ja, name_en, category      |
-| `pedigrees`        | 血統情報         | cat, father, mother, generation |
-| `breeding_records` | 交配記録         | mother, father, mating_date     |
-| `care_schedules`   | ケアスケジュール | cat, care_type, scheduled_date  |
+| No. | テーブル名         | 概要         | 主要フィールド                                                |
+| --- | ------------------ | ------------ | ------------------------------------------------------------- |
+| 1   | `users`            | ユーザー管理 | email, role, clerk_id                                         |
+| 2   | `cats`             | 猫の基本情報 | name, birth_date, gender, breed_id, owner_id                  |
+| 3   | `breeds`           | 猫種マスタ   | code, name, description                                       |
+| 4   | `coat_colors`      | 毛色マスタ   | code, name, description                                       |
+| 5   | `pedigrees`        | 血統情報     | pedigree_id, cat_name, father_pedigree_id, mother_pedigree_id |
+| 6   | `breeding_records` | 交配記録     | male_id, female_id, breeding_date, status                     |
+| 7   | `care_records`     | ケア履歴     | cat_id, care_type, care_date, description                     |
+| 8   | `schedules`        | スケジュール | title, schedule_date, type, status, cat_id                    |
+| 9   | `tags`             | タグマスタ   | name, color, description                                      |
+| 10  | `cat_tags`         | 猫タグ関連   | cat_id, tag_id                                                |
+| 11  | `login_attempts`   | ログイン履歴 | user_id, success, ip_address                                  |
 
-### 🔄 主要リレーション
+### 🔄 主要リレーション（本番環境）
 
-- **猫 ↔ 血統**: 1対1（各猫には1つの血統記録）
-- **猫 ↔ 繁殖記録**: 1対多（1匹の猫が複数の交配に参加）
-- **ユーザー ↔ 猫**: 1対多（1人のユーザーが複数の猫を管理）
-- **猫 ↔ ケアスケジュール**: 1対多（1匹の猫に複数のケア予定）
+- **ユーザー ↔ 猫**: 1対多（1人が複数の猫を所有）
+- **猫 ↔ 猫**: 自己参照（親子関係）
+- **猫 ↔ 血統**: 1対多（1匹の猫が複数の血統記録）
+- **猫 ↔ 交配記録**: 1対多（オス/メス別の交配参加）
+- **猫 ↔ ケア記録**: 1対多（1匹の猫の多数のケア履歴）
+- **猫 ↔ タグ**: 多対多（cat_tags中間テーブル経由）
+- **血統 ↔ 血統**: 自己参照（父母・祖父母関係）
 
-### 📊 データベース接続情報
+### 📊 本番環境データベース設定
 
 ```bash
 # 開発環境
