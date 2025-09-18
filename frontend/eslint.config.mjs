@@ -15,18 +15,30 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import nextPlugin from '@next/eslint-plugin-next';
 import importX from 'eslint-plugin-import-x';
 import prettier from 'eslint-config-prettier';
-// Removed @eslint/eslintrc dependency to fix import error
+import { FlatCompat } from "@eslint/eslintrc";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const compat = new FlatCompat({
+  baseDirectory: __dirname
+});
 
 const eslintConfig = [
+  // Next.js configs from the codemod
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  
   // === 基本設定 ===
   js.configs.recommended,
   ...tseslint.configs.recommended,
   prettier,
   
-  // === メイン設定 ===
+  // === TypeScript設定 ===
   {
-    name: 'frontend-main-config',
-    files: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
+    name: 'frontend-typescript-config',
+    files: ["**/*.ts", "**/*.tsx"],
     plugins: {
       'react-hooks': reactHooks,
       '@next/next': nextPlugin,
@@ -35,7 +47,7 @@ const eslintConfig = [
     languageOptions: {
       parserOptions: {
         project: './tsconfig.json',
-        tsconfigRootDir: import.meta.dirname
+        tsconfigRootDir: __dirname
       }
     },
     rules: {
@@ -51,10 +63,11 @@ const eslintConfig = [
       '@typescript-eslint/no-unsafe-call': 'warn',
       '@typescript-eslint/no-unsafe-return': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
+      '@typescript-eslint/triple-slash-reference': 'off', // Next.js generated files
       
-  // === Import/Export Rules ===
-  // 警告削減のため順序チェックは一旦無効化（将来Re-enable検討）
-  'import-x/order': 'off',
+      // === Import/Export Rules ===
+      // 警告削減のため順序チェックは一旦無効化（将来Re-enable検討）
+      'import-x/order': 'off',
       'import-x/no-duplicates': 'error',
       'import-x/no-unresolved': 'off', // TypeScriptで解決するため無効化
       'import-x/no-unused-modules': 'off', // 開発段階では無効化
@@ -67,9 +80,9 @@ const eslintConfig = [
       '@next/next/no-page-custom-font': 'warn',
       '@next/next/no-unwanted-polyfillio': 'warn',
       
-  // === 一般的なJavaScript Rules ===
-  // 開発効率優先でconsoleは許可（本番ビルド時に見直し）
-  'no-console': 'off',
+      // === 一般的なJavaScript Rules ===
+      // 開発効率優先でconsoleは許可（本番ビルド時に見直し）
+      'no-console': 'off',
       'no-debugger': 'warn',
     },
     settings: {
@@ -82,6 +95,35 @@ const eslintConfig = [
           project: './tsconfig.json'
         },
         node: true
+      }
+    }
+  },
+
+  // === JavaScript設定 (TypeScriptプロジェクトチェックなし) ===
+  {
+    name: 'frontend-javascript-config',
+    files: ["**/*.js", "**/*.jsx"],
+    plugins: {
+      'react-hooks': reactHooks,
+      '@next/next': nextPlugin,
+      'import-x': importX,
+    },
+    rules: {
+      // === React/Next.js Rules ===
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+      '@next/next/no-img-element': 'off',
+      '@next/next/no-html-link-for-pages': 'error',
+      '@next/next/no-page-custom-font': 'warn',
+      '@next/next/no-unwanted-polyfillio': 'warn',
+      
+      // === 一般的なJavaScript Rules ===
+      'no-console': 'off',
+      'no-debugger': 'warn',
+    },
+    settings: {
+      next: {
+        rootDir: '.'
       }
     }
   },
@@ -125,6 +167,7 @@ const eslintConfig = [
       "dist/**",
       "node_modules/**",
       "coverage/**",
+      "next-env.d.ts",
       "**/*_old.tsx",
       "**/*page_old.tsx", 
       "**/*page_new.tsx",
