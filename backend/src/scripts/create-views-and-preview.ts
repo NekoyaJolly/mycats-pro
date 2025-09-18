@@ -75,7 +75,7 @@ async function preview() {
   console.table(peds);
 }
 
-(async () => {
+void (async () => {
   try {
     await createViews();
     await preview();

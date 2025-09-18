@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { Transform, Type } from "class-transformer";
-import { IsOptional, IsString, IsInt, IsBoolean, IsIn } from "class-validator";
+import { Type } from "class-transformer";
+import { IsOptional, IsString, IsInt, IsIn } from "class-validator";
 
 export class PedigreeQueryDto {
   @ApiPropertyOptional({ description: "ページ番号", default: 1 })

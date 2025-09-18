@@ -9,7 +9,7 @@ async function main() {
   // 1) Admin user
   const email = "admin@example.com";
   const password = "Passw0rd!";
-  const passwordHash = await bcrypt.hash(password, 10);
+  const _passwordHash = await bcrypt.hash(password, 10);
 
   const admin = await prisma.user.upsert({
     where: { email },
@@ -78,6 +78,6 @@ main()
     console.error(e);
     process.exit(1);
   })
-  .finally(async () => {
-    await prisma.$disconnect();
+  .finally(() => {
+    void prisma.$disconnect();
   });
