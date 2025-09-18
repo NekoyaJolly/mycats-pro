@@ -13,6 +13,13 @@ on:
         default: false
         type: boolean
 
+# Security: Minimal permissions for enhanced security
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+  checks: write
+
 env:
   NODE_VERSION: "20"
   PNPM_VERSION: "9"
@@ -22,35 +29,54 @@ jobs:
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: read
+      security-events: write
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: "fs"
           scan-ref: "."
           format: "sarif"
           output: "trivy-results.sarif"
+          severity: "CRITICAL,HIGH,MEDIUM"
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: "trivy-results.sarif"
+          category: "trivy-fs-scan"
 
       - name: Check for critical vulnerabilities
         run: |
-          # Check if there are any critical vulnerabilities
-          if trivy fs --severity CRITICAL --quiet . | grep -q "CRITICAL"; then
-            echo "❌ Critical vulnerabilities found!"
-            trivy fs --severity CRITICAL .
-            exit 1
+          # Security: Check for critical vulnerabilities and fail fast
+          echo "🔍 Scanning for critical and high severity vulnerabilities..."
+          if trivy fs --severity CRITICAL,HIGH --quiet --exit-code 1 .; then
+            echo "✅ No critical or high severity vulnerabilities found"
           else
-            echo "✅ No critical vulnerabilities found"
+            echo "❌ Critical or high severity vulnerabilities detected!"
+            echo "📊 Full vulnerability report:"
+            trivy fs --severity CRITICAL,HIGH .
+            echo "🚫 Build failed due to security vulnerabilities"
+            exit 1
           fi
+
+      - name: Security audit for dependencies
+        run: |
+          # Security: Additional dependency security audit
+          echo "🔒 Running dependency security audit..."
+          # Install security audit tools if available
+          if command -v npm &> /dev/null; then
+            echo "📦 Running npm audit..."
+            npm audit --audit-level high || echo "⚠️ npm audit found issues"
+          fi
+          echo "✅ Dependency security audit completed"
 
   # ジョブ2: 型チェック・Lint
   lint-and-typecheck:
@@ -338,6 +364,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint-and-typecheck, test, e2e-test, build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: read
+      deployments: write
+      actions: read
 
     environment:
       name: production
@@ -387,6 +417,7 @@ jobs:
 
       - name: Validate production environment
         run: |
+          # Security: Validate production environment variables without exposing them
           node -e "
           const { validateProductionEnvironment } = require('./backend/dist/common/environment.validation.js');
           try {
@@ -412,14 +443,27 @@ jobs:
 
       - name: Production health check
         run: |
-          # Wait for application startup
+          # Security: Wait for application startup with timeout
+          echo "⏳ Waiting for application startup..."
           sleep 30
 
-          # Health check
-          curl -f ${{ vars.PRODUCTION_URL }}/health || exit 1
+          # Security: Health check with proper error handling
+          echo "🏥 Performing health check..."
+          if curl -f -s --max-time 30 "${{ vars.PRODUCTION_URL }}/health"; then
+            echo "✅ Health check passed"
+          else
+            echo "❌ Health check failed"
+            exit 1
+          fi
 
-          # API availability check
-          curl -f ${{ vars.PRODUCTION_URL }}/api/v1/breeds || exit 1
+          # Security: API availability check with authentication if needed
+          echo "🔌 Checking API availability..."
+          if curl -f -s --max-time 30 "${{ vars.PRODUCTION_URL }}/api/v1/breeds"; then
+            echo "✅ API availability check passed"
+          else
+            echo "❌ API availability check failed"
+            exit 1
+          fi
         timeout-minutes: 5
 
       - name: Notify deployment status
