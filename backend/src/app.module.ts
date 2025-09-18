@@ -8,13 +8,13 @@ import { BreedsModule } from "./breeds/breeds.module";
 import { CareModule } from "./care/care.module";
 import { CatsModule } from "./cats/cats.module";
 import { CoatColorsModule } from "./coat-colors/coat-colors.module";
+import { SecurityMiddleware } from "./common/middleware/security.middleware";
 import { PedigreeModule } from "./pedigree/pedigree.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { ScheduleModule } from "./schedule/schedule.module";
 import { TagsModule } from "./tags/tags.module";
 import { UploadModule } from "./upload/upload.module";
 import { UsersModule } from "./users/users.module";
-import { SecurityMiddleware } from "./common/middleware/security.middleware";
 
 @Module({
   imports: [
