@@ -323,7 +323,7 @@ const QuickRecordWizard: React.FC<QuickRecordWizardProps> = ({
             label="実施日"
             placeholder="ケアを実施した日を選択"
             value={data.date}
-            onChange={(value) => setData(prev => ({ ...prev, date: value ?? new Date() }))}
+            onChange={(value) => setData(prev => ({ ...prev, date: (value || new Date()) as Date }))}
           />
         </>
       )}
@@ -678,7 +678,7 @@ const TreatmentRecordForm: React.FC<TreatmentRecordFormProps> = ({
           label="治療日"
           placeholder="治療を実施した日"
           value={formData.date}
-          onChange={(date) => setFormData(prev => ({ ...prev, date: date ?? new Date() }))}
+          onChange={(date) => setFormData(prev => ({ ...prev, date: (date || new Date()) as Date }))}
           required
         />
       </Group>
@@ -692,12 +692,6 @@ const TreatmentRecordForm: React.FC<TreatmentRecordFormProps> = ({
           value={formData.diseaseName}
           onChange={(value) => setFormData(prev => ({ ...prev, diseaseName: value || '' }))}
           searchable
-          creatable
-          getCreateLabel={(query) => `+ 病名「${query}」を追加`}
-          onCreate={(query) => {
-            const item = { value: query, label: query };
-            return item;
-          }}
           required
         />
       )}
