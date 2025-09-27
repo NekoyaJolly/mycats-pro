@@ -391,6 +391,7 @@ const nextConfig: NextConfig = {
     unoptimized: true, // 画像最適化を無効化
   },
   // ... 既存設定
+  // 注意: basePath は不要（GitHub Pagesが自動でリポジトリパスを処理）
 };
 ```
 
