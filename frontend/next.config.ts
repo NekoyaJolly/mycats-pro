@@ -3,6 +3,12 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   serverExternalPackages: [],
+  // GitHub Pages static export configuration
+  output: "export", // 静的エクスポートを有効化
+  trailingSlash: true, // GitHub Pages用の推奨設定
+  images: {
+    unoptimized: true, // 画像最適化を無効化
+  },
   eslint: {
     // 本番ビルド時にESLintエラーを無視
     ignoreDuringBuilds: true,
@@ -18,22 +24,7 @@ const nextConfig: NextConfig = {
   // Build configuration
   generateEtags: false,
   poweredByHeader: false,
-  async rewrites() {
-    return []
-  },
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'Access-Control-Allow-Origin',
-            value: '*'
-          }
-        ]
-      }
-    ]
-  }
+  // Remove rewrites and headers as they don't work with static export
 };
 
 export default nextConfig;
