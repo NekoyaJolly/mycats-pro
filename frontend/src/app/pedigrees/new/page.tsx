@@ -25,6 +25,7 @@ import {
 import { DateInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
 import '@mantine/dates/styles.css';
+import { apiGet, apiPost } from '../../lib/api';
 import { 
   IconDeviceFloppy, 
   IconArrowLeft, 
@@ -139,7 +140,7 @@ export default function NewPedigreePage() {
 
   const fetchBreeds = async () => {
     try {
-      const response = await fetch('http://localhost:3004/api/v1/breeds?limit=100');
+      const response = await apiGet('/breeds', { limit: '100' });
       if (response.ok) {
         const result = await response.json();
         setBreeds(result.data || []);
@@ -152,7 +153,7 @@ export default function NewPedigreePage() {
 
   const fetchColors = async () => {
     try {
-      const response = await fetch('http://localhost:3004/api/v1/coat-colors?limit=100');
+      const response = await apiGet('/coat-colors', { limit: '100' });
       if (response.ok) {
         const result = await response.json();
         setColors(result.data || []);
@@ -165,7 +166,7 @@ export default function NewPedigreePage() {
 
   const fetchPedigreeOptions = async () => {
     try {
-      const response = await fetch('http://localhost:3004/api/v1/pedigrees?limit=100');
+      const response = await apiGet('/pedigrees', { limit: '100' });
       if (response.ok) {
         const result = await response.json();
         const options = (result.data || []).map((p: any) => ({
@@ -183,7 +184,7 @@ export default function NewPedigreePage() {
   // 親猫IDから血統データを自動取得する関数
   const fetchPedigreeById = async (pedigreeId: string) => {
     try {
-      const response = await fetch(`http://localhost:3004/api/v1/pedigrees/pedigree-id/${pedigreeId}`);
+      const response = await apiGet(`/pedigrees/pedigree-id/${pedigreeId}`);
       if (response.ok) {
         const result = await response.json();
         return result;
@@ -339,7 +340,7 @@ export default function NewPedigreePage() {
   // 血統書番号の重複チェック
   const checkPedigreeIdDuplicate = async (pedigreeId: string) => {
     try {
-      const response = await fetch(`http://localhost:3004/api/v1/pedigrees/pedigree-id/${pedigreeId}`);
+      const response = await apiGet(`/pedigrees/pedigree-id/${pedigreeId}`);
       return response.ok;
     } catch {
       return false;
@@ -384,13 +385,7 @@ export default function NewPedigreePage() {
         pedigreeIssueDate: formData.pedigreeIssueDate?.toISOString(),
       };
 
-      const response = await fetch('http://localhost:3004/api/v1/pedigrees', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(submitData),
-      });
+      const response = await apiPost('/pedigrees', submitData);
 
       if (response.ok) {
         notifications.show({
