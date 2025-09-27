@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   // GitHub Pages static export configuration
   output: "export", // 静的エクスポートを有効化
   trailingSlash: true, // GitHub Pages用の推奨設定
+  basePath: "/mycats", // GitHub Pages用のベースパス設定
   images: {
     unoptimized: true, // 画像最適化を無効化
   },
