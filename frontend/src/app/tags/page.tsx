@@ -57,44 +57,11 @@ const PRESET_COLORS = [
   '#1abc9c', '#3498db', '#9b59b6', '#34495e', '#95a5a6'
 ];
 
-// サンプルデータ
-const sampleTagCategories: TagCategory[] = [
-  {
-    id: '1',
-    name: '体型・サイズ',
-    description: '猫の体型や大きさに関するタグ',
-    color: '#3498db',
-    tags: [
-      { id: 't1', name: '大型', categoryId: '1', color: '#3498db', description: '体重5kg以上', usageCount: 12 },
-      { id: 't2', name: '中型', categoryId: '1', color: '#3498db', description: '体重3-5kg', usageCount: 8 },
-      { id: 't3', name: '小型', categoryId: '1', color: '#3498db', description: '体重3kg未満', usageCount: 5 },
-    ]
-  },
-  {
-    id: '2',
-    name: '性格・特徴',
-    description: '猫の性格や行動特徴に関するタグ',
-    color: '#e67e22',
-    tags: [
-      { id: 't4', name: '人懐っこい', categoryId: '2', color: '#e67e22', usageCount: 15 },
-      { id: 't5', name: '内気', categoryId: '2', color: '#e67e22', usageCount: 7 },
-      { id: 't6', name: '活発', categoryId: '2', color: '#e67e22', usageCount: 10 },
-    ]
-  },
-  {
-    id: '3',
-    name: '健康状態',
-    description: '健康や医療に関するタグ',
-    color: '#e74c3c',
-    tags: [
-      { id: 't7', name: '要注意', categoryId: '3', color: '#e74c3c', usageCount: 3 },
-      { id: 't8', name: '健康', categoryId: '3', color: '#2ecc71', usageCount: 20 },
-    ]
-  },
-];
+// デフォルトのタグカテゴリ（初期データは空）
+const defaultTagCategories: TagCategory[] = [];
 
 export default function TagsPage() {
-  const [tagCategories, setTagCategories] = useState<TagCategory[]>(sampleTagCategories);
+  const [tagCategories, setTagCategories] = useState<TagCategory[]>(defaultTagCategories);
   const [categoryModalOpened, { open: openCategoryModal, close: closeCategoryModal }] = useDisclosure(false);
   const [tagModalOpened, { open: openTagModal, close: closeTagModal }] = useDisclosure(false);
   const [editingCategory, setEditingCategory] = useState<TagCategory | null>(null);

@@ -29,7 +29,7 @@ const catData = {
   microchip: 'MC123456789',
   status: '健康',
   description: 'とても元気なオス猫。人懐っこく、遊ぶのが大好き。',
-  image: '/cat_sample.jpg',
+  image: '/placeholder-cat.jpg', // プレースホルダー画像
   vaccinations: [
     { date: '2023-04-15', vaccine: '三種混合ワクチン' },
     { date: '2023-10-15', vaccine: '三種混合ワクチン' },

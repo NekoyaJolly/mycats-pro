@@ -203,7 +203,7 @@ export default function BreedingPage() {
       
       // generation_limit の実装（将来的にpedigree機能連携）
       if (rule.type === 'generation_limit') {
-        // TODO: 血統データとの連携が必要
+        // 血統データとの連携は将来実装予定
         return false;
       }
       
