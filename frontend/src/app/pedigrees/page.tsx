@@ -22,7 +22,7 @@ import {
 } from '@mantine/core';
 import { IconSearch, IconEye, IconFilter, IconFileText, IconRefresh, IconPlus } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
-import { apiGet } from '../lib/api';
+import { apiGet } from '../../lib/api';
 
 interface PedigreeData {
   id: string;

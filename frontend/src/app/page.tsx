@@ -10,14 +10,12 @@ import {
   Card,
   Group,
   Stack,
-  Flex,
   Box,
   Badge,
   SimpleGrid,
   ActionIcon,
   Modal,
   Checkbox,
-  Accordion,
 } from '@mantine/core';
 import { IconPlus, IconSettings, IconCalendarEvent, IconStethoscope, IconChevronDown } from '@tabler/icons-react';
 
@@ -343,15 +341,15 @@ export default function Home() {
     }
   };
 
-  // 優先度による色分け
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'red';
-      case 'medium': return 'yellow';
-      case 'low': return 'green';
-      default: return 'gray';
-    }
-  };
+  // 優先度による色分け (現在未使用だが将来使用予定)
+  // const getPriorityColor = (priority: string) => {
+  //   switch (priority) {
+  //     case 'high': return 'red';
+  //     case 'medium': return 'yellow';
+  //     case 'low': return 'green';
+  //     default: return 'gray';
+  //   }
+  // };
 
   // 交配予定タイプによる表示
   const getBreedingTypeLabel = (type: string) => {

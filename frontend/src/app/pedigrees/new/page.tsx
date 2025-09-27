@@ -25,7 +25,7 @@ import {
 import { DateInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
 import '@mantine/dates/styles.css';
-import { apiGet, apiPost } from '../../lib/api';
+import { apiGet, apiPost } from '../../../lib/api';
 import { 
   IconDeviceFloppy, 
   IconArrowLeft, 
