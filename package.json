@@ -34,8 +34,7 @@
     "setup": "./scripts/setup-dev.sh",
     "diagnose": "./scripts/diagnose.sh",
     "help": "echo \"Available commands: dev, start, backend:*, db:*, test:*, frontend:*, setup, diagnose\"",
-    "install:all": "pnpm install",
-    "prepare": "husky install"
+    "install:all": "pnpm install"
   },
   "devDependencies": {
     "@eslint/js": "^9",
@@ -44,9 +43,7 @@
     "@typescript-eslint/parser": "^8",
     "cross-env": "^10.0.0",
     "eslint": "^9",
-    "husky": "^9.1.6",
     "kill-port": "^2.0.1",
-    "lint-staged": "^15.2.10",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.3.3",
     "typescript": "^5",
@@ -61,13 +58,5 @@
     "overrides": {
       "axios": ">=1.12.0"
     }
-  },
-  "lint-staged": {
-    "**/*.{js,jsx,ts,tsx}": [
-      "pnpm exec eslint --fix"
-    ],
-    "**/*.{json,md,css,scss,yml,yaml}": [
-      "pnpm exec prettier --write"
-    ]
   }
 }
