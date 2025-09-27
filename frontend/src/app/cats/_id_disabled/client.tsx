@@ -44,7 +44,7 @@ const catData = {
   ],
 };
 
-export default function CatDetailPage() {
+export default function CatDetailClient() {
   const router = useRouter();
   const cat = catData;
 

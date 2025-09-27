@@ -15,7 +15,7 @@ const dummyCat = {
   description: "とても元気なオス猫。人懐っこく、遊ぶのが大好き。",
 };
 
-export default function CatEditPage() {
+export default function CatEditClient() {
   const router = useRouter();
   const [form, setForm] = useState({ ...dummyCat });
 

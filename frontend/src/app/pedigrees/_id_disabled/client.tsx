@@ -59,7 +59,7 @@ interface PedigreeDetail {
   motherOf: Array<{ id: string; pedigreeId: string; catName: string }>;
 }
 
-export default function PedigreeDetailPage() {
+export default function PedigreeDetailClient() {
   const router = useRouter();
   const params = useParams();
   const pedigreeId = params.id as string;

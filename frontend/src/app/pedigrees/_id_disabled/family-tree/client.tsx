@@ -34,7 +34,7 @@ interface FamilyTreeData {
   mother?: FamilyTreeData | null;
 }
 
-export default function FamilyTreePage() {
+export default function FamilyTreeClient() {
   const router = useRouter();
   const params = useParams();
   const pedigreeId = params.id as string;

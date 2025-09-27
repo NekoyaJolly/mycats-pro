@@ -75,7 +75,7 @@ const CatCard = ({ cat, level = 0 }: { cat: { name: string; color: string } | nu
   );
 };
 
-export default function PedigreePage() {
+export default function PedigreeClient() {
   const router = useRouter();
 
   return (
