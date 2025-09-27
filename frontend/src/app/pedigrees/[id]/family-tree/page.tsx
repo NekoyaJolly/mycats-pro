@@ -18,7 +18,7 @@ import {
 } from '@mantine/core';
 import { IconArrowLeft, IconDna } from '@tabler/icons-react';
 import { useRouter, useParams } from 'next/navigation';
-import { apiGet } from '../../../lib/api';
+import { apiGet } from '../../../../lib/api';
 
 interface FamilyTreeData {
   id: string;

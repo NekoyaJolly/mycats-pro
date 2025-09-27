@@ -1173,7 +1173,7 @@ export default function BreedingPage() {
               {rule.type === 'individual_prohibition' && rule.maleNames && rule.femaleNames && (
                 <Group gap="xs">
                   <Text size="xs">禁止ペア:</Text>
-                  {rule.maleNames.map((maleName, index) => 
+                  {rule.maleNames.map((maleName, _index) => 
                     rule.femaleNames!.map((femaleName) => (
                       <Badge key={`${maleName}-${femaleName}`} variant="outline" size="xs" color="red">
                         {maleName} × {femaleName}

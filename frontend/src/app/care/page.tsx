@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Title,
@@ -257,10 +257,10 @@ const QuickRecordWizard: React.FC<QuickRecordWizardProps> = ({
   onSave,
   onCancel,
   availableTags,
-  tagCategories,
+  tagCategories: _tagCategories,
   isDataLoaded
 }) => {
-  const getTagSelectData = () => {
+  const getTagSelectData = useCallback(() => {
     if (!availableTags || !Array.isArray(availableTags)) {
       return [];
     }
@@ -268,7 +268,7 @@ const QuickRecordWizard: React.FC<QuickRecordWizardProps> = ({
       value: tag.id,
       label: tag.name
     }));
-  };
+  }, [availableTags]);
 
   const canProceedToNext = () => {
     switch (step) {
@@ -418,7 +418,7 @@ interface TemplateFormProps {
 }
 
 // テンプレートフォームコンポーネント
-const TemplateFormModal: React.FC<TemplateFormProps> = ({ initialData, onSave, onCancel, availableTags, tagCategories }) => {
+const TemplateFormModal: React.FC<TemplateFormProps> = ({ initialData, onSave, onCancel, availableTags, tagCategories: _tagCategories }) => {
   const [name, setName] = useState(initialData?.name || '');
   const [description, setDescription] = useState(initialData?.description || '');
   const [category, setCategory] = useState<'disease' | 'treatment' | 'medication' | 'examination'>(
@@ -1271,6 +1271,46 @@ export default function CarePage() {
   const [treatmentTemplateSettings, setTreatmentTemplateSettings] = useState<TreatmentTemplateSettings>(defaultTreatmentTemplateSettings);
   const [diseaseHistory, _setDiseaseHistory] = useState<string[]>(sampleDiseaseHistory);
 
+  // タグ選択用のデータを生成（Mantine v8対応）
+  const getTagSelectData = useCallback(() => {
+    try {
+      if (!availableTags || !Array.isArray(availableTags)) {
+        console.warn('availableTags is not available or not an array');
+        return [];
+      }
+      
+      if (!tagCategories || !Array.isArray(tagCategories)) {
+        // カテゴリがない場合は単純なvalue/label配列を返す
+        return availableTags.map(tag => ({
+          value: tag.id,
+          label: tag.name
+        }));
+      }
+      
+      // Mantine v8の形式でvalue/labelオブジェクトの配列を返す
+      const sortedTags = [...availableTags].sort((a, b) => {
+        const catA = tagCategories.find(cat => cat.id === a.category);
+        const catB = tagCategories.find(cat => cat.id === b.category);
+        const categoryOrderA = catA?.order || 999;
+        const categoryOrderB = catB?.order || 999;
+        
+        if (categoryOrderA !== categoryOrderB) {
+          return categoryOrderA - categoryOrderB;
+        }
+        
+        return a.name.localeCompare(b.name);
+      });
+      
+      return sortedTags.map(tag => ({
+        value: tag.id,
+        label: tag.name
+      }));
+    } catch (error) {
+      console.error('Error in getTagSelectData:', error);
+      return [];
+    }
+  }, [availableTags, tagCategories]);
+
   // データの初期化を確認
   useEffect(() => {
     if (careRecords && tagCategories && availableTags) {
@@ -1289,7 +1329,7 @@ export default function CarePage() {
       const testData = getTagSelectData();
       console.log('タグ選択データ:', testData.slice(0, 3)); // 最初の3つをログ出力
     }
-  }, [isDataLoaded]);
+  }, [isDataLoaded, getTagSelectData]);
 
   // 今日の予定を取得
   const getTodayCare = () => {
@@ -1486,46 +1526,6 @@ export default function CarePage() {
     setMedicalTemplates(prev =>
       prev.map(t => t.id === templateId ? { ...t, isActive: !t.isActive } : t)
     );
-  };
-
-  // タグ選択用のデータを生成（Mantine v8対応）
-  const getTagSelectData = () => {
-    try {
-      if (!availableTags || !Array.isArray(availableTags)) {
-        console.warn('availableTags is not available or not an array');
-        return [];
-      }
-      
-      if (!tagCategories || !Array.isArray(tagCategories)) {
-        // カテゴリがない場合は単純なvalue/label配列を返す
-        return availableTags.map(tag => ({
-          value: tag.id,
-          label: tag.name
-        }));
-      }
-      
-      // Mantine v8の形式でvalue/labelオブジェクトの配列を返す
-      const sortedTags = [...availableTags].sort((a, b) => {
-        const catA = tagCategories.find(cat => cat.id === a.category);
-        const catB = tagCategories.find(cat => cat.id === b.category);
-        const categoryOrderA = catA?.order || 999;
-        const categoryOrderB = catB?.order || 999;
-        
-        if (categoryOrderA !== categoryOrderB) {
-          return categoryOrderA - categoryOrderB;
-        }
-        
-        return a.name.localeCompare(b.name);
-      });
-      
-      return sortedTags.map(tag => ({
-        value: tag.id,
-        label: tag.name
-      }));
-    } catch (error) {
-      console.error('Error in getTagSelectData:', error);
-      return [];
-    }
   };
 
   // タグフィルター機能

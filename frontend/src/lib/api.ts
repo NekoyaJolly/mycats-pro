@@ -61,7 +61,7 @@ export async function apiGet(path: string, params?: Record<string, string>): Pro
  * @param data - Request body data
  * @returns Promise with the response
  */
-export async function apiPost(path: string, data: any): Promise<Response> {
+export async function apiPost(path: string, data: unknown): Promise<Response> {
   return apiRequest(getApiUrl(path), {
     method: 'POST',
     body: JSON.stringify(data),

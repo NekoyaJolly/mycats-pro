@@ -17,7 +17,7 @@ import {
 } from '@mantine/core';
 import { IconArrowLeft, IconCalendar, IconUser, IconDna, IconFileText } from '@tabler/icons-react';
 import { useRouter, useParams } from 'next/navigation';
-import { apiGet } from '../../lib/api';
+import { apiGet } from '../../../lib/api';
 
 interface PedigreeDetail {
   id: string;
