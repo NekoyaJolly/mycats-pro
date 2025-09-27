@@ -335,6 +335,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Clean previous build outputs
+        run: |
+          echo "🧹 Cleaning previous build outputs..."
+          rm -rf backend/dist frontend/.next
+          echo "✅ Clean completed"
+
       - name: Generate Prisma Client
         working-directory: backend
         run: npx prisma generate
@@ -346,19 +352,56 @@ jobs:
       - name: Build frontend
         run: pnpm --filter frontend run build
 
+      - name: Verify build outputs
+        run: |
+          echo "🔍 Verifying build outputs..."
+          echo "Current working directory: $(pwd)"
+          
+          echo "Backend build files:"
+          if [ -d "backend/dist" ]; then
+            echo "✅ Backend dist/ directory exists"
+            ls -la backend/dist/ | head -5
+          else
+            echo "❌ Backend build failed - no dist/ directory"
+            exit 1
+          fi
+          
+          echo "Frontend build files:"
+          if [ -d "frontend/.next" ]; then
+            echo "✅ Frontend .next/ directory exists"  
+            ls -la frontend/.next/ | head -5
+          else
+            echo "❌ Frontend build failed - no .next/ directory"
+            exit 1
+          fi
+          
+          echo "✅ Build outputs verified successfully"
+
       - name: Upload build artifacts - Backend
         uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: backend-build
-          path: backend/dist/
+          path: backend/dist
           retention-days: 7
+          if-no-files-found: error
 
       - name: Upload build artifacts - Frontend
         uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: frontend-build
-          path: frontend/.next/
+          path: frontend/.next
           retention-days: 7
+          if-no-files-found: error
+
+      - name: Confirm artifact uploads
+        if: success()
+        run: |
+          echo "✅ Artifact upload steps completed successfully"
+          echo "Uploaded artifacts:"
+          echo "  - backend-build (from backend/dist)"
+          echo "  - frontend-build (from frontend/.next)"
 
   # ジョブ6: 本番環境デプロイ (mainブランチのみ)
   deploy-production:
@@ -405,23 +448,59 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Wait for artifacts to be ready
+        run: |
+          echo "⏳ Waiting for artifacts to be fully uploaded..."
+          sleep 10
+
       - name: Download build artifacts - Backend
         uses: actions/download-artifact@v4
         with:
           name: backend-build
-          path: backend/dist/
+          path: backend/dist
 
       - name: Download build artifacts - Frontend
         uses: actions/download-artifact@v4
         with:
           name: frontend-build
-          path: frontend/.next/
+          path: frontend/.next
+
+      - name: Verify artifacts
+        run: |
+          echo "🔍 Verifying downloaded artifacts..."
+          echo "Current working directory: $(pwd)"
+          echo "Available files and directories:"
+          ls -la
+          
+          echo "Backend artifacts:"
+          if [ -d "backend/dist" ]; then
+            echo "✅ Backend dist/ directory exists"
+            ls -la backend/dist/ | head -3
+          else
+            echo "❌ Backend dist/ not found"
+          fi
+          
+          echo "Frontend artifacts:"
+          if [ -d "frontend/.next" ]; then
+            echo "✅ Frontend .next/ directory exists"
+            ls -la frontend/.next/ | head -3
+          else
+            echo "❌ Frontend .next/ not found"
+          fi
+          
+          if [ ! -d "backend/dist" ] || [ ! -d "frontend/.next" ]; then
+            echo "❌ Required build artifacts are missing"
+            echo "Debug: Listing all artifacts that may have been downloaded:"
+            find . -name "*.js" -path "*/dist/*" -o -name "BUILD_ID" | head -10 || echo "No artifacts found"
+            exit 1
+          fi
+          echo "✅ All artifacts verified successfully"
 
       - name: Validate production environment
         run: |
           # Security: Validate production environment variables without exposing them
           node -e "
-          const { validateProductionEnvironment } = require('./backend/dist/common/environment.validation.js');
+          const { validateProductionEnvironment } = require('./backend/dist/src/common/environment.validation.js');
           try {
             validateProductionEnvironment();
             console.log('✅ Production environment validation passed');
