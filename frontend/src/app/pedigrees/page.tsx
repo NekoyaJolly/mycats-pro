@@ -22,6 +22,7 @@ import {
 } from '@mantine/core';
 import { IconSearch, IconEye, IconFilter, IconFileText, IconRefresh, IconPlus } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
+import { apiGet } from '../lib/api';
 
 interface PedigreeData {
   id: string;
@@ -67,19 +68,19 @@ export default function PedigreesPage() {
   const fetchPedigrees = useCallback(async (page = 1) => {
     try {
       setLoading(true);
-      const params = new URLSearchParams({
+      const queryParams: Record<string, string> = {
         page: page.toString(),
         limit: '20',
-      });
+      };
 
       if (searchTerm) {
-        params.append('search', searchTerm);
+        queryParams.search = searchTerm;
       }
       if (genderFilter) {
-        params.append('gender', genderFilter);
+        queryParams.gender = genderFilter;
       }
 
-      const response = await fetch(`http://localhost:3004/api/v1/pedigrees?${params}`);
+      const response = await apiGet('/pedigrees', queryParams);
       if (!response.ok) {
         throw new Error('Failed to fetch pedigrees');
       }

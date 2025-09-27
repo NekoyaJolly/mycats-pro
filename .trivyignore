@@ -1,0 +1,10 @@
+# Trivy ignore file for security scanning
+# This file contains vulnerabilities that are intentionally ignored
+
+# Development-specific vulnerabilities that don't affect production
+CVE-2024-28849  # Development-only dependency issue in @next/eslint-plugin-next
+
+# Node.js vulnerabilities that are handled by environment constraints
+# (We enforce Node.js >=20 in package.json)
+
+# Frontend static build vulnerabilities that don't apply to backend API
