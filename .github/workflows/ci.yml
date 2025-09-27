@@ -346,19 +346,32 @@ jobs:
       - name: Build frontend
         run: pnpm --filter frontend run build
 
+      - name: Verify build outputs
+        run: |
+          echo "🔍 Verifying build outputs..."
+          echo "Backend build files:"
+          ls -la backend/dist/ || (echo "❌ Backend build failed - no dist/ directory" && exit 1)
+          echo "Frontend build files:"
+          ls -la frontend/.next/ || (echo "❌ Frontend build failed - no .next/ directory" && exit 1)
+          echo "✅ Build outputs verified"
+
       - name: Upload build artifacts - Backend
         uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: backend-build
           path: backend/dist/
           retention-days: 7
+          if-no-files-found: error
 
       - name: Upload build artifacts - Frontend
         uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: frontend-build
           path: frontend/.next/
           retention-days: 7
+          if-no-files-found: error
 
   # ジョブ6: 本番環境デプロイ (mainブランチのみ)
   deploy-production:
@@ -416,6 +429,20 @@ jobs:
         with:
           name: frontend-build
           path: frontend/.next/
+
+      - name: Verify artifacts
+        run: |
+          echo "🔍 Verifying downloaded artifacts..."
+          echo "Backend artifacts:"
+          ls -la backend/dist/ || echo "❌ Backend dist/ not found"
+          echo "Frontend artifacts:"
+          ls -la frontend/.next/ || echo "❌ Frontend .next/ not found"
+          
+          if [ ! -d "backend/dist" ] || [ ! -d "frontend/.next" ]; then
+            echo "❌ Required build artifacts are missing"
+            exit 1
+          fi
+          echo "✅ All artifacts verified"
 
       - name: Validate production environment
         run: |
