@@ -18,6 +18,7 @@ import {
 } from '@mantine/core';
 import { IconArrowLeft, IconDna } from '@tabler/icons-react';
 import { useRouter, useParams } from 'next/navigation';
+import { apiGet } from '../../../lib/api';
 
 interface FamilyTreeData {
   id: string;
@@ -54,9 +55,9 @@ export default function FamilyTreePage() {
     const fetchFamilyTree = async () => {
       try {
         setLoading(true);
-        const response = await fetch(
-          `http://localhost:3004/api/v1/pedigrees/${pedigreeId}/family-tree?generations=${generations}`
-        );
+        const response = await apiGet(`/pedigrees/${pedigreeId}/family-tree`, {
+          generations: generations.toString()
+        });
         
         if (!response.ok) {
           throw new Error('家系図データの取得に失敗しました');

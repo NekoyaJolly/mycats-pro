@@ -32,6 +32,7 @@ jobs:
     permissions:
       contents: read
       security-events: write
+      actions: read
     
     steps:
       - name: Checkout code
@@ -52,6 +53,7 @@ jobs:
         with:
           sarif_file: "trivy-results.sarif"
           category: "trivy-fs-scan"
+          wait-for-processing: false
 
       - name: Check for critical vulnerabilities
         run: |
