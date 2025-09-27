@@ -335,6 +335,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Clean previous build outputs
+        run: |
+          echo "🧹 Cleaning previous build outputs..."
+          rm -rf backend/dist frontend/.next
+          echo "✅ Clean completed"
+
       - name: Generate Prisma Client
         working-directory: backend
         run: npx prisma generate
@@ -349,11 +355,27 @@ jobs:
       - name: Verify build outputs
         run: |
           echo "🔍 Verifying build outputs..."
+          echo "Current working directory: $(pwd)"
+          
           echo "Backend build files:"
-          ls -la backend/dist/ || (echo "❌ Backend build failed - no dist/ directory" && exit 1)
+          if [ -d "backend/dist" ]; then
+            echo "✅ Backend dist/ directory exists"
+            ls -la backend/dist/ | head -5
+          else
+            echo "❌ Backend build failed - no dist/ directory"
+            exit 1
+          fi
+          
           echo "Frontend build files:"
-          ls -la frontend/.next/ || (echo "❌ Frontend build failed - no .next/ directory" && exit 1)
-          echo "✅ Build outputs verified"
+          if [ -d "frontend/.next" ]; then
+            echo "✅ Frontend .next/ directory exists"  
+            ls -la frontend/.next/ | head -5
+          else
+            echo "❌ Frontend build failed - no .next/ directory"
+            exit 1
+          fi
+          
+          echo "✅ Build outputs verified successfully"
 
       - name: Upload build artifacts - Backend
         uses: actions/upload-artifact@v4
@@ -372,6 +394,14 @@ jobs:
           path: frontend/.next
           retention-days: 7
           if-no-files-found: error
+
+      - name: Confirm artifact uploads
+        if: success()
+        run: |
+          echo "✅ Artifact upload steps completed successfully"
+          echo "Uploaded artifacts:"
+          echo "  - backend-build (from backend/dist)"
+          echo "  - frontend-build (from frontend/.next)"
 
   # ジョブ6: 本番環境デプロイ (mainブランチのみ)
   deploy-production:
@@ -438,16 +468,33 @@ jobs:
       - name: Verify artifacts
         run: |
           echo "🔍 Verifying downloaded artifacts..."
+          echo "Current working directory: $(pwd)"
+          echo "Available files and directories:"
+          ls -la
+          
           echo "Backend artifacts:"
-          ls -la backend/dist/ || echo "❌ Backend dist/ not found"
+          if [ -d "backend/dist" ]; then
+            echo "✅ Backend dist/ directory exists"
+            ls -la backend/dist/ | head -3
+          else
+            echo "❌ Backend dist/ not found"
+          fi
+          
           echo "Frontend artifacts:"
-          ls -la frontend/.next/ || echo "❌ Frontend .next/ not found"
+          if [ -d "frontend/.next" ]; then
+            echo "✅ Frontend .next/ directory exists"
+            ls -la frontend/.next/ | head -3
+          else
+            echo "❌ Frontend .next/ not found"
+          fi
           
           if [ ! -d "backend/dist" ] || [ ! -d "frontend/.next" ]; then
             echo "❌ Required build artifacts are missing"
+            echo "Debug: Listing all artifacts that may have been downloaded:"
+            find . -name "*.js" -path "*/dist/*" -o -name "BUILD_ID" | head -10 || echo "No artifacts found"
             exit 1
           fi
-          echo "✅ All artifacts verified"
+          echo "✅ All artifacts verified successfully"
 
       - name: Validate production environment
         run: |
