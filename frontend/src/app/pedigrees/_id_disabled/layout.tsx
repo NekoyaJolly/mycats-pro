@@ -1,10 +1,12 @@
-import CatEditClient from './client';
-
 // Static export support - return empty array for dynamic routes
 export function generateStaticParams() {
   return [];
 }
 
-export default function CatEditPage() {
-  return <CatEditClient />;
+export default function PedigreeLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <>{children}</>;
 }
