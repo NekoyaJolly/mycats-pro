@@ -3,6 +3,16 @@
 import { useRouter } from "next/navigation";
 import { Box, Flex, Heading, Button, Stack, Text, Card } from "@chakra-ui/react";
 
+// 型定義
+interface PedigreeCat {
+  name: string;
+  gender: string;
+  breed: string;
+  color: string;
+  father?: PedigreeCat;
+  mother?: PedigreeCat;
+}
+
 // 仮の血統データ
 const pedigree = {
   id: "1",
@@ -118,7 +128,7 @@ const mockPedigree = {
 };
 
 // 1ノード分の表示
-function PedigreeNode({ cat }: { cat: any }) {
+function PedigreeNode({ cat }: { cat: PedigreeCat | null }) {
   if (!cat) return <Box minW="120px" minH="80px" />;
   return (
     <Card.Root minW="120px" minH="80px" p={2} textAlign="center" display="flex" flexDirection="column" justifyContent="center" alignItems="center">
@@ -130,7 +140,7 @@ function PedigreeNode({ cat }: { cat: any }) {
 }
 
 // 4世代分のノードを配列で返す
-function getFourthGenNodes(pedigree: any) {
+function getFourthGenNodes(pedigree: PedigreeCat) {
   // 祖父母の父母（曽祖父母）
   const fatherFather = pedigree?.father?.father;
   const fatherMother = pedigree?.father?.mother;

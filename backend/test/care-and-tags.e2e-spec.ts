@@ -1,11 +1,12 @@
 import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
+import { Server } from "http";
 import request from "supertest";
 import { AppModule } from "../src/app.module";
 
 describe("Care & Tags flows (e2e)", () => {
   let app: INestApplication;
-  let server: any;
+  let server: Server;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({

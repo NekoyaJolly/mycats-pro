@@ -19,6 +19,11 @@ interface PedigreeRelationData {
   MotherJCU: string;
 }
 
+interface PedigreeUpdateData {
+  fatherPedigreeId?: string;
+  motherPedigreeId?: string;
+}
+
 async function buildPedigreeRelations() {
   const csvPath = path.join(
     __dirname,
@@ -41,7 +46,7 @@ async function buildPedigreeRelations() {
             trim: true,
           }),
         )
-        .on("data", (record: any) => {
+        .on("data", (record: Record<string, string>) => {
           records.push({
             PedigreeID: record.PedigreeID,
             FatherJCU: record.FatherJCU,
@@ -89,7 +94,7 @@ async function buildPedigreeRelations() {
       }
 
       try {
-        const updateData: any = {};
+        const updateData: PedigreeUpdateData = {};
 
         // 父親のリレーション
         const fatherPedigreeId = extractPedigreeNumber(record.FatherJCU);

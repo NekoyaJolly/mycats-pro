@@ -55,6 +55,36 @@ interface NgPairingRule {
   active: boolean;
 }
 
+interface BreedingCat {
+  id: string;
+  name: string;
+  breed: string;
+  status: string;
+  tags: string[];
+  lastMating?: string | null;
+}
+
+interface BreedingScheduleEntry {
+  maleId: string;
+  maleName: string;
+  femaleId: string;
+  femaleName: string;
+  date: string;
+  duration: number;
+  dayIndex: number;
+  isHistory: boolean;
+  result?: string;
+}
+
+interface PregnancyCheckItem {
+  id: string;
+  maleName: string;
+  femaleName: string;
+  matingDate: string;
+  checkDate: string;
+  status: string;
+}
+
 // 猫データ（繁殖用）
 const maleCats = [
   { id: '1', name: 'レオ', breed: 'アメリカンショートヘア', status: '繁殖可能', tags: ['血統書付き', '大型'] },
@@ -112,7 +142,7 @@ export default function BreedingPage() {
   const [activeTab, setActiveTab] = useState('schedule');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 現在の月
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear()); // 現在の年
-  const [breedingSchedule, setBreedingSchedule] = useState<Record<string, any>>({});
+  const [breedingSchedule, setBreedingSchedule] = useState<Record<string, BreedingScheduleEntry>>({});
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedMaleForEdit, setSelectedMaleForEdit] = useState<string | null>(null);
   const [activeMales, setActiveMales] = useState(maleCats.slice(0, 4)); // 最初は4頭表示
@@ -141,7 +171,7 @@ export default function BreedingPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedDuration, setSelectedDuration] = useState<number>(1); // 交配期間（日数）
   const [defaultDuration, setDefaultDuration] = useState<number>(1); // デフォルト交配期間
-  const [availableFemales, setAvailableFemales] = useState<any[]>([]);
+  const [availableFemales, setAvailableFemales] = useState<BreedingCat[]>([]);
   const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false);
   const [maleModalOpened, { open: openMaleModal, close: closeMaleModal }] = useDisclosure(false);
   const [rulesModalOpened, { open: openRulesModal, close: closeRulesModal }] = useDisclosure(false);
@@ -222,7 +252,7 @@ export default function BreedingPage() {
   };
 
   // オス猫追加
-  const handleAddMale = (maleData: any) => {
+  const handleAddMale = (maleData: BreedingCat) => {
     setActiveMales(prev => [...prev, maleData]);
     closeMaleModal();
   };
@@ -316,9 +346,9 @@ export default function BreedingPage() {
     const female = femaleCats.find(f => f.id === femaleId);
     const male = activeMales.find(m => m.id === selectedMale);
     
-    if (female && male && selectedDate) {
+    if (female && male && selectedDate && selectedMale) {
       // NGペアチェック
-      if (isNGPairing(selectedMale!, femaleId)) {
+      if (isNGPairing(selectedMale, femaleId)) {
         const ngRule = ngPairingRules.find(rule => {
           if (!rule.active) return false;
           
@@ -355,7 +385,7 @@ export default function BreedingPage() {
       }
       
       // 各日付にスケジュールを追加
-      const newSchedules: Record<string, any> = {};
+      const newSchedules: Record<string, BreedingScheduleEntry> = {};
       scheduleDates.forEach((dateStr, index) => {
         const scheduleKey = `${selectedMale}-${dateStr}`;
         
@@ -407,7 +437,7 @@ export default function BreedingPage() {
   };
 
   // 妊娠確認
-  const handlePregnancyCheck = (checkItem: any, isPregnant: boolean) => {
+  const handlePregnancyCheck = (checkItem: PregnancyCheckItem, isPregnant: boolean) => {
     if (isPregnant) {
       // 妊娠の場合：出産予定リストに追加
       const matingDate = new Date(checkItem.matingDate);

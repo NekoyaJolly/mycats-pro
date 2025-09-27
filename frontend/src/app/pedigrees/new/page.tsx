@@ -85,6 +85,12 @@ interface PedigreeOption {
   label: string;
 }
 
+interface PedigreeApiData {
+  id: string;
+  pedigreeId: string;
+  catName?: string;
+}
+
 export default function NewPedigreePage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -168,7 +174,7 @@ export default function NewPedigreePage() {
       const response = await fetch('http://localhost:3004/api/v1/pedigrees?limit=100');
       if (response.ok) {
         const result = await response.json();
-        const options = (result.data || []).map((p: any) => ({
+        const options = (result.data || []).map((p: PedigreeApiData) => ({
           value: p.id,
           label: `${p.pedigreeId} - ${p.catName || '名前なし'}`
         }));
@@ -420,7 +426,7 @@ export default function NewPedigreePage() {
     return null;
   }
 
-  const updateFormData = (field: keyof PedigreeFormData, value: any) => {
+  const updateFormData = (field: keyof PedigreeFormData, value: unknown) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
