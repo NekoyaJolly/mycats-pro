@@ -19,6 +19,11 @@ import {
   Select,
   ActionIcon,
   ScrollArea,
+  TextInput,
+  Checkbox,
+  MultiSelect,
+  NumberInput,
+  Radio,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { 
@@ -31,8 +36,24 @@ import {
   IconX,
   IconMaximize,
   IconMinimize,
-  IconSettings
+  IconSettings,
+  IconTrash,
+  IconEdit,
 } from '@tabler/icons-react';
+
+// 型定義
+interface NgPairingRule {
+  id: string;
+  name: string;
+  type: 'tag_combination' | 'individual_prohibition' | 'generation_limit';
+  maleConditions?: string[];
+  femaleConditions?: string[];
+  maleNames?: string[];
+  femaleNames?: string[];
+  generationLimit?: number;
+  description: string;
+  active: boolean;
+}
 
 // 猫データ（繁殖用）
 const maleCats = [
@@ -50,10 +71,11 @@ const femaleCats = [
 ];
 
 // NGペアルール
-const ngPairingRules = [
+const initialNgPairingRules: NgPairingRule[] = [
   {
     id: '1',
     name: '近親交配防止',
+    type: 'tag_combination',
     maleConditions: ['血統書付き'],
     femaleConditions: ['血統書付き'],
     description: '血統書付き同士の交配は避ける',
@@ -62,6 +84,7 @@ const ngPairingRules = [
   {
     id: '2',
     name: 'サイズ不適合',
+    type: 'tag_combination',
     maleConditions: ['大型'],
     femaleConditions: ['小型'],
     description: '大型オスと小型メスの交配は避ける',
@@ -87,8 +110,8 @@ const generateMonthDates = (year: number, month: number) => {
 
 export default function BreedingPage() {
   const [activeTab, setActiveTab] = useState('schedule');
-  const [selectedMonth, setSelectedMonth] = useState(8); // 8月
-  const [selectedYear, setSelectedYear] = useState(2024);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 現在の月
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear()); // 現在の年
   const [breedingSchedule, setBreedingSchedule] = useState<Record<string, any>>({});
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedMaleForEdit, setSelectedMaleForEdit] = useState<string | null>(null);
@@ -116,10 +139,43 @@ export default function BreedingPage() {
   
   const [selectedMale, setSelectedMale] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDuration, setSelectedDuration] = useState<number>(1); // 交配期間（日数）
+  const [defaultDuration, setDefaultDuration] = useState<number>(1); // デフォルト交配期間
   const [availableFemales, setAvailableFemales] = useState<any[]>([]);
   const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false);
   const [maleModalOpened, { open: openMaleModal, close: closeMaleModal }] = useDisclosure(false);
   const [rulesModalOpened, { open: openRulesModal, close: closeRulesModal }] = useDisclosure(false);
+  const [newRuleModalOpened, { open: openNewRuleModal, close: closeNewRuleModal }] = useDisclosure(false);
+  
+  // 交配チェック記録管理 - キー: "オスID-メスID-日付", 値: チェック回数
+  const [matingChecks, setMatingChecks] = useState<{[key: string]: number}>({});
+  
+  const [ngPairingRules, setNgPairingRules] = useState(initialNgPairingRules);
+  const [newRule, setNewRule] = useState({
+    name: '',
+    type: 'tag_combination',
+    maleNames: [] as string[],
+    femaleNames: [] as string[],
+    maleConditions: [] as string[],
+    femaleConditions: [] as string[],
+    generationLimit: 3,
+    description: '',
+  });
+
+  // 次のルール番号を生成する関数
+  const getNextRuleName = () => {
+    const existingNumbers = ngPairingRules
+      .map(rule => {
+        const match = rule.name.match(/^NG(\d+)$/);
+        return match ? parseInt(match[1]) : 0;
+      })
+      .filter(num => num > 0);
+    
+    const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
+    return `NG${maxNumber + 1}`;
+  };
+  
+  const availableTags = [...new Set([...maleCats.flatMap(cat => cat.tags), ...femaleCats.flatMap(cat => cat.tags)])];
   
   const router = useRouter();
 
@@ -135,10 +191,23 @@ export default function BreedingPage() {
     return ngPairingRules.some(rule => {
       if (!rule.active) return false;
       
-      const maleMatches = rule.maleConditions.some(condition => male.tags.includes(condition));
-      const femaleMatches = rule.femaleConditions.some(condition => female.tags.includes(condition));
+      if (rule.type === 'tag_combination' && rule.maleConditions && rule.femaleConditions) {
+        const maleMatches = rule.maleConditions.some(condition => male.tags.includes(condition));
+        const femaleMatches = rule.femaleConditions.some(condition => female.tags.includes(condition));
+        return maleMatches && femaleMatches;
+      }
       
-      return maleMatches && femaleMatches;
+      if (rule.type === 'individual_prohibition' && rule.maleNames && rule.femaleNames) {
+        return rule.maleNames.includes(male.name) && rule.femaleNames.includes(female.name);
+      }
+      
+      // generation_limit の実装（将来的にpedigree機能連携）
+      if (rule.type === 'generation_limit') {
+        // TODO: 血統データとの連携が必要
+        return false;
+      }
+      
+      return false;
     });
   };
 
@@ -168,6 +237,7 @@ export default function BreedingPage() {
   const handleMaleSelect = (maleId: string, date: string) => {
     setSelectedMale(maleId);
     setSelectedDate(date);
+    setSelectedDuration(defaultDuration); // デフォルト期間を使用
     
     // 交配可能なメス猫をフィルタリング（妊娠中・確認中以外）
     const available = femaleCats.filter(female => 
@@ -178,6 +248,62 @@ export default function BreedingPage() {
     
     setAvailableFemales(available);
     openModal();
+  };
+
+  // デフォルト期間を更新
+  const handleSetDefaultDuration = (duration: number, setAsDefault: boolean) => {
+    if (setAsDefault) {
+      setDefaultDuration(duration);
+    }
+  };
+
+  // 交配結果処理
+  const handleMatingResult = (maleId: string, femaleId: string, femaleName: string, result: 'success' | 'failure') => {
+    const male = activeMales.find(m => m.id === maleId);
+    
+    if (result === 'success') {
+      // ○ボタン：妊娠確認中リストに追加
+      const newPregnancyCheck = {
+        id: Date.now().toString(),
+        maleName: male?.name || '',
+        femaleName: femaleName,
+        matingDate: new Date().toISOString().split('T')[0],
+        checkDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30日後
+        status: '確認中'
+      };
+      
+      setPregnancyCheckList(prev => [...prev, newPregnancyCheck]);
+    }
+    
+    // 交配スケジュールを履歴として残す（○×どちらも）
+    setBreedingSchedule(prev => {
+      const newSchedule = { ...prev };
+      Object.keys(newSchedule).forEach(key => {
+        if (key.includes(maleId) && newSchedule[key].femaleName === femaleName && !newSchedule[key].isHistory) {
+          newSchedule[key] = {
+            ...newSchedule[key],
+            isHistory: true,
+            result: '' // 成功・失敗問わず結果表示なし
+          };
+        }
+      });
+      return newSchedule;
+    });
+  };
+
+  // 交配チェックを追加
+  const handleMatingCheck = (maleId: string, femaleId: string, date: string) => {
+    const key = `${maleId}-${femaleId}-${date}`;
+    setMatingChecks(prev => ({
+      ...prev,
+      [key]: (prev[key] || 0) + 1
+    }));
+  };
+
+  // その日のチェック回数を取得
+  const getMatingCheckCount = (maleId: string, femaleId: string, date: string): number => {
+    const key = `${maleId}-${femaleId}-${date}`;
+    return matingChecks[key] || 0;
   };
 
   // オス猫名クリック時の編集モード
@@ -194,9 +320,19 @@ export default function BreedingPage() {
       // NGペアチェック
       if (isNGPairing(selectedMale!, femaleId)) {
         const ngRule = ngPairingRules.find(rule => {
-          const maleMatches = rule.maleConditions.some(condition => male.tags.includes(condition));
-          const femaleMatches = rule.femaleConditions.some(condition => female.tags.includes(condition));
-          return rule.active && maleMatches && femaleMatches;
+          if (!rule.active) return false;
+          
+          if (rule.type === 'tag_combination' && rule.maleConditions && rule.femaleConditions) {
+            const maleMatches = rule.maleConditions.some(condition => male.tags.includes(condition));
+            const femaleMatches = rule.femaleConditions.some(condition => female.tags.includes(condition));
+            return maleMatches && femaleMatches;
+          }
+          
+          if (rule.type === 'individual_prohibition' && rule.maleNames && rule.femaleNames) {
+            return rule.maleNames.includes(male.name) && rule.femaleNames.includes(female.name);
+          }
+          
+          return false;
         });
         
         const confirmed = window.confirm(
@@ -209,51 +345,62 @@ export default function BreedingPage() {
         }
       }
       
-      const scheduleKey = `${selectedMale}-${selectedDate}`;
+      // 交配期間の日付を計算
+      const startDate = new Date(selectedDate);
+      const scheduleDates: string[] = [];
+      for (let i = 0; i < selectedDuration; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        scheduleDates.push(date.toISOString().split('T')[0]);
+      }
       
-      // 前回のペアがある場合、成功/失敗の確認
-      const existingPair = breedingSchedule[scheduleKey];
-      if (existingPair) {
-        const success = window.confirm(`前回のペア（${male.name} × ${existingPair.femaleName}）は成功しましたか？`);
+      // 各日付にスケジュールを追加
+      const newSchedules: Record<string, any> = {};
+      scheduleDates.forEach((dateStr, index) => {
+        const scheduleKey = `${selectedMale}-${dateStr}`;
         
-        if (success) {
-          // 成功：メスを妊娠確認中リストに追加
-          const checkDate = new Date(selectedDate);
-          checkDate.setDate(checkDate.getDate() + 21); // 21日後に妊娠確認
+        // 前回のペアがある場合、成功/失敗の確認
+        const existingPair = breedingSchedule[scheduleKey];
+        if (existingPair && index === 0) { // 初日のみチェック
+          const success = window.confirm(`前回のペア（${male.name} × ${existingPair.femaleName}）は成功しましたか？`);
           
-          setPregnancyCheckList(prev => [...prev, {
-            id: Date.now().toString(),
-            maleName: male.name,
-            femaleName: existingPair.femaleName,
-            matingDate: selectedDate,
-            checkDate: checkDate.toISOString().split('T')[0],
-            status: '確認待ち',
-          }]);
-        }
-        
-        // 成功・失敗に関わらず、既存のペアをテキスト記録に変更
-        setBreedingSchedule((prev: Record<string, any>) => ({
-          ...prev,
-          [scheduleKey]: {
+          if (success) {
+            // 成功：メスを妊娠確認中リストに追加
+            const checkDate = new Date(selectedDate);
+            checkDate.setDate(checkDate.getDate() + 21); // 21日後に妊娠確認
+            
+            setPregnancyCheckList(prev => [...prev, {
+              id: Date.now().toString(),
+              maleName: male.name,
+              femaleName: existingPair.femaleName,
+              matingDate: selectedDate,
+              checkDate: checkDate.toISOString().split('T')[0],
+              status: '確認待ち',
+            }]);
+          }
+          
+          // 成功・失敗に関わらず、既存のペアをテキスト記録に変更
+          newSchedules[scheduleKey] = {
             ...existingPair,
             isHistory: true,
             result: success ? '成功' : '失敗',
-          }
-        }));
-      }
-      
-      // 新しいペアを追加
-      setBreedingSchedule((prev: Record<string, any>) => ({
-        ...prev,
-        [scheduleKey]: {
-          maleId: selectedMale,
-          maleName: male.name,
-          femaleId: femaleId,
-          femaleName: female.name,
-          date: selectedDate,
-          isHistory: false,
+          };
+        } else if (!existingPair) {
+          // 新しいペアを追加
+          newSchedules[scheduleKey] = {
+            maleId: selectedMale,
+            maleName: male.name,
+            femaleId: femaleId,
+            femaleName: female.name,
+            date: dateStr,
+            duration: selectedDuration,
+            dayIndex: index, // 0: 初日, 1: 2日目, 2: 3日目...
+            isHistory: false,
+          };
         }
-      }));
+      });
+      
+      setBreedingSchedule(prev => ({ ...prev, ...newSchedules }));
     }
     
     closeModal();
@@ -282,6 +429,85 @@ export default function BreedingPage() {
     
     // 妊娠確認中リストから削除
     setPregnancyCheckList(prev => prev.filter(p => p.id !== checkItem.id));
+  };
+
+  // NGルール管理機能
+  const addNewRule = () => {
+    const id = Date.now().toString();
+    const ruleToAdd: NgPairingRule = {
+      id,
+      name: newRule.name,
+      type: newRule.type as 'tag_combination' | 'individual_prohibition' | 'generation_limit',
+      description: newRule.description,
+      active: true,
+    };
+
+    if (newRule.type === 'tag_combination') {
+      ruleToAdd.maleConditions = newRule.maleConditions;
+      ruleToAdd.femaleConditions = newRule.femaleConditions;
+    } else if (newRule.type === 'individual_prohibition') {
+      ruleToAdd.maleNames = newRule.maleNames;
+      ruleToAdd.femaleNames = newRule.femaleNames;
+    } else if (newRule.type === 'generation_limit') {
+      ruleToAdd.generationLimit = newRule.generationLimit;
+    }
+
+    setNgPairingRules(prev => [...prev, ruleToAdd]);
+    resetNewRuleForm();
+    closeNewRuleModal();
+  };
+
+  const resetNewRuleForm = () => {
+    setNewRule({
+      name: getNextRuleName(),
+      type: 'tag_combination',
+      maleNames: [],
+      femaleNames: [],
+      maleConditions: [],
+      femaleConditions: [],
+      generationLimit: 3,
+      description: '',
+    });
+  };
+
+  // 新規ルールモーダルを開く時にルール名を自動生成
+  const openNewRuleModalWithName = () => {
+    setNewRule(prev => ({
+      ...prev,
+      name: getNextRuleName()
+    }));
+    openNewRuleModal();
+  };
+
+  // 新規ルールのバリデーション
+  const isNewRuleValid = () => {
+    // ルール名は必須
+    if (!newRule.name.trim()) {
+      return false;
+    }
+
+    // ルールタイプ別のバリデーション
+    if (newRule.type === 'tag_combination') {
+      return newRule.maleConditions.length > 0 && newRule.femaleConditions.length > 0;
+    } else if (newRule.type === 'individual_prohibition') {
+      return newRule.maleNames.length > 0 && newRule.femaleNames.length > 0;
+    } else if (newRule.type === 'generation_limit') {
+      return newRule.generationLimit > 0;
+    }
+
+    return false;
+  };
+
+  const deleteRule = (ruleId: string) => {
+    setNgPairingRules(prev => prev.filter(rule => rule.id !== ruleId));
+  };
+
+  const toggleRule = (ruleId: string) => {
+    setNgPairingRules(prev => 
+      prev.map(rule => 
+        rule.id === ruleId ? { ...rule, active: !rule.active } : rule
+      )
+    );
   };
 
   return (
@@ -313,13 +539,14 @@ export default function BreedingPage() {
               繁殖管理
             </Title>
             <Group gap="sm" ml="auto">
-              <ActionIcon
+              <Button
                 variant="light"
                 onClick={openRulesModal}
-                title="NGペアルール設定"
+                leftSection={<IconSettings size={16} />}
+                size="sm"
               >
-                <IconSettings size={18} />
-              </ActionIcon>
+                NG設定
+              </Button>
               <ActionIcon
                 variant="light"
                 onClick={toggleFullscreen}
@@ -422,10 +649,20 @@ export default function BreedingPage() {
                           borderRight: '2px solid #e9ecef'
                         }}
                       >
-                        日付
+                        <Flex align="center" gap={4} justify="center">
+                          <Text size={isFullscreen ? "xs" : "sm"} fw={600}>
+                            日付
+                          </Text>
+                        </Flex>
                       </Table.Th>
                       {activeMales.map(male => (
-                        <Table.Th key={male.id} style={{ minWidth: isFullscreen ? 100 : 120 }}>
+                        <Table.Th 
+                          key={male.id} 
+                          style={{ 
+                            minWidth: isFullscreen ? 100 : 120,
+                            borderRight: '1px solid #e9ecef' // オス名の境界線
+                          }}
+                        >
                           <Box
                             onClick={() => handleMaleNameClick(male.id)}
                             style={{ cursor: 'pointer', position: 'relative' }}
@@ -433,32 +670,6 @@ export default function BreedingPage() {
                             <Text fw={600} size={isFullscreen ? "xs" : "sm"} ta="center">
                               {male.name}
                             </Text>
-                            <Text size={isFullscreen ? "8px" : "xs"} c="dimmed" ta="center">
-                              {male.breed}
-                            </Text>
-                            {/* +ボタンを名前の中心に配置 */}
-                            <Box
-                              style={{
-                                position: 'absolute',
-                                top: '50%',
-                                left: '50%',
-                                transform: 'translate(-50%, -50%)',
-                                opacity: 0.7,
-                                pointerEvents: 'none'
-                              }}
-                            >
-                              <ActionIcon
-                                variant="light"
-                                size={isFullscreen ? "xs" : "sm"}
-                                color="gray"
-                                style={{ 
-                                  opacity: 0.5,
-                                  backgroundColor: 'rgba(255,255,255,0.8)'
-                                }}
-                              >
-                                <IconPlus size={isFullscreen ? 12 : 14} />
-                              </ActionIcon>
-                            </Box>
                           </Box>
                           {selectedMaleForEdit === male.id && (
                             <Group gap="xs" justify="center" mt="xs">
@@ -502,30 +713,142 @@ export default function BreedingPage() {
                             borderRight: '1px solid #e9ecef'
                           }}
                         >
-                          <Text size={isFullscreen ? "xs" : "sm"} fw={dayOfWeek === 0 || dayOfWeek === 6 ? 600 : 400}>
-                            {date}日
-                          </Text>
-                          <Text size={isFullscreen ? "8px" : "xs"} c="dimmed">
-                            {['日', '月', '火', '水', '木', '金', '土'][dayOfWeek]}
-                          </Text>
+                          <Flex align="center" gap={4} justify="center">
+                            <Text size={isFullscreen ? "xs" : "sm"} fw={dayOfWeek === 0 || dayOfWeek === 6 ? 600 : 400}>
+                              {date}日
+                            </Text>
+                            <Text size={isFullscreen ? "8px" : "xs"} c="dimmed">
+                              ({['日', '月', '火', '水', '木', '金', '土'][dayOfWeek]})
+                            </Text>
+                          </Flex>
                         </Table.Td>
                         {activeMales.map(male => {
                           const scheduleKey = `${male.id}-${dateString}`;
                           const schedule = breedingSchedule[scheduleKey];
                           
+                          // 次の日も同じ交配期間かチェック
+                          const nextDate = new Date(selectedYear, selectedMonth, date + 1);
+                          const nextDateString = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
+                          const nextScheduleKey = `${male.id}-${nextDateString}`;
+                          const nextSchedule = breedingSchedule[nextScheduleKey];
+                          const hasNextSameMating = schedule && nextSchedule && 
+                            schedule.femaleName === nextSchedule.femaleName && 
+                            !schedule.isHistory && !nextSchedule.isHistory;
+                          
                           return (
-                            <Table.Td key={male.id} style={{ textAlign: 'center' }}>
+                            <Table.Td 
+                              key={male.id} 
+                              style={{ 
+                                textAlign: 'center',
+                                // 交配期間中で次の日も同じ交配の場合は境界線を消す
+                                borderRight: hasNextSameMating ? 'none' : '1px solid #e9ecef',
+                                // 交配期間中は薄い黄色の背景
+                                backgroundColor: schedule && !schedule.isHistory ? '#fffacd' : 'transparent'
+                              }}
+                            >
                               {schedule ? (
                                 schedule.isHistory ? (
-                                  <Text size={isFullscreen ? "8px" : "xs"} c="dimmed">
-                                    {schedule.femaleName}
-                                    <br />
-                                    ({schedule.result})
-                                  </Text>
+                                  // 履歴：名前とチェックマークを一行表示
+                                  <Box style={{ position: 'relative', width: '100%', height: '100%', minHeight: isFullscreen ? '28px' : '32px', display: 'flex', flexDirection: 'column', justifyContent: 'center', opacity: 0.6 }}>
+                                    <Flex align="center" gap={4} style={{ minHeight: isFullscreen ? '24px' : '28px' }}>
+                                      {/* 履歴のメス名表示（初日と最終日） */}
+                                      {(schedule.dayIndex === 0 || schedule.dayIndex === schedule.duration - 1) && (
+                                        <Badge size={isFullscreen ? "xs" : "sm"} color="gray" variant="light">
+                                          {schedule.femaleName}
+                                        </Badge>
+                                      )}
+                                      
+                                      {/* 履歴のチェックマーク表示エリア */}
+                                      <Box
+                                        style={{
+                                          flex: 1,
+                                          minHeight: isFullscreen ? '20px' : '24px',
+                                          padding: '2px 4px',
+                                          borderRadius: '3px',
+                                          border: '1px dashed #d3d3d3',
+                                          backgroundColor: getMatingCheckCount(male.id, schedule.femaleId, dateString) > 0 ? '#f8f8f8' : 'transparent',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center'
+                                        }}
+                                      >
+                                        {getMatingCheckCount(male.id, schedule.femaleId, dateString) > 0 ? (
+                                          <Text size={isFullscreen ? "8px" : "xs"} c="dimmed" ta="center" lh={1}>
+                                            {'✓'.repeat(getMatingCheckCount(male.id, schedule.femaleId, dateString))}
+                                          </Text>
+                                        ) : (
+                                          <Text size="8px" c="dimmed" ta="center" style={{ opacity: 0.3 }} lh={1}>
+                                            -
+                                          </Text>
+                                        )}
+                                      </Box>
+                                    </Flex>
+                                  </Box>
                                 ) : (
-                                  <Badge size={isFullscreen ? "xs" : "sm"} color="blue">
-                                    {schedule.femaleName}
-                                  </Badge>
+                                  <Box style={{ position: 'relative', width: '100%', height: '100%', minHeight: isFullscreen ? '28px' : '32px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                    {/* 一行表示：メス名バッジ（初日と最終日）とチェックエリア */}
+                                    <Flex align="center" gap={4} style={{ minHeight: isFullscreen ? '24px' : '28px' }}>
+                                      {/* メス名表示（初日と最終日） */}
+                                      {(schedule.dayIndex === 0 || schedule.dayIndex === schedule.duration - 1) && (
+                                        <Badge size={isFullscreen ? "xs" : "sm"} color="pink">
+                                          {schedule.femaleName}
+                                        </Badge>
+                                      )}
+                                      
+                                      {/* チェックマーク表示エリアまたは最終日のボタン */}
+                                      {schedule.dayIndex === schedule.duration - 1 ? (
+                                        /* 最終日：○×ボタン */
+                                        <Group gap={2}>
+                                          <ActionIcon
+                                            size={isFullscreen ? "xs" : "sm"}
+                                            variant="light"
+                                            color="green"
+                                            onClick={() => handleMatingResult(male.id, schedule.femaleId, schedule.femaleName, 'success')}
+                                            title="交配成功"
+                                          >
+                                            ○
+                                          </ActionIcon>
+                                          <ActionIcon
+                                            size={isFullscreen ? "xs" : "sm"}
+                                            variant="light"
+                                            color="red"
+                                            onClick={() => handleMatingResult(male.id, schedule.femaleId, schedule.femaleName, 'failure')}
+                                            title="交配失敗"
+                                          >
+                                            ×
+                                          </ActionIcon>
+                                        </Group>
+                                      ) : (
+                                        /* 初日・中間日：チェックマーク表示エリア */
+                                        <Box
+                                          style={{
+                                            flex: 1,
+                                            minHeight: isFullscreen ? '16px' : '18px',
+                                            cursor: 'pointer',
+                                            padding: '1px 4px',
+                                            borderRadius: '3px',
+                                            border: '1px dashed #e9ecef',
+                                            backgroundColor: getMatingCheckCount(male.id, schedule.femaleId, dateString) > 0 ? '#f0f9f0' : 'transparent',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                          }}
+                                          onClick={() => handleMatingCheck(male.id, schedule.femaleId, dateString)}
+                                          title="クリックして交配記録を追加"
+                                        >
+                                          {getMatingCheckCount(male.id, schedule.femaleId, dateString) > 0 ? (
+                                            <Text size={isFullscreen ? "8px" : "xs"} c="green" ta="center" lh={1}>
+                                              {'✓'.repeat(getMatingCheckCount(male.id, schedule.femaleId, dateString))}
+                                            </Text>
+                                          ) : (
+                                            <Text size="8px" c="dimmed" ta="center" style={{ opacity: 0.5 }} lh={1}>
+                                              +
+                                            </Text>
+                                          )}
+                                        </Box>
+                                      )}
+                                    </Flex>
+                                  </Box>
                                 )
                               ) : (
                                 <Button
@@ -638,10 +961,28 @@ export default function BreedingPage() {
         title="交配するメス猫を選択"
         size="md"
       >
-        <Stack gap="sm">
+        <Stack gap="md">
           <Text size="sm" c="dimmed">
             {selectedMale && activeMales.find(m => m.id === selectedMale)?.name} との交配相手を選択してください
           </Text>
+          
+          <Stack gap="xs">
+            <NumberInput
+              label="交配期間"
+              description="交配を行う日数を設定してください"
+              value={selectedDuration}
+              onChange={(value) => setSelectedDuration(typeof value === 'number' ? value : 1)}
+              min={1}
+              max={7}
+              suffix="日間"
+            />
+            <Checkbox
+              label="この期間をデフォルトに設定"
+              size="sm"
+              onChange={(event) => handleSetDefaultDuration(selectedDuration, event.currentTarget.checked)}
+            />
+          </Stack>
+
           {availableFemales.map((female) => {
             const isNG = selectedMale ? isNGPairing(selectedMale, female.id) : false;
             return (
@@ -738,36 +1079,198 @@ export default function BreedingPage() {
         size="lg"
       >
         <Stack gap="md">
-          <Text size="sm" c="dimmed">
-            交配時に警告を表示するルールを設定できます
-          </Text>
+          <Group justify="space-between">
+            <Text size="sm" c="dimmed">
+              交配時に警告を表示するルールを設定できます
+            </Text>
+            <Button
+              leftSection={<IconPlus size={16} />}
+              onClick={openNewRuleModalWithName}
+              size="sm"
+            >
+              新規ルール作成
+            </Button>
+          </Group>
+
           {ngPairingRules.map((rule) => (
             <Card key={rule.id} shadow="sm" padding="md" radius="md" withBorder>
               <Group justify="space-between" mb="xs">
                 <Text fw={600}>{rule.name}</Text>
-                <Badge color={rule.active ? 'green' : 'gray'}>
-                  {rule.active ? '有効' : '無効'}
-                </Badge>
+                <Group gap="xs">
+                  <Badge color={rule.active ? 'green' : 'gray'}>
+                    {rule.active ? '有効' : '無効'}
+                  </Badge>
+                  <ActionIcon
+                    variant="light"
+                    color="blue"
+                    size="sm"
+                    onClick={() => toggleRule(rule.id)}
+                  >
+                    <IconEdit size={14} />
+                  </ActionIcon>
+                  <ActionIcon
+                    variant="light"
+                    color="red"
+                    size="sm"
+                    onClick={() => deleteRule(rule.id)}
+                  >
+                    <IconTrash size={14} />
+                  </ActionIcon>
+                </Group>
               </Group>
               <Text size="sm" c="dimmed" mb="xs">
                 {rule.description}
               </Text>
-              <Group gap="xs">
-                <Text size="xs">オス条件:</Text>
-                {rule.maleConditions.map((condition: string) => (
-                  <Badge key={condition} variant="outline" size="xs" color="blue">
-                    {condition}
-                  </Badge>
-                ))}
-                <Text size="xs">メス条件:</Text>
-                {rule.femaleConditions.map((condition: string) => (
-                  <Badge key={condition} variant="outline" size="xs" color="pink">
-                    {condition}
-                  </Badge>
-                ))}
-              </Group>
+
+              {/* ルールタイプ別の詳細表示 */}
+              {rule.type === 'tag_combination' && rule.maleConditions && rule.femaleConditions && (
+                <Group gap="xs">
+                  <Text size="xs">オス条件:</Text>
+                  {rule.maleConditions.map((condition: string) => (
+                    <Badge key={condition} variant="outline" size="xs" color="blue">
+                      {condition}
+                    </Badge>
+                  ))}
+                  <Text size="xs">メス条件:</Text>
+                  {rule.femaleConditions.map((condition: string) => (
+                    <Badge key={condition} variant="outline" size="xs" color="pink">
+                      {condition}
+                    </Badge>
+                  ))}
+                </Group>
+              )}
+
+              {rule.type === 'individual_prohibition' && rule.maleNames && rule.femaleNames && (
+                <Group gap="xs">
+                  <Text size="xs">禁止ペア:</Text>
+                  {rule.maleNames.map((maleName, index) => 
+                    rule.femaleNames!.map((femaleName) => (
+                      <Badge key={`${maleName}-${femaleName}`} variant="outline" size="xs" color="red">
+                        {maleName} × {femaleName}
+                      </Badge>
+                    ))
+                  )}
+                </Group>
+              )}
+
+              {rule.type === 'generation_limit' && (
+                <Text size="xs" c="dimmed">
+                  近親係数制限: {rule.generationLimit}親等まで禁止
+                </Text>
+              )}
             </Card>
           ))}
+
+          {ngPairingRules.length === 0 && (
+            <Text ta="center" c="dimmed" py="md">
+              NGルールが設定されていません
+            </Text>
+          )}
+        </Stack>
+      </Modal>
+
+      {/* 新規ルール作成モーダル */}
+      <Modal
+        opened={newRuleModalOpened}
+        onClose={closeNewRuleModal}
+        title="NGルール新規作成"
+        size="lg"
+      >
+        <Stack gap="md">
+          <TextInput
+            label="ルール名"
+            placeholder="例: 大型×小型禁止"
+            value={newRule.name}
+            onChange={(e) => setNewRule(prev => ({ ...prev, name: e.target.value }))}
+            required
+          />
+
+          <Radio.Group
+            label="ルールタイプ"
+            value={newRule.type}
+            onChange={(value) => setNewRule(prev => ({ ...prev, type: value }))}
+            required
+          >
+            <Stack gap="xs">
+              <Radio value="tag_combination" label="タグ組み合わせ禁止" />
+              <Radio value="individual_prohibition" label="個別ペア禁止" />
+              <Radio value="generation_limit" label="近親係数制限" />
+            </Stack>
+          </Radio.Group>
+
+          {newRule.type === 'tag_combination' && (
+            <>
+              <MultiSelect
+                label="オス猫の条件タグ"
+                data={availableTags}
+                value={newRule.maleConditions}
+                onChange={(value) => setNewRule(prev => ({ ...prev, maleConditions: value }))}
+                placeholder="禁止するオス猫のタグを選択"
+                required
+              />
+              <MultiSelect
+                label="メス猫の条件タグ"
+                data={availableTags}
+                value={newRule.femaleConditions}
+                onChange={(value) => setNewRule(prev => ({ ...prev, femaleConditions: value }))}
+                placeholder="禁止するメス猫のタグを選択"
+                required
+              />
+            </>
+          )}
+
+          {newRule.type === 'individual_prohibition' && (
+            <>
+              <MultiSelect
+                label="禁止するオス猫"
+                data={maleCats.map(cat => ({ value: cat.name, label: cat.name }))}
+                value={newRule.maleNames}
+                onChange={(value) => setNewRule(prev => ({ ...prev, maleNames: value }))}
+                placeholder="禁止するオス猫を選択"
+                required
+              />
+              <MultiSelect
+                label="禁止するメス猫"
+                data={femaleCats.map(cat => ({ value: cat.name, label: cat.name }))}
+                value={newRule.femaleNames}
+                onChange={(value) => setNewRule(prev => ({ ...prev, femaleNames: value }))}
+                placeholder="禁止するメス猫を選択"
+                required
+              />
+            </>
+          )}
+
+          {newRule.type === 'generation_limit' && (
+            <NumberInput
+              label="親等制限"
+              description="指定した親等以内の近親交配を禁止します"
+              value={newRule.generationLimit}
+              onChange={(value) => setNewRule(prev => ({ ...prev, generationLimit: typeof value === 'number' ? value : 3 }))}
+              min={1}
+              max={10}
+              suffix="親等"
+              required
+            />
+          )}
+
+          <TextInput
+            label="説明"
+            placeholder="このルールの詳細説明（任意）"
+            value={newRule.description}
+            onChange={(e) => setNewRule(prev => ({ ...prev, description: e.target.value }))}
+          />
+
+          <Group justify="flex-end" gap="sm">
+            <Button variant="outline" onClick={closeNewRuleModal}>
+              キャンセル
+            </Button>
+            <Button 
+              onClick={addNewRule}
+              disabled={!isNewRuleValid()}
+            >
+              ルール作成
+            </Button>
+          </Group>
         </Stack>
       </Modal>
     </Box>
