@@ -360,7 +360,7 @@ jobs:
         if: success()
         with:
           name: backend-build
-          path: backend/dist/
+          path: backend/dist
           retention-days: 7
           if-no-files-found: error
 
@@ -369,7 +369,7 @@ jobs:
         if: success()
         with:
           name: frontend-build
-          path: frontend/.next/
+          path: frontend/.next
           retention-days: 7
           if-no-files-found: error
 
@@ -418,17 +418,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Wait for artifacts to be ready
+        run: |
+          echo "⏳ Waiting for artifacts to be fully uploaded..."
+          sleep 10
+
       - name: Download build artifacts - Backend
         uses: actions/download-artifact@v4
         with:
           name: backend-build
-          path: backend/dist/
+          path: backend/dist
 
       - name: Download build artifacts - Frontend
         uses: actions/download-artifact@v4
         with:
           name: frontend-build
-          path: frontend/.next/
+          path: frontend/.next
 
       - name: Verify artifacts
         run: |
@@ -448,7 +453,7 @@ jobs:
         run: |
           # Security: Validate production environment variables without exposing them
           node -e "
-          const { validateProductionEnvironment } = require('./backend/dist/common/environment.validation.js');
+          const { validateProductionEnvironment } = require('./backend/dist/src/common/environment.validation.js');
           try {
             validateProductionEnvironment();
             console.log('✅ Production environment validation passed');
