@@ -21,6 +21,7 @@
     "frontend:install": "pnpm --filter frontend install",
     "frontend:dev:wait": "wait-on tcp:3004 && cross-env PORT=3000 pnpm --filter frontend run dev",
     "frontend:build": "pnpm --filter frontend run build",
+    "frontend:build:static": "pnpm --filter frontend run build:static",
     "frontend:start": "pnpm --filter frontend run start",
     "frontend:lint": "pnpm --filter frontend run lint",
     "lint": "run-p lint:*",

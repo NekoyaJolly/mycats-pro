@@ -384,14 +384,19 @@ NODE_ENV=production node backend/dist/main.js
 1. **Next.js設定の変更** (`frontend/next.config.ts`)
 
 ```typescript
+// GitHub Pages用の静的エクスポート設定を環境変数で制御
+const isStaticExport = process.env.EXPORT_STATIC === 'true';
+
 const nextConfig: NextConfig = {
-  output: "export", // 静的エクスポートを有効化
-  trailingSlash: true, // GitHub Pages用の推奨設定
+  // GitHub Pages static export configuration (環境変数で制御)
+  ...(isStaticExport && {
+    output: "export", // 静的エクスポートを有効化
+    trailingSlash: true, // GitHub Pages用の推奨設定
+  }),
   images: {
-    unoptimized: true, // 画像最適化を無効化
+    unoptimized: isStaticExport, // GitHub Pages用の場合のみ画像最適化を無効化
   },
-  // ... 既存設定
-  // 注意: basePath は不要（GitHub Pagesが自動でリポジトリパスを処理）
+  // ... その他の設定
 };
 ```
 
@@ -424,7 +429,7 @@ jobs:
         run: |
           cd frontend
           pnpm install
-          pnpm build
+          pnpm run build:static
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
@@ -558,6 +563,20 @@ docker-compose up -d
    # legacy-peer-depsでインストール
    cd frontend
    npm install --legacy-peer-deps
+   ```
+
+6. **GitHub Pages用静的ビルドとローカル開発の使い分け**
+
+   ```bash
+   # ローカル開発・本番サーバー用のビルド
+   cd frontend
+   npm run build
+   npm run start
+
+   # GitHub Pages用の静的エクスポート
+   cd frontend
+   npm run build:static
+   # 静的ファイルは out/ ディレクトリに生成される
    ```
 
 ### ログの確認
