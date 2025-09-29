@@ -1,13 +1,18 @@
 import type { NextConfig } from "next";
 
+// GitHub Pages用の静的エクスポート設定を環境変数で制御
+const isStaticExport = process.env.EXPORT_STATIC === 'true';
+
 const nextConfig: NextConfig = {
   /* config options here */
   serverExternalPackages: [],
-  // GitHub Pages static export configuration
-  output: "export", // 静的エクスポートを有効化
-  trailingSlash: true, // GitHub Pages用の推奨設定
+  // GitHub Pages static export configuration (環境変数で制御)
+  ...(isStaticExport && {
+    output: "export", // 静的エクスポートを有効化
+    trailingSlash: true, // GitHub Pages用の推奨設定
+  }),
   images: {
-    unoptimized: true, // 画像最適化を無効化
+    unoptimized: isStaticExport, // GitHub Pages用の場合のみ画像最適化を無効化
   },
   eslint: {
     // 本番ビルド時にESLintエラーを無視
@@ -24,6 +29,8 @@ const nextConfig: NextConfig = {
   // Build configuration
   generateEtags: false,
   poweredByHeader: false,
+  // モノレポ対応のためのワークスペースルート設定
+  outputFileTracingRoot: process.cwd().includes("/frontend") ? "../" : "./",
   // Remove rewrites and headers as they don't work with static export
 };
 

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
+    "build:static": "EXPORT_STATIC=true next build",
     "start": "next start -p 3000",
     "lint": "eslint --max-warnings 150 .",
     "test": "jest",
