@@ -1,4 +1,6 @@
+---
 name: Deploy to GitHub Pages
+
 on:
   push:
     branches: [main]
@@ -9,15 +11,23 @@ permissions:
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+# Allow only one concurrent deployment, skipping runs queued between the run
+# in-progress and latest queued. However, do NOT cancel in-progress runs as we
+# want to allow these production deployments to complete.
 concurrency:
   group: "pages"
   cancel-in-progress: false
 
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9"
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,19 +35,55 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: latest
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
 
-      - name: Install and Build
+      - name: Get pnpm store directory
+        id: pnpm-cache-dir
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache-dir.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
         run: |
           cd frontend
-          pnpm install
+          pnpm install --frozen-lockfile
+
+      - name: Build for static export
+        run: |
+          cd frontend
+          echo "🏗️ Building static export for GitHub Pages..."
           pnpm run build:static
+          echo "✅ Build completed successfully"
+
+      - name: Verify build output
+        run: |
+          cd frontend
+          echo "🔍 Verifying build output..."
+          if [ ! -d "out" ]; then
+            echo "❌ Output directory 'out' not found"
+            exit 1
+          fi
+          if [ ! -f "out/index.html" ]; then
+            echo "❌ Index file not found"
+            exit 1
+          fi
+          echo "📊 Build statistics:"
+          echo "Total files: $(find out -type f | wc -l)"
+          echo "Total size: $(du -sh out | cut -f1)"
+          echo "✅ Build output verified successfully"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -50,3 +96,9 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Deployment summary
+        run: |
+          echo "🚀 Deployment completed successfully!"
+          echo "📍 Site URL: ${{ steps.deployment.outputs.page_url }}"
+          echo "🆔 Deployment ID: ${{ steps.deployment.outputs.deployment_id }}"

@@ -1,11 +1,16 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 // GitHub Pages用の静的エクスポート設定を環境変数で制御
 const isStaticExport = process.env.EXPORT_STATIC === 'true';
+// GitHub Pages でのサブディレクトリ デプロイ用の base path 設定（必要に応じて）
+const basePath = process.env.BASE_PATH || '';
 
 const nextConfig: NextConfig = {
   /* config options here */
   serverExternalPackages: [],
+  // GitHub Pages base path 設定（サブディレクトリ デプロイ用）
+  ...(basePath && { basePath }),
   // GitHub Pages static export configuration (環境変数で制御)
   ...(isStaticExport && {
     output: "export", // 静的エクスポートを有効化
@@ -30,7 +35,7 @@ const nextConfig: NextConfig = {
   generateEtags: false,
   poweredByHeader: false,
   // モノレポ対応のためのワークスペースルート設定
-  outputFileTracingRoot: process.cwd().includes("/frontend") ? "../" : "./",
+  outputFileTracingRoot: path.join(__dirname, "../"),
   // Remove rewrites and headers as they don't work with static export
 };
 
