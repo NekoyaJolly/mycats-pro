@@ -1538,7 +1538,7 @@ export default function CarePage() {
   };
 
   return (
-    <Container size="lg" style={{ minHeight: '100vh', backgroundColor: '#f8f9fa', padding: '1rem', paddingBottom: '5rem' }}>
+  <Container size="lg" style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)', padding: '1rem', paddingBottom: '5rem' }}>
       {/* ヘッダー */}
       <Group justify="space-between" mb="lg" wrap="nowrap">
         <Title order={1} c="blue" size="h2">ケアスケジュール</Title>

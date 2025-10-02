@@ -1,13 +1,15 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background-base: #f5f7fb;
+  --background-soft: #eef2f9;
+  --surface: #ffffff;
+  --surface-tinted: #f1f5ff;
+  --border-subtle: #d8e0ee;
+  --text-primary: #1f2937;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --accent: #2563eb;
+  --accent-subtle: #e0ecff;
+  color-scheme: light;
 }
 
 html,
@@ -17,9 +19,9 @@ body {
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--text-primary);
+  background: var(--background-base);
+  font-family: "Inter", "Noto Sans JP", "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -35,8 +37,37 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+p,
+label,
+span,
+small {
+  color: var(--text-secondary);
+}
+
+.mantine-Paper-root,
+.mantine-Card-root {
+  background-color: var(--surface) !important;
+  color: var(--text-primary) !important;
+}
+
+.mantine-AppShell-main {
+  background: var(--background-base);
+}
+
+.mantine-Alert-root {
+  color: var(--text-primary);
+}
+
+.mantine-NavLink-root {
+  color: var(--text-secondary);
 }

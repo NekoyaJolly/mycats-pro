@@ -265,15 +265,15 @@ export default function Home() {
 
   // 項目全体の完了状態を切り替える
   const toggleCareItemCompletion = (itemId: string) => {
-    setCareSchedules(prev => 
-      prev.map(item => {
+    setCareSchedules((prev) =>
+      prev.map((item) => {
         if (item.id === itemId) {
           const newCompleted = !item.isCompleted;
           return {
             ...item,
             isCompleted: newCompleted,
             // 全体をチェックした場合、すべての個別チェックも完了状態にする
-            cats: item.cats.map(cat => ({ ...cat, completed: newCompleted }))
+            cats: item.cats.map((cat) => ({ ...cat, completed: newCompleted })),
           };
         }
         return item;
@@ -283,20 +283,20 @@ export default function Home() {
 
   // 個別の猫のケア完了状態を切り替える
   const toggleIndividualCatCare = (itemId: string, catId: string) => {
-    setCareSchedules(prev => 
-      prev.map(item => {
+    setCareSchedules((prev) =>
+      prev.map((item) => {
         if (item.id === itemId) {
-          const updatedCats = item.cats.map(cat =>
+          const updatedCats = item.cats.map((cat) =>
             cat.id === catId ? { ...cat, completed: !cat.completed } : cat
           );
-          
+
           // すべての個別チェックが完了している場合、全体も完了状態にする
-          const allCompleted = updatedCats.every(cat => cat.completed);
-          
+          const allCompleted = updatedCats.every((cat) => cat.completed);
+
           return {
             ...item,
             cats: updatedCats,
-            isCompleted: allCompleted
+            isCompleted: allCompleted,
           };
         }
         return item;
@@ -306,9 +306,9 @@ export default function Home() {
 
   // アコーディオンの展開/折り畳みを切り替える
   const toggleAccordion = (itemId: string) => {
-    setCareSchedules(prev => 
-      prev.map(item => 
-        item.id === itemId 
+    setCareSchedules((prev) =>
+      prev.map((item) =>
+        item.id === itemId
           ? { ...item, isExpanded: !item.isExpanded }
           : item
       )
@@ -362,30 +362,59 @@ export default function Home() {
   };
 
   return (
-    <Box style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
+    <Box
+      style={{
+        minHeight: '100vh',
+        backgroundColor: 'var(--background-base)',
+        color: 'var(--text-primary)',
+      }}
+    >
       {/* ヘッダー */}
-      <Box style={{ backgroundColor: 'white', borderBottom: '1px solid #e9ecef', padding: '1rem 0' }}>
+      <Box
+        style={{
+          backgroundColor: 'var(--surface)',
+          borderBottom: '1px solid var(--border-subtle)',
+          padding: '1rem 0',
+          boxShadow: '0 6px 20px rgba(15, 23, 42, 0.04)',
+        }}
+      >
         <Container size="xl">
           {/* 日付表示 */}
           <Group justify="space-between" align="center" mb="md">
-            <Text size="lg" fw={500}>{today}</Text>
+            <Text size="lg" fw={600} style={{ color: 'var(--text-primary)' }}>
+              {today}
+            </Text>
             <ActionIcon
               variant="subtle"
               color="gray"
               onClick={() => setDashboardModalOpened(true)}
               title="ダッシュボード設定"
+              style={{ color: 'var(--text-muted)' }}
             >
               <IconSettings size={16} />
             </ActionIcon>
           </Group>
-          
+
           {/* ダッシュボード */}
-          <Text size="sm" fw={500} c="dimmed" mb="sm">ダッシュボード</Text>
+          <Text size="sm" fw={600} style={{ color: 'var(--text-muted)' }} mb="sm">
+            ダッシュボード
+          </Text>
           <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm" mb="lg">
             {enabledDashboardItems.map((item) => (
-              <Card key={item.id} shadow="sm" padding="md" radius="md" withBorder>
+              <Card
+                key={item.id}
+                shadow="sm"
+                padding="md"
+                radius="md"
+                withBorder
+                style={{
+                  backgroundColor: 'var(--surface)',
+                  borderColor: 'var(--border-subtle)',
+                  color: 'var(--text-primary)',
+                }}
+              >
                 <Group justify="space-between" mb="xs">
-                  <Text size="xs" c="dimmed" fw={500}>
+                  <Text size="xs" fw={500} style={{ color: 'var(--text-muted)' }}>
                     {item.label}
                   </Text>
                 </Group>
@@ -509,7 +538,7 @@ export default function Home() {
                       </Badge>
                     </Group>
                     {schedule.notes && (
-                      <Text size="xs" c="dimmed">
+                      <Text size="xs">
                         {schedule.notes}
                       </Text>
                     )}

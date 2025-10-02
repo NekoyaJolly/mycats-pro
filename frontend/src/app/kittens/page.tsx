@@ -198,7 +198,7 @@ export default function KittensPage() {
   };
 
   return (
-    <Container size="lg" style={{ minHeight: '100vh', backgroundColor: '#f8f9fa', padding: '1rem', paddingBottom: '5rem' }}>
+  <Container size="lg" style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)', padding: '1rem', paddingBottom: '5rem' }}>
       {/* ヘッダー - モバイル最適化 */}
       <Group justify="space-between" mb="lg" wrap="nowrap">
         <Title order={1} c="blue" size="h2">子猫管理</Title>
@@ -399,14 +399,14 @@ export default function KittensPage() {
                   fontSize: '0.85rem'
                 }}>
                   <thead>
-                    <tr style={{ backgroundColor: '#f8f9fa' }}>
+                    <tr style={{ backgroundColor: 'var(--background-soft)' }}>
                       <th style={{ 
                         padding: '6px 8px', 
                         border: '1px solid #dee2e6', 
                         minWidth: '80px',
                         position: 'sticky',
                         left: 0,
-                        backgroundColor: '#f8f9fa',
+                        backgroundColor: 'var(--background-soft)',
                         zIndex: 10
                       }}>
                         母猫名
@@ -443,7 +443,7 @@ export default function KittensPage() {
                           verticalAlign: 'top',
                           position: 'sticky',
                           left: 0,
-                          backgroundColor: '#fff',
+                          backgroundColor: 'var(--surface)',
                           zIndex: 5
                         }}>
                           <Group gap="xs" wrap="nowrap">

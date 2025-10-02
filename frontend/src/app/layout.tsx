@@ -1,22 +1,15 @@
 import type { Metadata } from "next";
-// import { Inter } from "next/font/google";
 import "./globals.css";
 import "@mantine/core/styles.css";
 import { Providers } from "./providers";
+import { AppLayout } from "@/components/AppLayout";
 import { Box, Text } from '@mantine/core';
-
-// const inter = Inter({ 
-//   subsets: ["latin"],
-//   display: 'fallback',
-//   fallback: ['system-ui', 'Arial', 'sans-serif']
-// });
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "猫生体管理アプリ",
   description: "猫の生体情報を管理するためのアプリケーションです。",
 };
-
-import Link from "next/link";
 
 export default function RootLayout({
   children,
@@ -27,7 +20,7 @@ export default function RootLayout({
     <html lang="ja">
       <body className="font-sans antialiased">
         <Providers>
-          <div style={{ minHeight: "100vh", position: "relative", paddingBottom: 72 }}>
+          <AppLayout>
             {children}
             {/* 固定フッターナビゲーション */}
             <Box
@@ -38,12 +31,14 @@ export default function RootLayout({
                 right: 0,
                 bottom: 0,
                 height: 64,
-                backgroundColor: '#fff',
-                borderTop: '1px solid #eee',
+                backgroundColor: 'var(--surface)',
+                borderTop: '1px solid var(--border-subtle)',
                 display: 'flex',
                 justifyContent: 'space-around',
                 alignItems: 'center',
                 zIndex: 100,
+                boxShadow: '0 -4px 12px rgba(15, 23, 42, 0.05)',
+                color: 'var(--text-muted)',
               }}
             >
               <Box
@@ -52,7 +47,7 @@ export default function RootLayout({
                 style={{
                   textAlign: 'center',
                   textDecoration: 'none',
-                  color: 'inherit',
+                  color: 'var(--text-muted)',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -60,7 +55,7 @@ export default function RootLayout({
                 }}
               >
                 <Text size="xl">🏠</Text>
-                <Text size="xs">ホーム</Text>
+                <Text size="xs" style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>ホーム</Text>
               </Box>
               <Box
                 component={Link}
@@ -68,7 +63,7 @@ export default function RootLayout({
                 style={{
                   textAlign: 'center',
                   textDecoration: 'none',
-                  color: 'inherit',
+                  color: 'var(--text-muted)',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -76,7 +71,7 @@ export default function RootLayout({
                 }}
               >
                 <Text size="xl">🔗</Text>
-                <Text size="xs">交配</Text>
+                <Text size="xs" style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>交配</Text>
               </Box>
               <Box
                 component={Link}
@@ -84,7 +79,7 @@ export default function RootLayout({
                 style={{
                   textAlign: 'center',
                   textDecoration: 'none',
-                  color: 'inherit',
+                  color: 'var(--text-muted)',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -92,7 +87,7 @@ export default function RootLayout({
                 }}
               >
                 <Text size="xl">🐾</Text>
-                <Text size="xs">子猫</Text>
+                <Text size="xs" style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>子猫</Text>
               </Box>
               <Box
                 component={Link}
@@ -100,7 +95,7 @@ export default function RootLayout({
                 style={{
                   textAlign: 'center',
                   textDecoration: 'none',
-                  color: 'inherit',
+                  color: 'var(--text-muted)',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -108,7 +103,7 @@ export default function RootLayout({
                 }}
               >
                 <Text size="xl">🩺</Text>
-                <Text size="xs">ケア</Text>
+                <Text size="xs" style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>ケア</Text>
               </Box>
               <Box
                 component={Link}
@@ -116,7 +111,7 @@ export default function RootLayout({
                 style={{
                   textAlign: 'center',
                   textDecoration: 'none',
-                  color: 'inherit',
+                  color: 'var(--text-muted)',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -124,10 +119,10 @@ export default function RootLayout({
                 }}
               >
                 <Text size="xl">⚙️</Text>
-                <Text size="xs">その他</Text>
+                <Text size="xs" style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>その他</Text>
               </Box>
             </Box>
-          </div>
+          </AppLayout>
         </Providers>
       </body>
     </html>

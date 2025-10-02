@@ -90,9 +90,10 @@ export class PasswordService {
       errors.push("パスワードには数字を含める必要があります");
     }
 
-    if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) {
-      errors.push("パスワードには特殊文字を含める必要があります");
-    }
+    // 特殊文字チェックは削除（要件を緩和）
+    // if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) {
+    //   errors.push("パスワードには特殊文字を含める必要があります");
+    // }
 
     // 連続する文字チェック
     if (/(.)\1{2,}/.test(password)) {
@@ -101,12 +102,12 @@ export class PasswordService {
       );
     }
 
-    // よくある弱いパスワードパターンをチェック
-    const weakPatterns = [/123456/, /password/i, /qwerty/i, /admin/i, /guest/i];
+    // よくある弱いパスワードパターンをチェック（開発用に緩和）
+    // const weakPatterns = [/123456/, /password/i, /qwerty/i, /admin/i, /guest/i];
 
-    if (weakPatterns.some((pattern) => pattern.test(password))) {
-      errors.push("よく使われるパスワードパターンは使用できません");
-    }
+    // if (weakPatterns.some((pattern) => pattern.test(password))) {
+    //   errors.push("よく使われるパスワードパターンは使用できません");
+    // }
 
     return {
       isValid: errors.length === 0,

@@ -106,7 +106,7 @@ export default function MorePage() {
   };
 
   return (
-    <Container size="lg" style={{ minHeight: '100vh', backgroundColor: '#f8f9fa', padding: '1rem', paddingBottom: '5rem' }}>
+  <Container size="lg" style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)', padding: '1rem', paddingBottom: '5rem' }}>
       {/* ヘッダー */}
       <Group justify="center" mb="lg">
         <Title order={1} c="blue" size="h2">その他の機能</Title>

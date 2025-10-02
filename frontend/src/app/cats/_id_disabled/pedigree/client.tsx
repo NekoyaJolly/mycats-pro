@@ -79,9 +79,16 @@ export default function PedigreeClient() {
   const router = useRouter();
 
   return (
-    <Box style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
+  <Box style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)' }}>
       {/* ヘッダー */}
-      <Box style={{ backgroundColor: 'white', borderBottom: '1px solid #e9ecef', padding: '1rem 0' }}>
+      <Box
+        style={{
+          backgroundColor: 'var(--surface)',
+          borderBottom: '1px solid var(--border-subtle)',
+          padding: '1rem 0',
+          boxShadow: '0 6px 20px rgba(15, 23, 42, 0.04)',
+        }}
+      >
         <Container size="xl">
           <Flex justify="space-between" align="center">
             <Button

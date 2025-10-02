@@ -544,7 +544,7 @@ export default function BreedingPage() {
     <Box 
       style={{ 
         minHeight: '100vh', 
-        backgroundColor: '#f8f9fa',
+  backgroundColor: 'var(--background-base)',
         position: isFullscreen ? 'fixed' : 'relative',
         top: 0,
         left: 0,
@@ -555,7 +555,14 @@ export default function BreedingPage() {
       }}
     >
       {/* ヘッダー */}
-      <Box style={{ backgroundColor: 'white', borderBottom: '1px solid #e9ecef', padding: '1rem 0' }}>
+      <Box
+        style={{
+          backgroundColor: 'var(--surface)',
+          borderBottom: '1px solid var(--border-subtle)',
+          padding: '1rem 0',
+          boxShadow: '0 6px 20px rgba(15, 23, 42, 0.04)',
+        }}
+      >
         <Container size="xl">
           <Flex align="center" gap="md">
             <ActionIcon
@@ -663,9 +670,9 @@ export default function BreedingPage() {
                     style={{ 
                       position: 'sticky',
                       top: 0,
-                      backgroundColor: 'white',
+                      backgroundColor: 'var(--surface)',
                       zIndex: 10,
-                      borderBottom: '2px solid #e9ecef'
+                      borderBottom: '2px solid var(--border-subtle)'
                     }}
                   >
                     <Table.Tr>
@@ -674,9 +681,9 @@ export default function BreedingPage() {
                           minWidth: isFullscreen ? 60 : 80,
                           position: 'sticky',
                           left: 0,
-                          backgroundColor: 'white',
+                          backgroundColor: 'var(--surface)',
                           zIndex: 11,
-                          borderRight: '2px solid #e9ecef'
+                          borderRight: '2px solid var(--border-subtle)'
                         }}
                       >
                         <Flex align="center" gap={4} justify="center">
@@ -690,7 +697,7 @@ export default function BreedingPage() {
                           key={male.id} 
                           style={{ 
                             minWidth: isFullscreen ? 100 : 120,
-                            borderRight: '1px solid #e9ecef' // オス名の境界線
+                            borderRight: '1px solid var(--border-subtle)' // オス名の境界線
                           }}
                         >
                           <Box
@@ -738,9 +745,9 @@ export default function BreedingPage() {
                           style={{
                             position: 'sticky',
                             left: 0,
-                            backgroundColor: 'white',
+                            backgroundColor: 'var(--surface)',
                             zIndex: 5,
-                            borderRight: '1px solid #e9ecef'
+                            borderRight: '1px solid var(--border-subtle)'
                           }}
                         >
                           <Flex align="center" gap={4} justify="center">
@@ -771,7 +778,7 @@ export default function BreedingPage() {
                               style={{ 
                                 textAlign: 'center',
                                 // 交配期間中で次の日も同じ交配の場合は境界線を消す
-                                borderRight: hasNextSameMating ? 'none' : '1px solid #e9ecef',
+                                borderRight: hasNextSameMating ? 'none' : '1px solid var(--border-subtle)',
                                 // 交配期間中は薄い黄色の背景
                                 backgroundColor: schedule && !schedule.isHistory ? '#fffacd' : 'transparent'
                               }}
@@ -857,7 +864,7 @@ export default function BreedingPage() {
                                             cursor: 'pointer',
                                             padding: '1px 4px',
                                             borderRadius: '3px',
-                                            border: '1px dashed #e9ecef',
+                                            border: '1px dashed var(--border-subtle)',
                                             backgroundColor: getMatingCheckCount(male.id, schedule.femaleId, dateString) > 0 ? '#f0f9f0' : 'transparent',
                                             display: 'flex',
                                             alignItems: 'center',

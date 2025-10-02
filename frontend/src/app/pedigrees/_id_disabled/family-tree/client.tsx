@@ -114,7 +114,7 @@ export default function FamilyTreeClient() {
           style={{ 
             border: '2px dashed #dee2e6',
             minHeight: '120px',
-            backgroundColor: '#f8f9fa'
+            backgroundColor: 'var(--background-base)'
           }}
         >
           <Text c="dimmed" ta="center" mt="md">
@@ -302,7 +302,7 @@ export default function FamilyTreeClient() {
         </Paper>
 
         {/* 説明 */}
-        <Paper p="md" style={{ backgroundColor: '#f8f9fa' }}>
+  <Paper p="md" style={{ backgroundColor: 'var(--background-soft)' }}>
           <Text size="sm" c="dimmed">
             <strong>使い方:</strong> 各カードをクリックすると、その個体の詳細情報に移動できます。
             世代数を変更することで、表示する祖先の数を調整できます。

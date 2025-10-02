@@ -16,80 +16,24 @@ import {
   Badge,
   Tabs,
   Select,
+  Skeleton,
+  Alert,
 } from '@mantine/core';
-import { IconSearch, IconPlus } from '@tabler/icons-react';
-
-// 猫のデータ型
-interface Cat {
-  id: string;
-  name: string;
-  breed: string;
-  gender: 'オス' | 'メス';
-  color: string;
-  birthDate: string;
-  bodyType: string;
-  pedigreeId: string;
-  tags: string[];
-  status: string;
-}
-
-// 在舎猫データ（設計書に基づく）
-const cats: Cat[] = [
-  { 
-    id: '1', 
-    name: 'レオ', 
-    breed: 'アメリカンショートヘア',
-    gender: 'オス',
-    color: '茶トラ', 
-    birthDate: '2023-03-15',
-    bodyType: '大型',
-    pedigreeId: 'P001',
-    tags: ['繁殖用', '健康'],
-    status: '在舎',
-  },
-  { 
-    id: '2', 
-    name: 'ミミ', 
-    breed: '雑種',
-    gender: 'メス',
-    color: '三毛', 
-    birthDate: '2023-02-20',
-    bodyType: '中型',
-    pedigreeId: 'P002',
-    tags: ['繁殖用', '妊娠中'],
-    status: '在舎',
-  },
-  { 
-    id: '3', 
-    name: 'ハナ', 
-    breed: 'ペルシャ',
-    gender: 'メス',
-    color: '白',
-    birthDate: '2022-11-10',
-    bodyType: '小型',
-    pedigreeId: 'P003',
-    tags: ['展示用', '健康'],
-    status: '在舎',
-  },
-  { 
-    id: '4', 
-    name: 'タロウ', 
-    breed: 'スコティッシュフォールド',
-    gender: 'オス',
-    color: 'グレー',
-    birthDate: '2023-01-05',
-    bodyType: '中型',
-    pedigreeId: 'P004',
-    tags: ['繁殖用'],
-    status: '在舎',
-  },
-];
+import { IconSearch, IconPlus, IconAlertCircle } from '@tabler/icons-react';
+import { useGetCats, type Cat } from '@/lib/api/hooks/use-cats';
 
 export default function CatsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('cats');
-  const [sortBy, setSortBy] = useState('name'); // 並び替え条件
+  const [sortBy, setSortBy] = useState('name');
   const router = useRouter();
+
+  // API連携でデータ取得
+  const { data, isLoading, isError, error } = useGetCats({
+    search: searchTerm || undefined,
+  });
+
+  const apiCats = data?.data?.cats || [];
 
   // 年齢計算関数
   const calculateAge = (birthDate: string) => {
@@ -112,18 +56,18 @@ export default function CatsPage() {
 
   // タブ別フィルタリングとソート
   const getFilteredCats = () => {
-    let filtered = cats;
+    let filtered = apiCats;
     
     switch (activeTab) {
       case 'male':
-        filtered = cats.filter(cat => cat.gender === 'オス');
+        filtered = apiCats.filter(cat => cat.gender === 'MALE');
         break;
       case 'female':
-        filtered = cats.filter(cat => cat.gender === 'メス');
+        filtered = apiCats.filter(cat => cat.gender === 'FEMALE');
         break;
       case 'kitten':
         // 1歳未満を子猫とする
-        filtered = cats.filter(cat => {
+        filtered = apiCats.filter(cat => {
           const birthDate = new Date(cat.birthDate);
           const today = new Date();
           const ageInMonths = (today.getFullYear() - birthDate.getFullYear()) * 12 + (today.getMonth() - birthDate.getMonth());
@@ -131,18 +75,18 @@ export default function CatsPage() {
         });
         break;
       case 'raising':
-        filtered = cats.filter(cat => cat.tags.includes('繁殖用') || cat.tags.includes('妊娠中'));
+        filtered = apiCats.filter(cat => cat.isInHouse);
         break;
       default:
-        filtered = cats;
+        filtered = apiCats;
     }
     
     // 検索フィルター適用
     if (searchTerm) {
       filtered = filtered.filter((cat) =>
         cat.name.includes(searchTerm) || 
-        cat.color.includes(searchTerm) ||
-        cat.breed.includes(searchTerm)
+        (cat.coatColor?.name || '').includes(searchTerm) ||
+        (cat.breed?.name || '').includes(searchTerm)
       );
     }
     
@@ -152,9 +96,9 @@ export default function CatsPage() {
         case 'name':
           return a.name.localeCompare(b.name);
         case 'age':
-          return new Date(b.birthDate).getTime() - new Date(a.birthDate).getTime(); // 新しい順
+          return new Date(b.birthDate).getTime() - new Date(a.birthDate).getTime();
         case 'breed':
-          return a.breed.localeCompare(b.breed);
+          return (a.breed?.name || '').localeCompare(b.breed?.name || '');
         case 'gender':
           return a.gender.localeCompare(b.gender);
         default:
@@ -168,9 +112,16 @@ export default function CatsPage() {
   const filteredCats = getFilteredCats();
 
   return (
-    <Box style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
+  <Box style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)' }}>
       {/* ヘッダー */}
-      <Box style={{ backgroundColor: 'white', borderBottom: '1px solid #e9ecef', padding: '1rem 0' }}>
+      <Box
+        style={{
+          backgroundColor: 'var(--surface)',
+          borderBottom: '1px solid var(--border-subtle)',
+          padding: '1rem 0',
+          boxShadow: '0 6px 20px rgba(15, 23, 42, 0.04)',
+        }}
+      >
         <Container size="xl">
           <Title order={2}>在舎猫管理</Title>
         </Container>
@@ -215,42 +166,60 @@ export default function CatsPage() {
         {/* タブ */}
         <Tabs value={activeTab} onChange={(value) => setActiveTab(value || 'cats')} mb="md">
           <Tabs.List>
-            <Tabs.Tab value="cats">Cats ({cats.length})</Tabs.Tab>
-            <Tabs.Tab value="male">Male ({cats.filter(c => c.gender === 'オス').length})</Tabs.Tab>
-            <Tabs.Tab value="female">Female ({cats.filter(c => c.gender === 'メス').length})</Tabs.Tab>
+            <Tabs.Tab value="cats">Cats ({apiCats.length})</Tabs.Tab>
+            <Tabs.Tab value="male">Male ({apiCats.filter(c => c.gender === 'MALE').length})</Tabs.Tab>
+            <Tabs.Tab value="female">Female ({apiCats.filter(c => c.gender === 'FEMALE').length})</Tabs.Tab>
             <Tabs.Tab value="kitten">Kitten</Tabs.Tab>
             <Tabs.Tab value="raising">Raising</Tabs.Tab>
           </Tabs.List>
         </Tabs>
 
-        {/* 猫リスト（コンパクト表示） */}
-        <Stack gap="xs">
-          {filteredCats.map((cat) => (
-            <Card key={cat.id} shadow="sm" padding="sm" radius="md" withBorder>
-              <Flex justify="space-between" align="center">
-                <Group gap="md" style={{ flex: 1 }}>
-                  <Text fw={600}>{cat.name}</Text>
-                  <Badge color={cat.gender === 'オス' ? 'blue' : 'pink'} size="sm">
-                    {cat.gender}
-                  </Badge>
-                  <Text size="sm">{cat.breed}</Text>
-                  <Text size="sm" c="dimmed">{calculateAge(cat.birthDate)}</Text>
-                </Group>
-                <Button
-                  variant="light"
-                  size="sm"
-                  onClick={() => handleViewDetails(cat.id)}
-                >
-                  詳細
-                </Button>
-              </Flex>
-            </Card>
-          ))}
-        </Stack>
+        {/* エラー表示 */}
+        {isError && (
+          <Alert icon={<IconAlertCircle />} title="エラー" color="red" mb="md">
+            {error instanceof Error ? error.message : 'データ取得失敗'}
+          </Alert>
+        )}
 
-        {filteredCats.length === 0 && (
+        {/* ローディング */}
+        {isLoading && (
+          <Stack gap="xs">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} height={60} radius="md" />
+            ))}
+          </Stack>
+        )}
+
+        {/* 猫リスト（コンパクト表示） */}
+        {!isLoading && !isError && (
+          <Stack gap="xs">
+            {filteredCats.map((cat) => (
+              <Card key={cat.id} shadow="sm" padding="sm" radius="md" withBorder>
+                <Flex justify="space-between" align="center">
+                  <Group gap="md" style={{ flex: 1 }}>
+                    <Text fw={600}>{cat.name}</Text>
+                    <Badge color={cat.gender === 'MALE' ? 'blue' : 'pink'} size="sm">
+                      {cat.gender === 'MALE' ? 'オス' : 'メス'}
+                    </Badge>
+                    <Text size="sm">{cat.breed?.name || '未登録'}</Text>
+                    <Text size="sm">{calculateAge(cat.birthDate)}</Text>
+                  </Group>
+                  <Button
+                    variant="light"
+                    size="sm"
+                    onClick={() => handleViewDetails(cat.id)}
+                  >
+                    詳細
+                  </Button>
+                </Flex>
+              </Card>
+            ))}
+          </Stack>
+        )}
+
+        {!isLoading && !isError && filteredCats.length === 0 && (
           <Card shadow="sm" padding="lg" radius="md" withBorder>
-            <Text ta="center" c="dimmed">
+            <Text ta="center">
               条件に一致する猫が見つかりませんでした
             </Text>
           </Card>
