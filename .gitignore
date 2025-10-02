@@ -42,6 +42,13 @@ logs/
 
 # Runtime data
 pids/
+# Runtime artifacts (should not be committed)
+backend.log
+backend.out
+backend.pid
+cookies.txt
+*.pid
+*.log
 *.pid
 *.seed
 *.pid.lock

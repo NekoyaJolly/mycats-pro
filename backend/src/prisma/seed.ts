@@ -1,28 +1,70 @@
 import { PrismaClient, UserRole, Gender } from "@prisma/client";
-import bcrypt from "bcryptjs";
+import * as argon2 from "argon2";
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log("Seeding database...");
 
-  // 1) Admin user
-  const email = "admin@example.com";
-  const password = "Passw0rd!";
-  const _passwordHash = await bcrypt.hash(password, 10);
+  // 1) Admin user (ENV override, 非破壊化ロジック)
+  const email = (process.env.ADMIN_EMAIL || "admin@example.com").toLowerCase();
+  const password = process.env.ADMIN_PASSWORD || "Passw0rd!";
+  const forceUpdate = process.env.ADMIN_FORCE_UPDATE === "1"; // 既存管理者を強制更新するか
 
-  const admin = await prisma.user.upsert({
-    where: { email },
-    update: { role: UserRole.ADMIN, isActive: true },
-    create: {
-      clerkId: "local_admin",
-      email,
-      firstName: "Admin",
-      lastName: "User",
-      role: UserRole.ADMIN,
-      isActive: true,
-    },
-  });
+  const existingAdmin = await prisma.user.findUnique({ where: { email } });
+  let adminAction: "created" | "kept" | "updated" = "kept";
+  let admin;
+
+  if (!existingAdmin) {
+    // 新規作成
+    const hash = await argon2.hash(password, {
+      type: argon2.argon2id,
+      memoryCost: 65536,
+      timeCost: 3,
+      parallelism: 4,
+    });
+    admin = await prisma.user.create({
+      data: {
+        clerkId: "local_admin",
+        email,
+        firstName: "Admin",
+        lastName: "User",
+        role: UserRole.ADMIN,
+        isActive: true,
+        passwordHash: hash,
+      },
+    });
+    adminAction = "created";
+  } else {
+    // 既存: 原則 passwordHash を変更しない / 役割や有効化のみ調整
+    let needsUpdate = false;
+    const updateData: Record<string, unknown> = {};
+    if (existingAdmin.role !== UserRole.ADMIN) {
+      updateData.role = UserRole.ADMIN;
+      needsUpdate = true;
+    }
+    if (!existingAdmin.isActive) {
+      updateData.isActive = true;
+      needsUpdate = true;
+    }
+    if (forceUpdate) {
+      const hash = await argon2.hash(password, {
+        type: argon2.argon2id,
+        memoryCost: 65536,
+        timeCost: 3,
+        parallelism: 4,
+      });
+      updateData.passwordHash = hash;
+      needsUpdate = true;
+    }
+    if (needsUpdate) {
+      admin = await prisma.user.update({ where: { email }, data: updateData });
+      adminAction = forceUpdate ? "updated" : "updated"; // updated (role/status or password)
+    } else {
+      admin = existingAdmin;
+      adminAction = "kept";
+    }
+  }
 
   // 2) Cats (one male, one female)
   const maleCat = await prisma.cat.upsert({
@@ -59,7 +101,7 @@ async function main() {
   });
 
   console.log("Seed complete ✅");
-  console.log("Admin:", { email, password, id: admin.id });
+  console.log("Admin:", { email, password: forceUpdate || adminAction === "created" ? password : "(unchanged)", id: admin.id, action: adminAction });
   console.log("Male Cat:", {
     id: maleCat.id,
     registrationId: maleCat.registrationId,

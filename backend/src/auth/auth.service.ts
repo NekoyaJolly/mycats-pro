@@ -65,6 +65,9 @@ export class AuthService {
     return user;
   }
 
+  /**
+   * ログイン: ユーザ検証→Access/Refreshトークン発行→RefreshトークンをDB保存（CookieセットはController側）
+   */
   async login(
     email: string,
     password: string,
@@ -111,24 +114,13 @@ export class AuthService {
       throw new UnauthorizedException("認証情報が正しくありません");
     }
 
-    const payload = { sub: user.id, email: user.email, role: user.role };
-    const access_token = await this.jwt.signAsync(payload, { expiresIn: '15m' });
-    const refresh_token = await this.jwt.signAsync(
-      { sub: user.id, type: 'refresh' }, 
-      { expiresIn: '7d' }
-    );
-
-    // リフレッシュトークンをDBに保存
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { refreshToken: refresh_token }
-    });
-
+  // generateTokens にフルユーザー型が必要なため再取得
+  const fullUser = await this.prisma.user.findUnique({ where: { id: user.id } });
+  const tokens = await this.generateTokens(fullUser as User);
     return {
       success: true,
       data: {
-        access_token,
-        refresh_token,
+        access_token: tokens.access_token,
         user: {
           id: user.id,
           email: user.email,
@@ -262,52 +254,75 @@ export class AuthService {
     return { success: true, message: "パスワードが正常に変更されました" };
   }
 
-  async refreshToken(refreshToken: string) {
+  /**
+   * Cookie などで受け取った refreshToken を用いてアクセストークンを再発行
+   * 成功時は refreshToken をローテーション（新しいものを返す）
+   */
+  async refreshUsingToken(refreshToken: string) {
+    if (!refreshToken) throw new UnauthorizedException('Missing refresh token');
     try {
       const payload = this.jwt.verify(refreshToken, {
-        secret: process.env.JWT_REFRESH_SECRET,
+        secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
       }) as { sub: string };
-      
+
       const user = await this.prisma.user.findFirst({
         where: { id: payload.sub, refreshToken: refreshToken },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          firstName: true,
+          lastName: true,
+          refreshToken: true,
+        },
       });
-      
-      if (!user) {
-        throw new UnauthorizedException('Invalid refresh token');
-      }
-      
-      return this.generateTokens(user);
-    } catch {
+      if (!user) throw new UnauthorizedException('Invalid refresh token');
+
+      // generateTokens のために完全ユーザーが必要 => id で再取得
+      const fullUser = await this.prisma.user.findUnique({ where: { id: user.id } });
+      const tokens = await this.generateTokens(fullUser as User); // ローテーション
+      return {
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        },
+      };
+    } catch (e) {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
-  
+
   private async generateTokens(user: User) {
-    const payload = { email: user.email, sub: user.id };
-    const accessToken = this.jwt.sign(payload);
-    const refreshToken = this.jwt.sign(payload, {
-      secret: process.env.JWT_REFRESH_SECRET,
-      expiresIn: '7d',
+    const accessPayload = { sub: user.id, email: user.email, role: user.role };
+    const access_token = await this.jwt.signAsync(accessPayload, {
+      expiresIn: '15m',
+      secret: process.env.JWT_SECRET,
     });
-    
+    const refresh_token = await this.jwt.signAsync(
+      { sub: user.id, type: 'refresh' },
+      {
+        expiresIn: '7d',
+        secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
+      },
+    );
+
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { refreshToken: refreshToken },
+      data: { refreshToken: refresh_token },
     });
-    
-    return {
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    };
+    return { access_token, refresh_token };
   }
 
   async logout(userId: string) {
-    // リフレッシュトークンを削除
     await this.prisma.user.update({
       where: { id: userId },
-      data: { refreshToken: null }
+      data: { refreshToken: null },
     });
-
-    return { success: true, message: "ログアウトしました" };
+    return { success: true, message: 'ログアウトしました' };
   }
 }

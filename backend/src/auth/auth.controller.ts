@@ -6,6 +6,7 @@ import {
   UseGuards,
   Req,
   Ip,
+  Res,
 } from "@nestjs/common";
 import {
   ApiBearerAuth,
@@ -13,7 +14,7 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
-import { Request } from "express";
+import { Request, Response } from "express";
 
 import { AuthService } from "./auth.service";
 import type { RequestUser } from "./auth.types";
@@ -32,9 +33,18 @@ export class AuthController {
   @Post("login")
   @ApiOperation({ summary: "ログイン（JWT発行）" })
   @ApiResponse({ status: HttpStatus.OK })
-  login(@Body() dto: LoginDto, @Req() req: Request, @Ip() ip: string) {
+  login(@Body() dto: LoginDto, @Req() req: Request, @Ip() ip: string, @Res({ passthrough: true }) res: Response) {
     const userAgent = req.headers["user-agent"] || "";
-    return this.auth.login(dto.email, dto.password, ip, userAgent);
+    return this.auth.login(dto.email, dto.password, ip, userAgent).then(async (result) => {
+      // login 内で refresh token は DB 保存済みなので、再度読み直し
+      const userId = result.data.user.id;
+      // DBから現在のrefreshToken取得
+      const refreshed = await (this as any).auth["prisma"].user.findUnique({ where: { id: userId }, select: { refreshToken: true } });
+      if (refreshed?.refreshToken) {
+        this.setRefreshCookie(res, refreshed.refreshToken);
+      }
+      return result;
+    });
   }
 
   @Post("register")
@@ -79,8 +89,14 @@ export class AuthController {
   @Post("refresh")
   @ApiOperation({ summary: "リフレッシュトークンでアクセストークン再取得" })
   @ApiResponse({ status: HttpStatus.OK })
-  refresh(@Body() dto: RefreshTokenDto) {
-    return this.auth.refreshToken(dto.refreshToken);
+  refresh(@Body() dto: RefreshTokenDto, @Res({ passthrough: true }) res: Response) {
+    // DTO 互換モード: body に入っていれば利用、無ければ Cookie 参照（将来的には完全Cookie化）
+    const cookieToken = (res.req as Request).cookies?.rt;
+    const token = dto?.refreshToken || cookieToken;
+    return this.auth.refreshUsingToken(token).then(result => {
+      this.setRefreshCookie(res, result.refresh_token);
+      return { success: true, data: { access_token: result.access_token, user: result.user } };
+    });
   }
 
   @ApiBearerAuth()
@@ -88,7 +104,23 @@ export class AuthController {
   @Post("logout")
   @ApiOperation({ summary: "ログアウト（リフレッシュトークン削除）" })
   @ApiResponse({ status: HttpStatus.OK })
-  logout(@GetUser() user: RequestUser | undefined) {
+  logout(@GetUser() user: RequestUser | undefined, @Res({ passthrough: true }) res: Response) {
+    // Cookie 無効化
+    res.cookie('rt', '', { httpOnly: true, secure: this.isSecure(), sameSite: 'lax', path: '/', maxAge: 0 });
     return this.auth.logout(user.userId);
+  }
+
+  private setRefreshCookie(res: Response, token: string) {
+    res.cookie('rt', token, {
+      httpOnly: true,
+      secure: this.isSecure(),
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
+    });
+  }
+
+  private isSecure() {
+    return process.env.NODE_ENV === 'production';
   }
 }

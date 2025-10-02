@@ -1,6 +1,12 @@
 /**
  * Next.js Middleware
  * 認証が必要なルートを保護
+ *
+ * 開発一時対応: UI側でログインフローを無効化したい場合は
+ *  .env.local に NEXT_PUBLIC_AUTH_DISABLED=1 を設定すると
+ *  すべてのページをパブリック扱いにし /login /register へのアクセスは /
+ *  へリダイレクトする。
+ * ※ 本番で有効化しないこと。
  */
 
 import { NextResponse } from 'next/server';
@@ -17,30 +23,38 @@ const PUBLIC_ROUTES = ['/login', '/register', '/api/health'];
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // === 開発用: 認証バイパスフラグ ===
+  if (process.env.NEXT_PUBLIC_AUTH_DISABLED === '1') {
+    // /login /register はトップへリダイレクト（UIから不可視化）
+    if (pathname.startsWith('/login') || pathname.startsWith('/register')) {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+    return NextResponse.next();
+  }
+
   // 公開ルートは認証不要
   if (PUBLIC_ROUTES.some((route) => pathname.startsWith(route))) {
     return NextResponse.next();
   }
 
-  // 静的ファイルは認証不要
+  // Next内部/静的/ビルド生成/アセット要求は除外
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/static') ||
-    pathname.includes('.') // .js, .css, .png などのファイル
+    pathname.includes('.')
   ) {
     return NextResponse.next();
   }
 
-  // localStorageからトークンを取得（クライアント側で行うため、ここではCookieを確認）
-  // NOTE: よりセキュアな実装として、HttpOnly Cookieにトークンを保存することを推奨
-  const accessToken = request.cookies.get('accessToken')?.value;
-
-  // トークンがない場合はログインページへリダイレクト
-  if (!accessToken) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
-  }
+  // 現時点では accessToken を Cookie に保持していない（Zustandメモリ）ため
+  // SSR段階での厳格リダイレクトは行わず pass-through。
+  // 将来 accessToken を Cookie 化した際は以下のコメントアウトを有効化する:
+  // const accessToken = request.cookies.get('accessToken')?.value;
+  // if (!accessToken) {
+  //   const loginUrl = new URL('/login', request.url);
+  //   loginUrl.searchParams.set('redirect', pathname);
+  //   return NextResponse.redirect(loginUrl);
+  // }
 
   return NextResponse.next();
 }
