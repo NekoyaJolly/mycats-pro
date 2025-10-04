@@ -99,7 +99,7 @@ async function importBreeds() {
           reject(error instanceof Error ? error : new Error(String(error)));
         }
       })
-  .on("error", (err) => reject(err instanceof Error ? err : new Error(String(err))));
+      .on("error", (err) => reject(err instanceof Error ? err : new Error(String(err))));
   });
 }
 
@@ -148,7 +148,7 @@ async function importCoatColors() {
           reject(error instanceof Error ? error : new Error(String(error)));
         }
       })
-  .on("error", (err) => reject(err instanceof Error ? err : new Error(String(err))));
+      .on("error", (err) => reject(err instanceof Error ? err : new Error(String(err))));
   });
 }
 
@@ -178,7 +178,7 @@ async function assertCsvHeaders(csvPath: string, expected: string[]): Promise<vo
         }
         resolve();
       })
-  .on("error", (err) => reject(err instanceof Error ? err : new Error(String(err))));
+      .on("error", reject);
   });
 }
 
@@ -403,7 +403,7 @@ async function importPedigrees() {
           reject(error);
         }
       })
-  .on("error", (err) => reject(err instanceof Error ? err : new Error(String(err))));
+      .on("error", reject);
   });
 }
 
@@ -468,7 +468,7 @@ async function main() {
 }
 
 if (require.main === module) {
-  (async (): Promise<void> => {
+  void (async (): Promise<void> => {
     try {
       await main();
       process.exit(0);

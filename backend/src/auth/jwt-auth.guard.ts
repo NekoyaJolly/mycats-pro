@@ -6,31 +6,31 @@ import { AuthGuard } from "@nestjs/passport";
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard("jwt") {
-	async canActivate(context: ExecutionContext): Promise<boolean> {
-		if (process.env.AUTH_DISABLED === "1") {
-			const req = context.switchToHttp().getRequest<{ user?: { userId: string; email: string; role: string } }>();
-			if (!req.user) {
-				req.user = {
-					userId: "dev-admin",
-					email: "dev-admin@example.com",
-					role: "ADMIN",
-				};
+			async canActivate(context: ExecutionContext): Promise<boolean> {
+				if (process.env.AUTH_DISABLED === "1") {
+							const req = context.switchToHttp().getRequest<{ user?: { userId: string; email: string; role: string } }>();
+							if (!req.user) {
+								req.user = {
+									userId: "dev-admin",
+									email: "dev-admin@example.com",
+									role: "ADMIN",
+								};
+							}
+							return true;
+				}
+						const result = super.canActivate(context);
+						if (typeof result === "boolean") {
+							return result;
+						}
+						if (typeof result === "object" && typeof (result as Promise<boolean>).then === "function") {
+							return await (result as Promise<boolean>);
+						}
+						// Observable<boolean>型を厳密に扱う
+						if (typeof result === "object" && typeof (result as { subscribe: Function }).subscribe === "function") {
+							return await new Promise<boolean>((resolve, reject) => {
+								(result as { subscribe: (cb: { next: (v: boolean) => void; error: (e: Error) => void }) => void }).subscribe({ next: resolve, error: reject });
+							});
+						}
+						throw new Error("Unexpected return type from canActivate");
 			}
-			return true;
-		}
-		const result = super.canActivate(context);
-		if (typeof result === "boolean") {
-			return result;
-		}
-		if (typeof result === "object" && typeof (result as Promise<boolean>).then === "function") {
-			return await (result as Promise<boolean>);
-		}
-		// Observable<boolean>型を厳密に扱う
-		if (typeof result === "object" && typeof (result as import('rxjs').Observable<boolean>).subscribe === "function") {
-			return await new Promise<boolean>((resolve, reject) => {
-				(result as import('rxjs').Observable<boolean>).subscribe({ next: resolve, error: reject });
-			});
-		}
-		throw new Error("Unexpected return type from canActivate");
-	}
 }
