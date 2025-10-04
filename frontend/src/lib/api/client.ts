@@ -14,7 +14,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004/a
 /**
  * APIレスポンスの共通型
  */
-export interface ApiResponse<T = unknown> {
+export interface ApiResponse<T = object> {
   success: boolean;
   data?: T;
   error?: string;
@@ -28,7 +28,7 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public status: number,
-    public response?: unknown,
+    public response?: object,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -158,7 +158,7 @@ async function refreshAccessToken(): Promise<string | null> {
 /**
  * API リクエスト共通処理
  */
-export async function apiRequest<T = unknown>(
+export async function apiRequest<T = object>(
   url: string,
   options: RequestInit = {},
   retryOnUnauthorized = true,
@@ -227,13 +227,13 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
 
   if (!response.ok) {
     let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-    let errorData: unknown;
+    let errorData: object | undefined;
 
     if (isJson) {
       try {
         errorData = await response.json();
         if (typeof errorData === 'object' && errorData !== null && 'message' in errorData) {
-          errorMessage = String(errorData.message);
+          errorMessage = String((errorData as { message?: string }).message);
         }
       } catch {
         // JSON解析失敗
@@ -257,7 +257,7 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
 /**
  * GET リクエスト
  */
-export async function get<T = unknown>(
+export async function get<T = object>(
   url: string,
   params?: Record<string, string | number | boolean | undefined>,
 ): Promise<ApiResponse<T>> {
@@ -282,9 +282,9 @@ export async function get<T = unknown>(
 /**
  * POST リクエスト
  */
-export async function post<T = unknown>(
+export async function post<T = object>(
   url: string,
-  body?: unknown,
+  body?: object,
 ): Promise<ApiResponse<T>> {
   return apiRequest<T>(url, {
     method: 'POST',
@@ -295,9 +295,9 @@ export async function post<T = unknown>(
 /**
  * PATCH リクエスト
  */
-export async function patch<T = unknown>(
+export async function patch<T = object>(
   url: string,
-  body?: unknown,
+  body?: object,
 ): Promise<ApiResponse<T>> {
   return apiRequest<T>(url, {
     method: 'PATCH',
@@ -308,7 +308,7 @@ export async function patch<T = unknown>(
 /**
  * DELETE リクエスト
  */
-export async function del<T = unknown>(
+export async function del<T = object>(
   url: string,
 ): Promise<ApiResponse<T>> {
   return apiRequest<T>(url, { method: 'DELETE' });

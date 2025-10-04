@@ -4,6 +4,7 @@
  */
 
 import fs from 'fs/promises';
+import fetch from 'node-fetch';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import openapiTS from 'openapi-typescript';

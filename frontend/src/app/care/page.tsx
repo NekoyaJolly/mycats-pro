@@ -186,7 +186,7 @@ const TagFormModal: React.FC<TagFormProps> = ({ initialData, onSave, onCancel, t
         label="カテゴリ"
         data={tagCategories.map(cat => ({ value: cat.id, label: cat.name }))}
         value={category}
-        onChange={(value) => setCategory(value as any || 'body_part')}
+        onChange={(value) => setCategory(typeof value === 'string' ? value as CareTag['category'] : 'body_part')}
         required
       />
       
@@ -478,14 +478,14 @@ const TemplateFormModal: React.FC<TemplateFormProps> = ({ initialData, onSave, o
       
       <Select
         label="カテゴリ"
-        data={[
+        data={[ 
           { value: 'disease', label: '病気・疾患' },
           { value: 'treatment', label: '治療・処置' },
           { value: 'medication', label: '薬物療法' },
           { value: 'examination', label: '検査' }
         ]}
         value={category}
-        onChange={(value) => setCategory(value as any || 'disease')}
+        onChange={(value) => setCategory(typeof value === 'string' ? value as MedicalTemplate['category'] : 'disease')}
         required
       />
       
@@ -773,7 +773,7 @@ const TreatmentRecordForm: React.FC<TreatmentRecordFormProps> = ({
           label="治療結果"
           data={treatmentResultOptions}
           value={formData.treatmentResult}
-          onChange={(value) => setFormData(prev => ({ ...prev, treatmentResult: value as any || 'unknown' }))}
+          onChange={(value) => setFormData(prev => ({ ...prev, treatmentResult: typeof value === 'string' ? value as TreatmentRecord['treatmentResult'] : 'unknown' }))}
         />
       )}
 
@@ -1430,7 +1430,7 @@ export default function CarePage() {
   const handleTagSave = (tagData: { name: string; category: string; color: string }) => {
     if (editingTag) {
       // 編集モード
-      const updatedTag = { ...editingTag, ...tagData };
+      const updatedTag = { ...editingTag, ...tagData, category: tagData.category as CareTag['category'] };
       // 実際のアプリでは、ここでAPIコールまたは状態更新
       console.log('タグ更新:', updatedTag);
     } else {
@@ -1438,7 +1438,7 @@ export default function CarePage() {
       const newTag: CareTag = {
         id: `custom_${Date.now()}`,
         ...tagData,
-        category: tagData.category as any
+        category: tagData.category as CareTag['category']
       };
       // 実際のアプリでは、ここでAPIコールまたは状態更新
       console.log('タグ作成:', newTag);
@@ -1881,7 +1881,7 @@ export default function CarePage() {
                             <ActionIcon variant="subtle" size="sm" style={{ cursor: 'grab' }}>
                               <IconGripVertical size={12} />
                             </ActionIcon>
-                            <Box style={{ flex: 1 }}>
+                                                       <Box style={{ flex: 1 }}>
                               <Group gap="sm" mb="xs">
                                 <Text size="sm" fw={500}>{item.name}</Text>
                                 <Badge size="xs" color={item.priority === '高' ? 'red' : item.priority === '中' ? 'yellow' : 'green'}>
