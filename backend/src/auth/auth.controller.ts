@@ -36,16 +36,32 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: "ログイン（JWT発行）" })
   @ApiResponse({ status: HttpStatus.OK })
-    login(@Body() dto: LoginDto, @Req() req: Request, @Ip() ip: string, @Res({ passthrough: true }) res: Response): Promise<any> {
-      const userAgent = req.headers["user-agent"] || "";
-      return this.auth.login(dto.email, dto.password, ip, userAgent).then(async (result: any) => {
-        const userId = result.data.user.id;
-        const refreshed = await (this.auth as any).prisma.user.findUnique({ where: { id: userId }, select: { refreshToken: true } });
-        if (refreshed?.refreshToken) {
-          this.setRefreshCookie(res, refreshed.refreshToken);
-        }
-        return result;
-      });
+  async login(
+    @Body() dto: LoginDto,
+    @Req() req: Request,
+    @Ip() ip: string,
+    @Res({ passthrough: true }) res: Response
+  ): Promise<{ success: boolean; data: { access_token: string; user: RequestUser } }> {
+    const userAgent = req.headers["user-agent"] || "";
+    const result = await this.auth.login(dto.email, dto.password, ip, userAgent);
+    const user = result.data.user;
+    // user型をRequestUserへ変換
+    const requestUser: RequestUser = {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    };
+    // prisma参照はunknown経由で型安全にアクセス
+    const prisma = (this.auth as unknown as { prisma?: { user: { findUnique: Function } } }).prisma;
+    if (prisma) {
+      const refreshed = await prisma.user.findUnique({ where: { id: user.id }, select: { refreshToken: true } }) as { refreshToken?: string } | null;
+      if (refreshed?.refreshToken) {
+        this.setRefreshCookie(res, refreshed.refreshToken);
+      }
+    }
+    return { success: result.success, data: { access_token: result.data.access_token, user: requestUser } };
   }
 
   @Post("register")
@@ -91,14 +107,21 @@ export class AuthController {
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({ summary: "リフレッシュトークンでアクセストークン再取得" })
   @ApiResponse({ status: HttpStatus.OK })
-  refresh(@Body() dto: RefreshTokenDto, @Res({ passthrough: true }) res: Response) {
+  async refresh(@Body() dto: RefreshTokenDto, @Res({ passthrough: true }) res: Response): Promise<{ success: boolean; data: { access_token: string; user: RequestUser } }> {
     // DTO 互換モード: body に入っていれば利用、無ければ Cookie 参照（将来的には完全Cookie化）
-  const cookieToken = (res.req as Request).cookies?.[REFRESH_COOKIE_NAME];
+    const cookieToken = (res.req as Request).cookies?.[REFRESH_COOKIE_NAME];
     const token = dto?.refreshToken || cookieToken;
-    return this.auth.refreshUsingToken(token).then(result => {
-      this.setRefreshCookie(res, result.refresh_token);
-      return { success: true, data: { access_token: result.access_token, user: result.user } };
-    });
+    const result = await this.auth.refreshUsingToken(token);
+    const user = result.user;
+    const requestUser: RequestUser = {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    };
+    this.setRefreshCookie(res, result.refresh_token);
+    return { success: true, data: { access_token: result.access_token, user: requestUser } };
   }
 
   @ApiBearerAuth()
