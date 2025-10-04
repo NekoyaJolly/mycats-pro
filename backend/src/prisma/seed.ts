@@ -38,7 +38,7 @@ async function main() {
   } else {
     // 既存: 原則 passwordHash を変更しない / 役割や有効化のみ調整
     let needsUpdate = false;
-    const updateData: Record<string, unknown> = {};
+  const updateData: Partial<typeof existingAdmin> = {};
     if (existingAdmin.role !== UserRole.ADMIN) {
       updateData.role = UserRole.ADMIN;
       needsUpdate = true;

@@ -6,19 +6,31 @@ import { AuthGuard } from "@nestjs/passport";
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard("jwt") {
-	canActivate(context: ExecutionContext) {
-		if (process.env.AUTH_DISABLED === "1") {
-			const req = context.switchToHttp().getRequest();
-			// 既に user があっても上書きしない（他ガードと干渉回避）
-			if (!req.user) {
-				req.user = {
-					userId: "dev-admin",
-					email: "dev-admin@example.com",
-					role: "ADMIN",
-				};
+			async canActivate(context: ExecutionContext): Promise<boolean> {
+				if (process.env.AUTH_DISABLED === "1") {
+					const req = context.switchToHttp().getRequest();
+					if (!req.user) {
+						req.user = {
+							userId: "dev-admin",
+							email: "dev-admin@example.com",
+							role: "ADMIN",
+						} as { userId: string; email: string; role: string };
+					}
+					return true;
+				}
+					const result = super.canActivate(context);
+					if (typeof result === "boolean") {
+						return result;
+					}
+					if (typeof result === "object" && typeof (result as Promise<boolean>).then === "function") {
+						return await (result as Promise<boolean>);
+					}
+					if (typeof result === "object" && typeof (result as any).subscribe === "function") {
+						// Observable<boolean>をPromise化
+						return new Promise<boolean>((resolve, reject) => {
+							(result as any).subscribe({ next: resolve, error: reject });
+						});
+					}
+					throw new Error("Unexpected return type from canActivate");
 			}
-			return true;
-		}
-		return super.canActivate(context);
-	}
 }

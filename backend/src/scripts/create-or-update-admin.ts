@@ -35,10 +35,9 @@ async function main() {
         lastName: "User",
       },
     });
-     
     console.log("✅ Admin created", { id: created.id, email });
   } else {
-    const updateData: Record<string, unknown> = {};
+  const updateData: Partial<typeof existing> = {};
     let changed = false;
     if (existing.role !== UserRole.ADMIN) {
       updateData.role = UserRole.ADMIN; changed = true;

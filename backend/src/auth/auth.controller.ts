@@ -36,18 +36,16 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: "ログイン（JWT発行）" })
   @ApiResponse({ status: HttpStatus.OK })
-  login(@Body() dto: LoginDto, @Req() req: Request, @Ip() ip: string, @Res({ passthrough: true }) res: Response) {
-    const userAgent = req.headers["user-agent"] || "";
-    return this.auth.login(dto.email, dto.password, ip, userAgent).then(async (result) => {
-      // login 内で refresh token は DB 保存済みなので、再度読み直し
-      const userId = result.data.user.id;
-      // DBから現在のrefreshToken取得
-      const refreshed = await (this as any).auth["prisma"].user.findUnique({ where: { id: userId }, select: { refreshToken: true } });
-      if (refreshed?.refreshToken) {
-        this.setRefreshCookie(res, refreshed.refreshToken);
-      }
-      return result;
-    });
+    login(@Body() dto: LoginDto, @Req() req: Request, @Ip() ip: string, @Res({ passthrough: true }) res: Response): Promise<any> {
+      const userAgent = req.headers["user-agent"] || "";
+      return this.auth.login(dto.email, dto.password, ip, userAgent).then(async (result: any) => {
+        const userId = result.data.user.id;
+        const refreshed = await (this.auth as any).prisma.user.findUnique({ where: { id: userId }, select: { refreshToken: true } });
+        if (refreshed?.refreshToken) {
+          this.setRefreshCookie(res, refreshed.refreshToken);
+        }
+        return result;
+      });
   }
 
   @Post("register")

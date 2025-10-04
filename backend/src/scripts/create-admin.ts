@@ -14,8 +14,8 @@ async function createAdmin() {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       console.log('✅ 管理者アカウントは既に存在します');
-  console.log(`📧 Email: ${email}`);
-  console.log(`🔑 Password: ${password}`);
+      console.log(`📧 Email: ${email}`);
+      console.log(`🔑 Password: ${password}`);
       console.log('👤 Role:', existing.role);
       return;
     }
