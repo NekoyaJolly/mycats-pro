@@ -54,8 +54,12 @@ export class CatsService {
 
   // birthDate は必須。文字列入力（ISO8601想定）を Date に変換して保存
   const birth = new Date(birthDate);
-    function toGender(val: any): Gender {
+    function toGender(val: string | Gender): Gender {
       if (val === Gender.MALE || val === Gender.FEMALE) return val;
+      if (typeof val === "string") {
+        if (val.toUpperCase() === Gender.MALE) return Gender.MALE;
+        if (val.toUpperCase() === Gender.FEMALE) return Gender.FEMALE;
+      }
       throw new BadRequestException("Invalid gender value");
     }
     return this.prisma.cat.create({

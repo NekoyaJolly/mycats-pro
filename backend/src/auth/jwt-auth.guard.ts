@@ -26,10 +26,10 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
 							return await (result as Promise<boolean>);
 						}
 						// Observable<boolean>型を厳密に扱う
-						if (typeof result === "object" && typeof (result as { subscribe: Function }).subscribe === "function") {
-							return await new Promise<boolean>((resolve, reject) => {
-								(result as { subscribe: (cb: { next: (v: boolean) => void; error: (e: Error) => void }) => void }).subscribe({ next: resolve, error: reject });
-							});
+									if (typeof result === "object" && typeof (result as { subscribe: (cb: { next: (v: boolean) => void; error: (e: Error) => void }) => void }).subscribe === "function") {
+										return await new Promise<boolean>((resolve, reject) => {
+											(result as { subscribe: (cb: { next: (v: boolean) => void; error: (e: Error) => void }) => void }).subscribe({ next: resolve, error: reject });
+										});
 						}
 						throw new Error("Unexpected return type from canActivate");
 			}

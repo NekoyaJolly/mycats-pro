@@ -42,19 +42,25 @@ export class AuthController {
     @Ip() ip: string,
     @Res({ passthrough: true }) res: Response
   ): Promise<{ success: boolean; data: { access_token: string; user: RequestUser } }> {
-    const userAgent = req.headers["user-agent"] || "";
+    let userAgent: string = "";
+    const ua = req.headers["user-agent"];
+    if (typeof ua === "string") {
+      userAgent = ua;
+    } else if (Array.isArray(ua)) {
+      userAgent = (ua as string[]).join(",");
+    }
     const result = await this.auth.login(dto.email, dto.password, ip, userAgent);
-    const user = result.data.user;
+    const userRaw = result.data.user as { id: string; email: string; role: string; firstName: string; lastName: string };
     // user型をRequestUserへ変換
     const requestUser: RequestUser = {
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      firstName: user.firstName,
-      lastName: user.lastName,
+      userId: userRaw.id,
+      email: userRaw.email,
+      role: userRaw.role as any, // UserRole型で明示的に変換（必要なら型ガード追加）
+      firstName: userRaw.firstName,
+      lastName: userRaw.lastName,
     };
     // 型安全にAuthServiceのprismaプロパティを直接利用
-    const refreshed = await this.auth["prisma"].user.findUnique({ where: { id: user.id }, select: { refreshToken: true } });
+  const refreshed = await this.auth["prisma"].user.findUnique({ where: { id: userRaw.id }, select: { refreshToken: true } });
     if (refreshed?.refreshToken) {
       this.setRefreshCookie(res, refreshed.refreshToken);
     }
