@@ -62,7 +62,7 @@ import { UsersModule } from "./users/users.module";
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     // Apply security middleware globally in production
-    const chain: Array<new (...args: any[]) => unknown> = [RequestIdMiddleware];
+  const chain: Array<{ new (...args: unknown[]): { use: (...args: unknown[]) => void } }> = [RequestIdMiddleware];
     if (process.env.NODE_ENV === 'production') {
       chain.push(SecurityMiddleware);
     }

@@ -23,9 +23,13 @@ export function DateInputField({
     <FormField label={label} description={description} error={error} required={required}>
       <DateInput
         value={value ? new Date(value) : null}
-        // Mantine DateInput の onChange は Date | null を返す想定だが型が広いため安全に処理
-        onChange={(d: any) => {
-          const dateVal: Date | null = d instanceof Date ? d : null;
+        // Mantine DateInput の onChange型(DateStringValue | null)に厳密化
+        onChange={(d: string | null) => {
+          let dateVal: Date | null = null;
+          if (typeof d === 'string') {
+            const parsed = new Date(d);
+            dateVal = isNaN(parsed.getTime()) ? null : parsed;
+          }
           onChange(dateVal ? dateVal.toISOString().split('T')[0] : undefined);
         }}
         valueFormat="YYYY-MM-DD"

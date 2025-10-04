@@ -53,13 +53,10 @@ export class AuthController {
       firstName: user.firstName,
       lastName: user.lastName,
     };
-    // prisma参照はunknown経由で型安全にアクセス
-  const prisma = (this.auth as unknown as { prisma?: { user: { findUnique: (args: { where: { id: string }, select: { refreshToken: boolean } }) => Promise<{ refreshToken?: string } | null> } } }).prisma;
-    if (prisma) {
-      const refreshed = await prisma.user.findUnique({ where: { id: user.id }, select: { refreshToken: true } });
-      if (refreshed?.refreshToken) {
-        this.setRefreshCookie(res, refreshed.refreshToken);
-      }
+    // 型安全にAuthServiceのprismaプロパティを直接利用
+    const refreshed = await this.auth["prisma"].user.findUnique({ where: { id: user.id }, select: { refreshToken: true } });
+    if (refreshed?.refreshToken) {
+      this.setRefreshCookie(res, refreshed.refreshToken);
     }
     return { success: result.success, data: { access_token: result.data.access_token, user: requestUser } };
   }
