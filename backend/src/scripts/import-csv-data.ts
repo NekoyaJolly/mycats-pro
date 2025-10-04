@@ -96,10 +96,10 @@ async function importBreeds() {
           console.log(`✅ Imported ${breeds.length} breeds`);
           resolve();
         } catch (error) {
-          reject(error);
+          reject(error instanceof Error ? error : new Error(String(error)));
         }
       })
-      .on("error", reject);
+      .on("error", (err) => reject(err instanceof Error ? err : new Error(String(err))));
   });
 }
 
@@ -145,15 +145,15 @@ async function importCoatColors() {
           console.log(`✅ Imported ${colors.length} coat colors`);
           resolve();
         } catch (error) {
-          reject(error);
+          reject(error instanceof Error ? error : new Error(String(error)));
         }
       })
-      .on("error", reject);
+      .on("error", (err) => reject(err instanceof Error ? err : new Error(String(err))));
   });
 }
 
 async function assertCsvHeaders(csvPath: string, expected: string[]): Promise<void> {
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     const rows: string[][] = [];
     let count = 0;
     const readStream = fs.createReadStream(csvPath);
@@ -468,7 +468,7 @@ async function main() {
 }
 
 if (require.main === module) {
-  (async (): Promise<void> => {
+  void (async (): Promise<void> => {
     try {
       await main();
       process.exit(0);

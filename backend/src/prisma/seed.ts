@@ -13,7 +13,7 @@ async function main() {
 
   const existingAdmin = await prisma.user.findUnique({ where: { email } });
   let adminAction: "created" | "kept" | "updated" = "kept";
-  let admin;
+  let admin: { id: string };
 
   if (!existingAdmin) {
     // 新規作成

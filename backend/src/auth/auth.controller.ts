@@ -54,9 +54,9 @@ export class AuthController {
       lastName: user.lastName,
     };
     // prisma参照はunknown経由で型安全にアクセス
-    const prisma = (this.auth as unknown as { prisma?: { user: { findUnique: Function } } }).prisma;
+  const prisma = (this.auth as unknown as { prisma?: { user: { findUnique: (args: { where: { id: string }, select: { refreshToken: boolean } }) => Promise<{ refreshToken?: string } | null> } } }).prisma;
     if (prisma) {
-      const refreshed = await prisma.user.findUnique({ where: { id: user.id }, select: { refreshToken: true } }) as { refreshToken?: string } | null;
+      const refreshed = await prisma.user.findUnique({ where: { id: user.id }, select: { refreshToken: true } });
       if (refreshed?.refreshToken) {
         this.setRefreshCookie(res, refreshed.refreshToken);
       }
