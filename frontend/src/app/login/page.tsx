@@ -1,5 +1,5 @@
 /**
- * ログイン画面
+ * ログイン画面 (再構築: ブランディング/フォント正規化)
  */
 
 'use client';
@@ -33,12 +33,8 @@ export default function LoginPage() {
   const { login, isAuthenticated, isLoading, error, clearError } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // フォーム設定
   const form = useForm<LoginFormValues>({
-    initialValues: {
-      email: '',
-      password: '',
-    },
+    initialValues: { email: '', password: '' },
     validate: {
       email: (value) => {
         if (!value) return 'メールアドレスを入力してください';
@@ -53,31 +49,21 @@ export default function LoginPage() {
     },
   });
 
-  // 既にログイン済みの場合はホームへリダイレクト
+  // 既ログイン時リダイレクト
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push('/');
-    }
+    if (isAuthenticated) router.push('/');
   }, [isAuthenticated, router]);
 
-  // エラーが変更されたときにクリア
-  useEffect(() => {
-    return () => {
-      clearError();
-    };
-  }, [clearError]);
+  // アンマウント時エラークリア
+  useEffect(() => () => clearError(), [clearError]);
 
-  // ログイン処理
   const handleSubmit = async (values: LoginFormValues) => {
     setIsSubmitting(true);
     clearError();
-
     try {
       await login(values);
-      // ログイン成功後は自動的にホームへリダイレクト（useEffectで処理）
-    } catch (error) {
-      // エラーは useAuth の error ステートで管理される
-      console.error('Login error:', error);
+    } catch (e) {
+      console.error('Login error:', e);
     } finally {
       setIsSubmitting(false);
     }
@@ -97,38 +83,31 @@ export default function LoginPage() {
       <Container size={420}>
         <Center>
           <Stack gap="lg" style={{ width: '100%' }}>
-            {/* ロゴ・タイトル */}
             <Box style={{ textAlign: 'center' }}>
               <Text
                 size="xl"
-                style={{
-                  fontSize: '4rem',
-                  marginBottom: '1rem',
-                }}
+                style={{ fontSize: '3.5rem', marginBottom: '0.75rem', lineHeight: 1 }}
               >
-                🐱
+                🐈
               </Text>
               <Title
-                order={1}
+                order={2}
                 style={{
                   color: 'var(--text-primary)',
-                  fontSize: '2rem',
+                  fontSize: 18,
                   fontWeight: 700,
                   marginBottom: '0.5rem',
+                  letterSpacing: 0.5,
                 }}
               >
-                猫生体管理システム
+                MyCats
               </Title>
-              <Text style={{ color: 'var(--text-secondary)' }}>
-                ログインして続行
-              </Text>
+              <Text style={{ color: 'var(--text-secondary)' }}>ログインして続行</Text>
             </Box>
 
-            {/* ログインフォーム */}
             <Paper radius="lg" p="xl" shadow="xl" style={{ boxShadow: '0 16px 40px rgba(15, 23, 42, 0.08)' }}>
               <form onSubmit={form.onSubmit(handleSubmit)}>
                 <Stack gap="md">
-                  {/* エラーメッセージ */}
                   {error && (
                     <Alert
                       icon={<IconAlertCircle size="1rem" />}
@@ -140,8 +119,6 @@ export default function LoginPage() {
                       {error}
                     </Alert>
                   )}
-
-                  {/* メールアドレス */}
                   <TextInput
                     required
                     label="メールアドレス"
@@ -154,8 +131,6 @@ export default function LoginPage() {
                       input: { backgroundColor: 'var(--surface)' },
                     }}
                   />
-
-                  {/* パスワード */}
                   <PasswordInput
                     required
                     label="パスワード"
@@ -168,8 +143,6 @@ export default function LoginPage() {
                       input: { backgroundColor: 'var(--surface)' },
                     }}
                   />
-
-                  {/* ログインボタン */}
                   <Button
                     type="submit"
                     fullWidth
@@ -183,19 +156,12 @@ export default function LoginPage() {
                   >
                     ログイン
                   </Button>
-
-                  {/* パスワードリセットリンク（将来実装） */}
                   <Text size="sm" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
                     パスワードをお忘れですか？{' '}
-                    <Text
-                      component="span"
-                      style={{ color: 'var(--text-muted)', cursor: 'not-allowed', opacity: 0.5 }}
-                    >
+                    <Text component="span" style={{ color: 'var(--text-muted)', cursor: 'not-allowed', opacity: 0.5 }}>
                       リセット（準備中）
                     </Text>
                   </Text>
-
-                  {/* 新規登録リンク */}
                   <Text size="sm" style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
                     アカウントをお持ちでない方は{' '}
                     <Text
@@ -209,10 +175,8 @@ export default function LoginPage() {
                 </Stack>
               </form>
             </Paper>
-
-            {/* フッター */}
             <Text size="sm" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
-              © 2025 猫生体管理システム. All rights reserved.
+              © 2025 MyCats. All rights reserved.
             </Text>
           </Stack>
         </Center>

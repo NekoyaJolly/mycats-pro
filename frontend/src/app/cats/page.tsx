@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Container,
-  Title,
   Text,
   Button,
   TextInput,
@@ -19,6 +18,7 @@ import {
   Skeleton,
   Alert,
 } from '@mantine/core';
+import { PageTitle } from '@/components/PageTitle';
 import { IconSearch, IconPlus, IconAlertCircle } from '@tabler/icons-react';
 import { useGetCats, type Cat } from '@/lib/api/hooks/use-cats';
 
@@ -123,22 +123,22 @@ export default function CatsPage() {
         }}
       >
         <Container size="xl">
-          <Title order={2}>在舎猫管理</Title>
+          <Group justify="space-between" align="center">
+            <PageTitle withMarginBottom={false}>在舎猫一覧</PageTitle>
+            <Button
+              leftSection={<IconPlus size={16} />}
+              onClick={() => router.push('/cats/new')}
+              variant="filled"
+            >
+              新規登録
+            </Button>
+          </Group>
         </Container>
       </Box>
 
       {/* メインコンテンツ */}
       <Container size="lg" style={{ paddingTop: '1rem' }}>
-        {/* タイトルと新規登録ボタン */}
-        <Flex justify="space-between" align="center" mb="md">
-          <Title order={3}>在舎猫一覧</Title>
-          <Button
-            leftSection={<IconPlus size={16} />}
-            onClick={() => router.push('/cats/new')}
-          >
-            新規登録
-          </Button>
-        </Flex>
+        {/* 旧タイトル+ボタンはヘッダーへ移動済み */}
         
         {/* 検索バーと並び替え */}
         <Group gap="md" mb="md">

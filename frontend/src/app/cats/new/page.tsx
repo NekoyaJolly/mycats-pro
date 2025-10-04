@@ -51,7 +51,6 @@ export default function CatRegistrationPage() {
 
   const handleRegisterSubmit = () => {
     console.log('Registration data:', registerForm);
-    // ここで実際の登録処理を行う
     router.push('/');
   };
 
@@ -86,7 +85,6 @@ export default function CatRegistrationPage() {
       </Box>
 
       <Container size="lg" style={{ paddingTop: '2rem' }}>
-        <Title order={1} mb="lg">猫の管理</Title>
 
         <Tabs value={activeTab} onChange={(value) => setActiveTab(value || 'register')} variant="outline">
           <Tabs.List>

@@ -120,11 +120,12 @@ export default function RegisterPage() {
               radius="lg"
               style={{ width: '100%', boxShadow: '0 16px 40px rgba(15, 23, 42, 0.08)' }}
             >
-              <Title order={2} ta="center" mb="md" style={{ color: 'var(--text-primary)' }}>
-                🐱 新規登録
+              <Title order={2} ta="center" mb="md" style={{ color: 'var(--text-primary)', fontSize: 18, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: '3.5rem', lineHeight: 1, display: 'block' }}>🐈</span>
+                <span style={{ fontSize: 18, fontWeight: 700 }}>MyCats 新規登録</span>
               </Title>
               <Text size="sm" ta="center" mb="xl" style={{ color: 'var(--text-muted)' }}>
-                猫管理システムのアカウントを作成
+                MyCats のアカウントを作成
               </Text>
 
               {/* 成功メッセージ */}

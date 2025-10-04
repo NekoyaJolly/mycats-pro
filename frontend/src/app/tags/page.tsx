@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import {
   Box,
-  Title,
   Button,
   Group,
   Card,
@@ -22,6 +21,7 @@ import {
   SimpleGrid,
   Divider,
 } from '@mantine/core';
+import { PageTitle } from '@/components/PageTitle';
 import { useDisclosure } from '@mantine/hooks';
 import {
   IconPlus,
@@ -196,7 +196,7 @@ export default function TagsPage() {
   <Container size="lg" style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)', padding: '1rem', paddingBottom: '5rem' }}>
       {/* ヘッダー */}
       <Group justify="space-between" mb="lg" wrap="wrap">
-        <Title order={1} c="blue" size="h2">タグ管理</Title>
+  <PageTitle style={{ color: 'var(--text-primary)' }}>タグ管理</PageTitle>
         <Group gap="sm">
           <Button 
             leftSection={<IconPlus size={16} />} 

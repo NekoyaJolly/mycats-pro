@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import {
   Box,
   Container,
-  Title,
   Text,
   Button,
   Card,
@@ -24,7 +23,9 @@ import {
   MultiSelect,
   NumberInput,
   Radio,
+  Title,
 } from '@mantine/core';
+import { PageTitle } from '@/components/PageTitle';
 import { useDisclosure } from '@mantine/hooks';
 import { 
   IconPlus, 
@@ -572,9 +573,7 @@ export default function BreedingPage() {
             >
               <IconArrowLeft size={20} />
             </ActionIcon>
-            <Title order={1} c="blue.6">
-              繁殖管理
-            </Title>
+            <PageTitle style={{ color: 'var(--text-primary)' }}>繁殖管理</PageTitle>
             <Group gap="sm" ml="auto">
               <Button
                 variant="light"
@@ -605,9 +604,9 @@ export default function BreedingPage() {
           overflow: isFullscreen ? 'hidden' : 'visible',
         }}
       >
-        <Title order={2} mb="md" size={isFullscreen ? "h3" : "h2"}>
+        <PageTitle withMarginBottom={true} style={{ fontSize: 18 }}>
           交配スケジュール管理
-        </Title>
+        </PageTitle>
 
         {/* タブ */}
         <Tabs value={activeTab} onChange={(value) => setActiveTab(value || 'schedule')} mb="md">

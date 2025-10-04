@@ -3,7 +3,6 @@
 import { useRouter } from 'next/navigation';
 import {
   Container,
-  Title,
   Card,
   Group,
   Text,
@@ -12,6 +11,7 @@ import {
   SimpleGrid,
   Box,
 } from '@mantine/core';
+import { PageTitle } from '@/components/PageTitle';
 import { 
   IconPlus, 
   IconTag, 
@@ -109,7 +109,7 @@ export default function MorePage() {
   <Container size="lg" style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)', padding: '1rem', paddingBottom: '5rem' }}>
       {/* ヘッダー */}
       <Group justify="center" mb="lg">
-        <Title order={1} c="blue" size="h2">その他の機能</Title>
+  <PageTitle style={{ color: 'var(--text-primary)' }}>その他の機能</PageTitle>
       </Group>
 
       {/* 機能一覧 */}
@@ -169,7 +169,7 @@ export default function MorePage() {
 
       {/* システム情報 */}
       <Card shadow="sm" padding="md" radius="md" withBorder mt="xl">
-        <Title order={3} size="h4" mb="md" c="gray">システム情報</Title>
+  <PageTitle withMarginBottom={true} style={{ color: 'var(--text-secondary)' }}>システム情報</PageTitle>
         <Stack gap="xs">
           <Group justify="space-between">
             <Text size="sm" c="dimmed">アプリバージョン</Text>
@@ -188,7 +188,7 @@ export default function MorePage() {
 
       {/* お問い合わせ */}
       <Card shadow="sm" padding="md" radius="md" withBorder mt="md">
-        <Title order={3} size="h4" mb="md" c="gray">サポート</Title>
+  <PageTitle withMarginBottom={true} style={{ color: 'var(--text-secondary)' }}>サポート</PageTitle>
         <Stack gap="sm">
           <Button variant="subtle" fullWidth justify="space-between" rightSection={<IconChevronRight size={16} />}>
             ヘルプ・使い方

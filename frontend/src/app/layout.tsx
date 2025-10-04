@@ -7,8 +7,32 @@ import { Box, Text } from '@mantine/core';
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "猫生体管理アプリ",
-  description: "猫の生体情報を管理するためのアプリケーションです。",
+  title: 'MyCats',
+  description: 'MyCats: 猫の個体・血統・ケア情報を一元管理するアプリケーション',
+  icons: {
+    icon: '/favicon.svg',
+  },
+  manifest: '/manifest.json',
+  openGraph: {
+    title: 'MyCats',
+    description: '猫の個体・血統・ケア情報を一元管理するアプリケーション',
+    url: 'https://example.com',
+    siteName: 'MyCats',
+    type: 'website',
+    locale: 'ja_JP',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'MyCats',
+    description: '猫の個体・血統・ケア情報を一元管理するアプリケーション',
+  },
+};
+
+export const viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#0f172a' },
+  ],
 };
 
 export default function RootLayout({

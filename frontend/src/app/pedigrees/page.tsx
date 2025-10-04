@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
-  Title,
   Paper,
   TextInput,
   Select,
@@ -20,6 +19,7 @@ import {
   Tooltip,
   LoadingOverlay,
 } from '@mantine/core';
+import { PageTitle } from '@/components/PageTitle';
 import { IconSearch, IconEye, IconFilter, IconFileText, IconRefresh, IconPlus } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { apiGet } from '../../lib/api';
@@ -139,7 +139,7 @@ export default function PedigreesPage() {
     <Container size="xl" py="md">
       <Stack gap="md">
         <Group justify="space-between">
-          <Title order={1}>血統書データ管理</Title>
+          <PageTitle>血統書データ管理</PageTitle>
           <Group>
             <Button
               leftSection={<IconPlus size={16} />}

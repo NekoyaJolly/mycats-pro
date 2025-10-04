@@ -2,6 +2,7 @@
 
 import { AppShell, Burger, Group, Text, ScrollArea, NavLink } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
+import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -51,9 +52,17 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const [mobileOpened, { toggle: toggleMobile }] = useDisclosure();
-  const [desktopOpened, { toggle: toggleDesktop }] = useDisclosure(true);
+  // 両方とも初期状態は閉じた状態に変更（遷移で自動的に閉じる仕様）
+  const [mobileOpened, { toggle: toggleMobile, close: closeMobile }] = useDisclosure(false);
+  const [desktopOpened, { toggle: toggleDesktop, close: closeDesktop }] = useDisclosure(false);
   const pathname = usePathname();
+
+  // ルート遷移検知でサイドバー自動折りたたみ
+  useEffect(() => {
+    // すでに閉じている場合は何もしないが、明示的に close を呼んでも副作用は軽微
+    closeMobile();
+    closeDesktop();
+  }, [pathname, closeMobile, closeDesktop]);
 
   return (
     <AppShell
@@ -99,8 +108,8 @@ export function AppLayout({ children }: AppLayoutProps) {
               visibleFrom="sm"
               size="sm"
             />
-            <Text size="lg" fw={700} style={{ color: 'var(--text-primary)' }}>
-              🐱 猫生体管理アプリ
+            <Text fw={700} style={{ color: 'var(--text-primary)', fontSize: 18, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>🐈</span> MyCats
             </Text>
           </Group>
         </Group>
