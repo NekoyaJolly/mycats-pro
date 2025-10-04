@@ -21,6 +21,11 @@ import { PasswordService } from "./password.service";
 
 @Injectable()
 export class AuthService {
+  /** 指定ユーザーのrefreshTokenを取得（型安全） */
+  public async getRefreshToken(userId: string): Promise<string | undefined> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { refreshToken: true } });
+    return user?.refreshToken ?? undefined;
+  }
   private readonly logger = new Logger(AuthService.name);
   constructor(
     private readonly prisma: PrismaService,
