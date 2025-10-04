@@ -143,7 +143,7 @@ export function useCreateCat() {
 
   return useMutation({
     mutationFn: (data: CreateCatRequest) => apiClient.post<Cat>('/cats', data),
-    onSuccess: (response) => {
+  onSuccess: (_response) => {
       // キャッシュを無効化して再フェッチ
       void queryClient.invalidateQueries({ queryKey: catKeys.lists() });
       void queryClient.invalidateQueries({ queryKey: catKeys.statistics() });
@@ -172,7 +172,7 @@ export function useUpdateCat(id: string) {
 
   return useMutation({
     mutationFn: (data: UpdateCatRequest) => apiClient.patch<Cat>(`/cats/${id}`, data),
-    onSuccess: (response) => {
+  onSuccess: (_response) => {
       // 特定の猫の詳細キャッシュを更新
       void queryClient.invalidateQueries({ queryKey: catKeys.detail(id) });
       // 一覧のキャッシュも無効化
@@ -203,7 +203,7 @@ export function useDeleteCat() {
 
   return useMutation({
     mutationFn: (id: string) => apiClient.delete(`/cats/${id}`),
-    onSuccess: (response, id) => {
+  onSuccess: (_response, id) => {
       // 削除した猫のキャッシュを削除
       void queryClient.removeQueries({ queryKey: catKeys.detail(id) });
       // 一覧のキャッシュも無効化

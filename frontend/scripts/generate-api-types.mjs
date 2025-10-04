@@ -3,6 +3,9 @@
  * バックエンドのSwagger JSONから TypeScript 型定義を生成します
  */
 
+
+/* eslint-disable no-undef */
+/* global process, console */
 import fs from 'fs/promises';
 import fetch from 'node-fetch';
 import path from 'path';

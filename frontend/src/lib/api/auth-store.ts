@@ -5,7 +5,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { apiClient, setTokens as setApiTokens, clearTokens as clearApiTokens } from './client';
-import type { ApiResponse } from './client';
 
 /**
  * ユーザー情報の型定義

@@ -20,7 +20,7 @@ import {
 } from '@mantine/core';
 import { PageTitle } from '@/components/PageTitle';
 import { IconSearch, IconPlus, IconAlertCircle } from '@tabler/icons-react';
-import { useGetCats, type Cat } from '@/lib/api/hooks/use-cats';
+import { useGetCats } from '@/lib/api/hooks/use-cats';
 
 export default function CatsPage() {
   const [searchTerm, setSearchTerm] = useState('');
