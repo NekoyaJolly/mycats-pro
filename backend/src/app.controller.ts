@@ -1,9 +1,31 @@
+
 import { Controller, Get } from "@nestjs/common";
+
+type HelloResponse = {
+  message: string;
+  version: string;
+  documentation: string;
+  health: string;
+  timestamp: string;
+  endpoints: {
+    cats: string;
+    pedigrees: string;
+    breeds: string;
+    coatColors: string;
+  };
+};
+
+type HealthResponse = {
+  status: string;
+  timestamp: string;
+  service: string;
+  version: string;
+};
 
 @Controller()
 export class AppController {
   @Get()
-  getHello(): Record<string, unknown> {
+  getHello(): HelloResponse {
     return {
       message: "🐱 Cat Management System API",
       version: "1.0.0",
@@ -20,7 +42,7 @@ export class AppController {
   }
 
   @Get("health")
-  getHealth(): Record<string, unknown> {
+  getHealth(): HealthResponse {
     return {
       status: "ok",
       timestamp: new Date().toISOString(),

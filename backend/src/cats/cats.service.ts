@@ -54,13 +54,17 @@ export class CatsService {
 
   // birthDate は必須。文字列入力（ISO8601想定）を Date に変換して保存
   const birth = new Date(birthDate);
+    function toGender(val: any): Gender {
+      if (val === Gender.MALE || val === Gender.FEMALE) return val;
+      throw new BadRequestException("Invalid gender value");
+    }
     return this.prisma.cat.create({
       data: {
         registrationId,
         name,
         pattern,
-        gender: gender as unknown as Gender,
-    birthDate: birth,
+        gender: toGender(gender),
+        birthDate: birth,
         ...(typeof weight === "number" ? { weight } : {}),
         ...(microchipId ? { microchipId } : {}),
         ...(imageUrl ? { imageUrl } : {}),
@@ -116,7 +120,7 @@ export class CatsService {
     // Filters
     if (breedId) where.breedId = breedId;
     if (colorId) where.colorId = colorId;
-  if (gender) where.gender = gender as unknown as Gender;
+  if (gender) where.gender = (gender === Gender.MALE || gender === Gender.FEMALE) ? gender : undefined;
 
     // Age filters
     if (ageMin || ageMax) {
@@ -286,7 +290,7 @@ export class CatsService {
         ...(microchipId ? { microchipId } : {}),
         ...(imageUrl ? { imageUrl } : {}),
         ...(notes ? { notes } : {}),
-        ...(gender ? { gender: gender as unknown as Gender } : {}),
+  ...(gender ? { gender: (gender === Gender.MALE || gender === Gender.FEMALE) ? gender : undefined } : {}),
         ...(birth ? { birthDate: birth } : {}),
         ...(ownerId ? { owner: { connect: { id: ownerId } } } : {}),
         ...(breedId ? { breed: { connect: { id: breedId } } } : {}),

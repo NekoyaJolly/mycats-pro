@@ -7,18 +7,18 @@ import {
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-type Wrapped<T> = { success: true; data?: T; meta?: unknown } | { success: true };
+type Wrapped<T, M = undefined> = { success: true; data?: T; meta?: M } | { success: true };
 
 @Injectable()
-export class TransformResponseInterceptor<T>
-  implements NestInterceptor<T, Wrapped<T>>
+export class TransformResponseInterceptor<T, M = undefined>
+  implements NestInterceptor<T, Wrapped<T, M>>
 {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<Wrapped<T>> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<Wrapped<T, M>> {
     return next.handle().pipe(
-      map((data: unknown) => {
+      map((data: T) => {
         // 1) 既にラップ済みはそのまま返す
-        if (data && typeof data === 'object' && 'success' in (data as Record<string, unknown>)) {
-          return data as Wrapped<T>;
+        if (data && typeof data === 'object' && 'success' in (data as unknown as { success: true })) {
+          return data as unknown as Wrapped<T, M>;
         }
 
         // 2) null/undefined は payload なしの成功
@@ -28,21 +28,21 @@ export class TransformResponseInterceptor<T>
 
         // 3) { data, meta } っぽい構造はメタを維持
         if (data && typeof data === 'object') {
-          const obj = data as Record<string, unknown>;
+          const obj = data as { data?: T; meta?: M };
           if ('data' in obj && !('success' in obj)) {
-            const payload: { success: true; data: unknown; meta?: unknown } = {
+            const payload: { success: true; data: T; meta?: M } = {
               success: true,
-              data: obj.data,
+              data: obj.data as T,
             };
             if ('meta' in obj) {
               payload.meta = obj.meta;
             }
-            return payload as Wrapped<T>;
+            return payload as Wrapped<T, M>;
           }
         }
 
   // 4) 配列・プリミティブ・オブジェクトは data に包む
-  return { success: true, data } as Wrapped<T>;
+  return { success: true, data } as Wrapped<T, M>;
       }),
     );
   }
