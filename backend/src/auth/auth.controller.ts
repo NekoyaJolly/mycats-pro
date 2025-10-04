@@ -1,3 +1,8 @@
+function toUserRole(val: string): RequestUser["role"] {
+  if (val === "ADMIN" || val === "USER" || val === "GUEST") return val as RequestUser["role"];
+  return "USER";
+}
+
 import {
   Body,
   Controller,
@@ -52,10 +57,14 @@ export class AuthController {
     const result = await this.auth.login(dto.email, dto.password, ip, userAgent);
     const userRaw = result.data.user as { id: string; email: string; role: string; firstName: string; lastName: string };
     // user型をRequestUserへ変換
+    function toUserRole(val: string): RequestUser["role"] {
+      if (val === "ADMIN" || val === "USER" || val === "GUEST") return val as RequestUser["role"];
+      return "USER";
+    }
     const requestUser: RequestUser = {
       userId: userRaw.id,
       email: userRaw.email,
-      role: userRaw.role as any, // UserRole型で明示的に変換（必要なら型ガード追加）
+      role: toUserRole(userRaw.role),
       firstName: userRaw.firstName,
       lastName: userRaw.lastName,
     };
@@ -115,11 +124,11 @@ export class AuthController {
     const cookieToken = (res.req as Request).cookies?.[REFRESH_COOKIE_NAME];
     const token = dto?.refreshToken || cookieToken;
     const result = await this.auth.refreshUsingToken(token);
-    const user = result.user;
+    const user = result.user as { id: string; email: string; role: string; firstName: string; lastName: string };
     const requestUser: RequestUser = {
       userId: user.id,
       email: user.email,
-      role: user.role,
+      role: toUserRole(user.role),
       firstName: user.firstName,
       lastName: user.lastName,
     };

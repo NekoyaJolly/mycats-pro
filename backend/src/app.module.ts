@@ -1,4 +1,4 @@
-import { Module, MiddlewareConsumer, NestModule } from "@nestjs/common";
+import { Module, MiddlewareConsumer, NestModule, NestMiddleware } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { ThrottlerModule } from "@nestjs/throttler";
 import { LoggerModule } from 'nestjs-pino';
@@ -62,7 +62,7 @@ import { UsersModule } from "./users/users.module";
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     // Apply security middleware globally in production
-  const chain: Array<{ new (...args: object[]): { use: (...args: object[]) => void } }> = [RequestIdMiddleware];
+  const chain: Array<{ new (...args: unknown[]): NestMiddleware }> = [RequestIdMiddleware];
     if (process.env.NODE_ENV === 'production') {
       chain.push(SecurityMiddleware);
     }
