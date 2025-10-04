@@ -1,0 +1,89 @@
+[Pedigreesテーブル設計]
+
+・リレーション（血統書作成時）
+1.GenderCode → 入力された番号を元に別テーブル(GenderList)から名称を取得
+2.BreedCode → 入力された番号を元に別テーブル(BreedList)から名称を取得
+3.CoatColorCode → 入力された番号を元に別テーブル(CoatColorList)から名称を取得
+
+
+フィールド名｜データ型｜NULL許可
+PedigreeID	|text		|NO
+Title		|text		|YES
+CatName		|text		|YES
+CatName2	|text		|YES
+BreedCode	|integer	|YES
+GenderCode	|integer	|YES
+EyeColor	|text		|YES
+CoatColorCode|integer   |YES
+BirthDate	|text		|YES
+BreederName |text		|YES
+OwnerName	|text		|YES
+RegistrationDate|text	|YES
+BrotherCount|integer	|YES
+SisterCount	|integer	|YES
+Notes		|text		|YES
+Notes2		|text		|YES
+OtherNo		|text		|YES
+FatherTitle	|text		|YES
+FatherCatName|text	    |YES
+FatherCatName2|text	    |YES
+FatherCoatColor|text	|YES
+FatherEyeColor|text	    |YES
+FatherJCU	 |text	    |YES
+FatherOtherCode|text	|YES
+MotherTitle	 |text	    |YES
+MotherCatName|text	    |YES
+MotherCatName2|text	    |YES
+MotherCoatColor|text	|YES
+MotherEyeColor|text	    |YES
+MotherJCU    |text	    |YES
+MotherOtherCode|text	|YES
+FFTitle		 |text	    |YES
+FFCatName	 |text	    |YES
+FFCatColor	 |text	    |YES
+FFJCU		 |text	    |YES
+FMTitle		 |text	    |YES
+FMCatName	 |text	    |YES
+FMCatColor	 |text	    |YES
+FMJCU		 |text	    |YES
+MFTitle		 |text	    |YES
+MFCatName	 |text	    |YES
+MFCatColor	 |text	    |YES
+MFJCU		 |text	    |YES
+MMTitle		 |text	    |YES
+MMCatName	 |text	    |YES
+MMCatColor	 |text	    |YES
+MMJCU		 |text	    |YES
+FFFTitle	 |text  	|YES
+FFFCatName	 |text  	|YES
+FFFCatColor	 |text	    |YES
+FFFJCU		 |text	    |YES
+FFMTitle	 |text  	|YES
+FFMCatName	 |text	    |YES
+FFMCatColor	 |text	    |YES
+FFMJCU		 |text	    |YES
+FMFTitle	 |text  	|YES
+FMFCatName	 |text	    |YES
+FMFCatColor	 |text	    |YES
+FMFJCU		 |text	    |YES
+FMMTitle	 |text  	|YES
+FMMCatName   |text	    |YES
+FMMCatColor  |text	    |YES
+FMMJCU		 |text	    |YES
+MFFTitle	 |text	    |YES
+MFFCatName	 |text	    |YES
+MFFCatColor	 |text	    |YES
+MFFJCU		 |text	    |YES
+MFMTitle	 |text	    |YES
+MFMCatName   |text  	|YES
+MFMCatColor	 |text  	|YES
+MFMJCU		 |text  	|YES
+MMFTitle	 |text  	|YES
+MMFCatName   |text	    |YES
+MMFCatColor	 |text  	|YES
+MMFJCU		 |text  	|YES
+MMMTitle	 |text  	|YES
+MMMCatName   |text	    |YES
+MMMCatColor  |text   	|YES
+MMMJCU		 |text  	|YES
+OldCode		 |text	    |YES

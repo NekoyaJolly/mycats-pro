@@ -29,7 +29,6 @@ model User {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  cats        Cat[]
   breedingRecords BreedingRecord[]
   careRecords     CareRecord[]
   schedules       Schedule[]
@@ -66,7 +65,6 @@ model Breed {
   
   // Relations
   cats        Cat[]
-  pedigrees   Pedigree[]
 
   @@map("breeds")
 }
@@ -83,7 +81,6 @@ model CoatColor {
   
   // Relations
   cats        Cat[]
-  pedigrees   Pedigree[]
 
   @@map("coat_colors")
 }
@@ -123,8 +120,7 @@ model Cat {
   motherOf        Cat[]     @relation("CatMother")
   
   // Owner
-  ownerId         String    @map("owner_id")
-  owner           User      @relation(fields: [ownerId], references: [id])
+  // ...ownerId, ownerフィールド削除
   
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
@@ -135,7 +131,7 @@ model Cat {
   careRecords     CareRecord[]
   schedules       Schedule[]
   tags            CatTag[]
-  pedigrees       Pedigree[]
+  pedigreeId      String?   @map("pedigree_id") // PedigreeIDで紐付け（全頭ではない）
 
   @@map("cats")
 }
@@ -222,76 +218,90 @@ model Tag {
 }
 
 model Pedigree {
-  id                    String    @id @default(uuid())
-  pedigreeId            String    @unique @map("pedigree_id") // PedigreeID from CSV
-  
-  // Cat information
-  catId                 String?   @map("cat_id")
-  cat                   Cat?      @relation(fields: [catId], references: [id])
-  
-  // Names (multiple parts)
-  title                 String?   // Title from CSV
-  catName               String    @map("cat_name") // CatName from CSV (column 3)
-  catName2              String?   @map("cat_name2") // CatName2 from CSV (column 4)
-  
-  // Basic info
-  breedId               String?   @map("breed_id")
-  breed                 Breed?    @relation(fields: [breedId], references: [id])
-  breedCode             Int?      @map("breed_code") // 猫種コード
-  gender                Int?      // 性別 (1=male, 2=female)
-  eyeColor              String?   @map("eye_color") // 目色
-  colorId               String?   @map("color_id")
-  color                 CoatColor? @relation(fields: [colorId], references: [id])
-  coatColorCode         Int?      @map("coat_color_code") // 毛色コード
-  
-  // Dates
-  birthDate             DateTime? @map("birth_date") // 生年月日
-  registrationDate      DateTime? @map("registration_date") // 登録年月日
-  pedigreeIssueDate     DateTime? @map("pedigree_issue_date") // 血統書発行日
-  
-  // People
-  breederName           String?   @map("breeder_name") // 繁殖者名
-  ownerName             String?   @map("owner_name") // 所有者名
-  
-  // Siblings
-  brotherCount          Int?      @map("brother_count") // 兄弟の人数
-  sisterCount           Int?      @map("sister_count") // 姉妹の人数
-  
-  // Notes and other info
-  notes                 String?   // 摘要
-  notes2                String?   // 摘要２
-  otherNo               String?   @map("other_no") // 他団体No
-  oldCode               String?   @map("old_code") // 旧コード
-  
-  // Parent relations
-  fatherPedigreeId      String?   @map("father_pedigree_id")
-  fatherPedigree        Pedigree? @relation("PedigreeFather", fields: [fatherPedigreeId], references: [id])
-  fatherOf              Pedigree[] @relation("PedigreeFather")
-  
-  motherPedigreeId      String?   @map("mother_pedigree_id")
-  motherPedigree        Pedigree? @relation("PedigreeMother", fields: [motherPedigreeId], references: [id])
-  motherOf              Pedigree[] @relation("PedigreeMother")
-  
-  // Grandparent relations
-  paternalGrandfatherId String?   @map("paternal_grandfather_id")
-  paternalGrandfather   Pedigree? @relation("PatGrandfather", fields: [paternalGrandfatherId], references: [id])
-  paternalGrandfatherOf Pedigree[] @relation("PatGrandfather")
-  
-  paternalGrandmotherId String?   @map("paternal_grandmother_id")
-  paternalGrandmother   Pedigree? @relation("PatGrandmother", fields: [paternalGrandmotherId], references: [id])
-  paternalGrandmotherOf Pedigree[] @relation("PatGrandmother")
-  
-  maternalGrandfatherId String?   @map("maternal_grandfather_id")
-  maternalGrandfather   Pedigree? @relation("MatGrandfather", fields: [maternalGrandfatherId], references: [id])
-  maternalGrandfatherOf Pedigree[] @relation("MatGrandfather")
-  
-  maternalGrandmotherId String?   @map("maternal_grandmother_id")
-  maternalGrandmother   Pedigree? @relation("MatGrandmother", fields: [maternalGrandmotherId], references: [id])
-  maternalGrandmotherOf Pedigree[] @relation("MatGrandmother")
-  
-  createdAt             DateTime  @default(now()) @map("created_at")
-  updatedAt             DateTime  @updatedAt @map("updated_at")
-
+  id                String   @id @default(uuid())
+  pedigreeId        String   @unique @map("pedigree_id")
+  title             String?  @map("title")
+  catName           String?  @map("cat_name")
+  catName2          String?  @map("cat_name2")
+  breedCode         Int?     @map("breed_code")
+  genderCode        Int?     @map("gender_code")
+  eyeColor          String?  @map("eye_color")
+  coatColorCode     Int?     @map("coat_color_code")
+  birthDate         String?  @map("birth_date")
+  breederName       String?  @map("breeder_name")
+  ownerName         String?  @map("owner_name")
+  registrationDate  String?  @map("registration_date")
+  brotherCount      Int?     @map("brother_count")
+  sisterCount       Int?     @map("sister_count")
+  notes             String?  @map("notes")
+  notes2            String?  @map("notes2")
+  otherNo           String?  @map("other_no")
+  fatherTitle       String?  @map("father_title")
+  fatherCatName     String?  @map("father_cat_name")
+  fatherCatName2    String?  @map("father_cat_name2")
+  fatherCoatColor   String?  @map("father_coat_color")
+  fatherEyeColor    String?  @map("father_eye_color")
+  fatherJCU         String?  @map("father_jcu")
+  fatherOtherCode   String?  @map("father_other_code")
+  motherTitle       String?  @map("mother_title")
+  motherCatName     String?  @map("mother_cat_name")
+  motherCatName2    String?  @map("mother_cat_name2")
+  motherCoatColor   String?  @map("mother_coat_color")
+  motherEyeColor    String?  @map("mother_eye_color")
+  motherJCU         String?  @map("mother_jcu")
+  motherOtherCode   String?  @map("mother_other_code")
+  FFTitle           String?  @map("ff_title")
+  FFCatName         String?  @map("ff_cat_name")
+  FFCatColor        String?  @map("ff_cat_color")
+  FFJCU             String?  @map("ff_jcu")
+  FMTitle           String?  @map("fm_title")
+  FMCatName         String?  @map("fm_cat_name")
+  FMCatColor        String?  @map("fm_cat_color")
+  FMJCU             String?  @map("fm_jcu")
+  MFTitle           String?  @map("mf_title")
+  MFCatName         String?  @map("mf_cat_name")
+  MFCatColor        String?  @map("mf_cat_color")
+  MFJCU             String?  @map("mf_jcu")
+  MMTitle           String?  @map("mm_title")
+  MMCatName         String?  @map("mm_cat_name")
+  MMCatColor        String?  @map("mm_cat_color")
+  MMJCU             String?  @map("mm_jcu")
+  FFFTitle          String?  @map("fff_title")
+  FFFCatName        String?  @map("fff_cat_name")
+  FFFCatColor       String?  @map("fff_cat_color")
+  FFFJCU            String?  @map("fff_jcu")
+  FFMTitle          String?  @map("ffm_title")
+  FFMCatName        String?  @map("ffm_cat_name")
+  FFMCatColor       String?  @map("ffm_cat_color")
+  FFMJCU            String?  @map("ffm_jcu")
+  FMFTitle          String?  @map("fmf_title")
+  FMFCatName        String?  @map("fmf_cat_name")
+  FMFCatColor       String?  @map("fmf_cat_color")
+  FMFJCU            String?  @map("fmf_jcu")
+  FMMTitle          String?  @map("fmm_title")
+  FMMCatName        String?  @map("fmm_cat_name")
+  FMMCatColor       String?  @map("fmm_cat_color")
+  FMMJCU            String?  @map("fmm_jcu")
+  MFFTitle          String?  @map("mff_title")
+  MFFCatName        String?  @map("mff_cat_name")
+  MFFCatColor       String?  @map("mff_cat_color")
+  MFFJCU            String?  @map("mff_jcu")
+  MFMTitle          String?  @map("mfm_title")
+  MFMCatName        String?  @map("mfm_cat_name")
+  MFMCatColor       String?  @map("mfm_cat_color")
+  MFMJCU            String?  @map("mfm_jcu")
+  MMFTitle          String?  @map("mmf_title")
+  MMFCatName        String?  @map("mmf_cat_name")
+  MMFCatColor       String?  @map("mmf_cat_color")
+  MMFJCU            String?  @map("mmf_jcu")
+  MMMTitle          String?  @map("mmm_title")
+  MMMCatName        String?  @map("mmm_cat_name")
+  MMMCatColor       String?  @map("mmm_cat_color")
+  MMMJCU            String?  @map("mmm_jcu")
+  oldCode           String?  @map("old_code")
+  // ...既存のリレーションは必要に応じて追加...
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
   @@map("pedigrees")
 }
 
