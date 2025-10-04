@@ -41,6 +41,10 @@
     "pedigree:parents": "ts-node src/scripts/import-parent-pedigrees.ts"
   },
   "dependencies": {
+  "nestjs-pino": "^4.0.0",
+    "@sentry/node": "^8.26.0",
+    "@sentry/profiling-node": "^8.26.0",
+    "pino-pretty": "^11.2.2",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.1.1",
     "@nestjs/core": "^10.0.0",

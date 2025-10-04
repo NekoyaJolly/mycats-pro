@@ -1,8 +1,8 @@
-# 🐱 猫生体管理システム (My Cats)
+# � MyCats
 
 [![CI](https://github.com/NekoyaJolly/mycats/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/NekoyaJolly/mycats/actions/workflows/ci.yml)
 
-フロントエンド (Next.js 15 + Mantine UI) とバックエンド (NestJS + Prisma) を組み合わせた包括的な猫生体管理アプリケーションです。血統書管理、交配記録、ケアスケジュール、健康管理などの機能を提供します。
+フロントエンド (Next.js 15 + Mantine UI) とバックエンド (NestJS + Prisma) を組み合わせた包括的な猫個体・血統・ケア情報管理アプリケーションです。血統書管理、交配記録、ケアスケジュール、健康管理などの機能を提供します。
 
 ## 📋 目次
 
@@ -10,11 +10,14 @@
 - [🛠 技術スタック](#-技術スタック)
 - [📁 プロジェクト構造](#-プロジェクト構造)
 - [🗄️ データベース設計](#️-データベース設計)
-- [🚀 クイックスタート](#-クイックスタート)
-- [🔧 利用可能なコマンド](#-利用可能なコマンド)
+- [🚀 クイックスタート (最短手順)](#-クイックスタート-最短手順)
+- [🧪 開発モード詳細 / 認証バイパス](#-開発モード詳細--認証バイパス)
+- [� Adminアカウント永続化](#-adminアカウント永続化)
+- [�🔧 スクリプト & コマンド集](#-スクリプト--コマンド集)
 - [📊 ビルド・デプロイ](#-ビルドデプロイ)
 - [🌐 デプロイオプション](#-デプロイオプション)
 - [🔍 トラブルシューティング](#-トラブルシューティング)
+- [🎨 スタイルガイド（抜粋）](#-スタイルガイド抜粋)
 
 ## 🎯 機能概要
 
@@ -177,7 +180,9 @@ DATABASE_URL="postgresql://postgres:password@localhost:5432/cat_management?schem
 curl http://localhost:3004/health
 ```
 
-## 🚀 クイックスタート
+## 🚀 クイックスタート (最短手順)
+
+ローカルで「動かすだけ」を最短で行うための手順です。細かい選択肢や背景は後続セクションを参照してください。
 
 ### 前提条件
 
@@ -205,46 +210,55 @@ pnpm --version  # 9.x系が推奨
 
 ### 3. 環境変数の設定
 
-`backend/.env`ファイルを作成し、データベース接続情報を設定：
+`backend/.env` を作成:
 
 ```env
-# Database Configuration
-DATABASE_URL="postgresql://username:password@localhost:5432/catmanagement"
-
-# JWT Configuration
-JWT_SECRET=your-jwt-secret-key
-
-# API Configuration
+# --- Core ---
 PORT=3004
 NODE_ENV=development
+JWT_SECRET=dev-jwt-secret-change-me
+
+# --- Database ---
+DATABASE_URL="postgresql://postgres:postgres@localhost:55432/mycats?schema=public"
+
+# --- Admin Seed (初回作成/seedで利用) ---
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=Passw0rd!
+
+# --- Optional Auth Bypass (開発のみ) ---
+# AUTH_DISABLED=1
 ```
 
-### 4. 依存関係のインストールとセットアップ
+必要に応じて `frontend/.env.local` に以下を追加 (認証バイパス利用時のみ):
+
+```env
+NEXT_PUBLIC_AUTH_DISABLED=1
+```
+
+> バイパスの詳細・リスクは後述「開発モード詳細 / 認証バイパス」を参照。
+
+### 4. 依存関係・DBセットアップ & クリーン起動
+
+ルート直下で以下を実行 (自動で backend/front を順序付き起動):
 
 ```bash
-# ワークスペース全体の依存関係をインストール
+# 依存関係
 pnpm install
 
-# データベースセットアップ
-cd backend
-pnpm run db:generate      # Prismaクライアント生成
-pnpm run db:migrate:dev   # データベースマイグレーション
+# (初回) DBマイグレーション + シード
+pnpm run db:migrate
+pnpm run db:seed
 
-# フロントエンドのビルド
-cd ../frontend
-pnpm build
+# クリーン起動 (ポート開放→前提チェック→バックエンド→フロント)
+pnpm run backend:dev:clean &
+pnpm --filter frontend run dev &
+wait
 ```
 
-### 5. 開発環境の起動
+あるいは単純にフル並列起動:
 
 ```bash
-# バックエンドを起動（別ターミナル）
-cd backend
-pnpm run start:dev        # http://localhost:3004
-
-# フロントエンドを起動（別ターミナル）
-cd frontend
-pnpm dev                  # http://localhost:3000
+pnpm run dev
 ```
 
 ### 5. アプリケーションへのアクセス
@@ -254,72 +268,141 @@ pnpm dev                  # http://localhost:3000
 - **API Documentation**: <http://localhost:3004/api/docs>
 - **Prisma Studio**: `npm run db:studio`
 
-## 🔧 利用可能なコマンド
+## 🧪 開発モード詳細 / 認証バイパス
 
-### 基本操作
+開発スピード優先で一時的にログイン手続きを省略したい場合のみ、`AUTH_DISABLED=1` (backend) と `NEXT_PUBLIC_AUTH_DISABLED=1` (frontend) を設定します。ガードはダミー管理者ユーザーを注入し、Next.js middleware は全リクエストを素通しします。
 
 ```bash
-pnpm install             # 全ての依存関係をインストール
-pnpm run dev             # 開発環境を起動（バックエンド:3004、フロントエンド:3000）
+# backend/.env
+AUTH_DISABLED=1
+
+# frontend/.env.local
+NEXT_PUBLIC_AUTH_DISABLED=1
 ```
 
-### フロントエンド管理
+解除は値を削除または `0` に変更し再起動するだけです。詳細なリスク・注意事項は `README_AUTH_DISABLED_NOTE.md` を参照してください。
+
+⚠️ 本番 / 共有環境で有効化すると、完全にアクセス制御が無効化され重大な情報漏洩リスクになります。
+
+## 🔧 スクリプト & コマンド集
+
+ルート (`package.json`) に集約された代表的なコマンド:
+
+| コマンド | 説明 |
+|----------|------|
+| `pnpm run dev` | backend + frontend + Prisma sync を並列起動 |
+| `pnpm run backend:dev:clean` | ポート解放→前提チェック→バックエンド起動 (安定再起動用) |
+| `pnpm run db:migrate` | 開発用マイグレーション適用 (dev) |
+| `pnpm run db:deploy` | 本番向け migrate deploy |
+| `pnpm run db:seed` | 管理者 & サンプルデータ投入 |
+| `pnpm run db:studio` | Prisma Studio GUI 起動 |
+| `pnpm run prisma:sync` | Prisma schema → Types 同期ウォッチ |
+| `pnpm run frontend:build` | フロントエンドビルド |
+| `pnpm run backend:build` | バックエンドビルド |
+| `pnpm run build` | ルートで backend + frontend を順序ビルド |
+| `pnpm run test:e2e` | backend E2E テスト (空でも passWithNoTests) |
+| `pnpm run api:smoke` | 登録→ログイン→tags POST のスモーク (要通常認証) |
+| `pnpm run diagnose` | 環境診断スクリプト |
+| `pnpm run setup` | 初期セットアップ (将来拡張用) |
+| `pnpm --filter backend exec ts-node src/scripts/create-or-update-admin.ts` | Admin再作成/更新 (パス保持/強制更新対応) |
+
+### ローカル Postgres スクリプト
+
+`scripts/local-postgres.sh` (ポート: 55432) を利用して Docker 無しで軽量な開発用クラスタを起動できます。
 
 ```bash
-cd frontend
-pnpm install             # フロントエンドの依存関係をインストール
-pnpm dev                 # 開発サーバーを起動 (http://localhost:3000)
-pnpm build               # 本番用ビルド
-pnpm start               # 本番サーバーを起動
-pnpm lint                # ESLintでコード品質チェック
-pnpm test                # Jestでテスト実行
+./scripts/local-postgres.sh start   # 起動
+./scripts/local-postgres.sh status  # 状態確認
+./scripts/local-postgres.sh stop    # 停止
+./scripts/local-postgres.sh psql    # psql シェル
 ```
 
-### バックエンド管理
+DATABASE_URL のポートが 55432 になっていることを確認してください。
+
+### 推奨ワークフロー (安定再起動)
 
 ```bash
-cd backend
-pnpm install             # バックエンドの依存関係をインストール
-pnpm run start:dev       # 開発サーバーを起動 (http://localhost:3004)
-pnpm run build           # 本番用ビルド
-pnpm run start:prod      # 本番サーバーを起動
+# backend 側だけ壊れた/ポート詰まり時
+pnpm run backend:dev:clean
+
+# スキーマ変更後 (Prisma) 再生成 + 再起動
+pnpm run db:migrate && pnpm run db:generate && pnpm run backend:dev:clean
 ```
 
-### データベース管理
+## 👤 Adminアカウント永続化
 
+### 目的
+
+再起動やシード再実行で毎回 Admin を「登録」し直さなくてよいようにし、開発の初期コストを削減します。
+
+### 実装方針
+ 
+1. `seed.ts` は既存 Admin のパスワードをデフォルトで上書きしない (ロール/有効化のみ整合)
+2. 強制パスワード変更が必要なケースのみ `ADMIN_FORCE_UPDATE=1` を明示
+3. 再適用専用スクリプト `create-or-update-admin.ts` を追加 (再実行安全 / 差分更新)
+
+### 利用例
+ 
 ```bash
-cd backend
-pnpm run db:migrate:dev  # 開発環境マイグレーション
-pnpm run db:migrate:deploy # 本番環境マイグレーション
-pnpm run db:generate     # Prismaクライアント生成
-pnpm run db:seed         # サンプルデータを投入
-pnpm run db:studio       # Prisma Studio（データベースGUI）
-pnpm run db:reset        # データベースリセット（開発用）
+# 既存を維持したまま整合 (初回または差分調整)
+pnpm --filter backend exec ts-node src/scripts/create-or-update-admin.ts
+
+# パスワードを変更したい場合
+ADMIN_PASSWORD='NewPassw0rd!' ADMIN_FORCE_UPDATE=1 pnpm --filter backend exec ts-node src/scripts/create-or-update-admin.ts
 ```
 
-### テスト・確認
+### ENV 例
+ 
+```env
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=Passw0rd!
+# 必要なときだけ
+# ADMIN_FORCE_UPDATE=1
+```
+
+### seed.ts の振る舞い
+ 
+- Admin が未存在: 作成 (ENV / デフォルト値)
+- 既存: ロールが ADMIN でない/非Active なら修正
+- `ADMIN_FORCE_UPDATE=1`: パスワード再ハッシュ反映
+
+### トラブルシュート
+ 
+| 症状 | 想定原因 | 対応 |
+|------|----------|------|
+| 期待した新パスワードでログイン不可 | 強制更新フラグ未指定 | `ADMIN_FORCE_UPDATE=1` で再実行 |
+| Admin が消えた | DBリセット/別DB指している | `pnpm run db:migrate && pnpm run db:seed` またはスクリプト実行 |
+| どのパスか不明 | 設定忘れ/共有不足 | 明示的に `ADMIN_FORCE_UPDATE=1` で再設定し共有 |
+
+### 今後の拡張候補
+ 
+- CLI 対話フロー (メール/パス生成)
+- 監査ログ (更新時に記録)
+- Admin ロール階層 (SUPER_ADMIN 差別化)
+
+
+### テスト (backend)
 
 ```bash
-cd backend
-pnpm run test            # ユニットテスト実行
-pnpm run test:e2e        # E2Eテスト実行
-pnpm run test:cov        # カバレッジ付きテスト
-curl http://localhost:3004/health  # ヘルスチェック
+pnpm --filter backend run test
+pnpm --filter backend run test:e2e
+pnpm --filter backend run test:cov
+```
+
+ヘルスチェック:
+
+```bash
+curl -s http://localhost:3004/health
 ```
 
 ## 📊 ビルド・デプロイ
 
-### 開発ビルド
+### 開発ビルド (individual)
 
 ```bash
-# 全依存関係のインストール
-npm run install:all
-
-# Prismaクライアント生成
-npm run db:generate
-
-# フロントエンドビルド
-npm run frontend:build
+pnpm install
+pnpm run db:generate
+pnpm run frontend:build
 ```
 
 ### 本番環境デプロイ
@@ -351,20 +434,16 @@ PRODUCTION_URL            # 本番アプリケーションURL
 #### 手動デプロイ
 
 ```bash
-# 1. 本番環境変数の設定（.env.production）
-# 2. 依存関係のインストール
+# 1) .env.production / DATABASE_URL / JWT_SECRET 設定
+# 2) 依存関係
 pnpm install --frozen-lockfile
-
-# 3. Prismaクライアント生成
-pnpm -w run db:generate
-
-# 4. データベースマイグレーション
-pnpm -w run db:deploy
-
-# 5. ビルド
+# 3) Prisma クライアント生成
+pnpm run db:generate
+# 4) マイグレーション適用
+pnpm run db:deploy
+# 5) ビルド
 pnpm run build
-
-# 6. 本番サーバー起動
+# 6) 起動
 NODE_ENV=production node backend/dist/main.js
 ```
 
@@ -400,7 +479,7 @@ const nextConfig: NextConfig = {
 };
 ```
 
-2. **GitHub Actions ワークフローの作成** (`.github/workflows/deploy.yml`)
+1. **GitHub Actions ワークフローの作成** (`.github/workflows/deploy.yml`)
 
 ```yaml
 name: Deploy to GitHub Pages
@@ -438,7 +517,7 @@ jobs:
           publish_dir: ./frontend/out
 ```
 
-3. **リポジトリ設定**
+1. **リポジトリ設定**
    - Settings → Pages → Source: "GitHub Actions"
 
 #### 制限事項
@@ -511,72 +590,46 @@ docker-compose up -d
 
 ### よくある問題
 
-1. **ポートが既に使用されている**
+1. **ポート競合 (3000 / 3004)**
 
    ```bash
-   # 使用中のポートを確認 (macOS/Linux)
-   lsof -i :3000
-   lsof -i :3004
-
-   # プロセスを終了
-   kill -9 <PID>
-
-   # または、プロジェクトのスクリプトを使用
-   npm run predev  # ポート3000, 3004をクリア
+   lsof -i :3000 || true
+   lsof -i :3004 || true
+   pnpm run predev   # kill-port で解放
+   pnpm run backend:dev:clean
    ```
 
-2. **データベース接続エラー**
+2. **DB接続エラー (ローカルクラスタ未起動)**
 
    ```bash
-   # PostgreSQLサービスの状態確認
-   brew services list | grep postgresql
-
-   # PostgreSQLを起動
-   brew services start postgresql
-
-   # 接続テスト
-   npm run test:health
+   ./scripts/local-postgres.sh status
+   ./scripts/local-postgres.sh start
+   pnpm run db:migrate
    ```
 
-3. **依存関係の問題**
+3. **依存関係崩壊**
 
    ```bash
-   # node_modulesを再インストール
-   rm -rf node_modules package-lock.json
-   rm -rf frontend/node_modules frontend/package-lock.json
-   rm -rf backend/node_modules backend/package-lock.json
-
-   # 依存関係を再インストール
-   npm run install:all
+   rm -rf node_modules pnpm-lock.yaml
+   rm -rf backend/node_modules frontend/node_modules
+   pnpm install
    ```
 
-4. **Prismaクライアントのエラー**
+4. **Prismaクライアント不整合**
 
    ```bash
-   # Prismaクライアントを再生成
-   npm run db:generate
+   pnpm run db:generate
    ```
 
-5. **フロントエンドビルドエラー**
+5. **フロントエンドビルド失敗 (型)**
+
+   Mantine カラーパレット型エラー時は `providers.tsx` の `MantineColorsTuple` 定義を確認。
+
+6. **GitHub Pages 静的エクスポート**
 
    ```bash
-   # legacy-peer-depsでインストール
    cd frontend
-   npm install --legacy-peer-deps
-   ```
-
-6. **GitHub Pages用静的ビルドとローカル開発の使い分け**
-
-   ```bash
-   # ローカル開発・本番サーバー用のビルド
-   cd frontend
-   npm run build
-   npm run start
-
-   # GitHub Pages用の静的エクスポート
-   cd frontend
-   npm run build:static
-   # 静的ファイルは out/ ディレクトリに生成される
+   pnpm run build:static   # out/ に生成
    ```
 
 ### ログの確認
@@ -585,15 +638,11 @@ docker-compose up -d
 - **フロントエンドログ**: ブラウザの開発者ツール（Console）
 - **データベースログ**: PostgreSQLのログファイル
 
-### 推奨Node.js/PNPMバージョン
+### 推奨バージョン確認
 
 ```bash
-# 現在のバージョン確認
-node --version
-pnpm --version
-
-# 推奨: Node.js 20.x〜22.x（root package.json engines参照）
-# パッケージマネージャ: PNPM 9系で検証済み
+node --version   # >=20 <23
+pnpm --version   # 9.x 推奨
 ```
 
 ## 🤝 開発への参加
@@ -638,6 +687,10 @@ git push origin feature/your-feature-name
 
 MIT License
 
+## 🎨 スタイルガイド（抜粋）
+
+ページタイトルは統一した視認性のため `src/components/PageTitle.tsx` を利用し、フォントサイズ18px/weight700で揃えています。新規ページ追加時は `<PageTitle>タイトル</PageTitle>` を最上部ヘッダー領域に配置してください。複数セクション小見出しが必要な場合も可能な限り PageTitle を再利用し、サイズ・色変更が必要な際はインライン style で最小限の上書きを行います。
+
 ## 🔗 関連ドキュメント
 
 ### 📚 技術ドキュメント
@@ -667,7 +720,7 @@ MIT License
 
 ---
 
-**最終更新**: 2025年9月27日  
+**最終更新**: 2025年10月3日  
 **プロジェクト状態**: アクティブ開発中  
 **主要バージョン**: フロントエンド（Next.js 15.5.3 + React 19.1.0 + Mantine 8.2.4）、バックエンド（NestJS 10 + Prisma 6.14.0）  
 **パッケージマネージャー**: pnpm 9.15.9（推奨）

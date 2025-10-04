@@ -6,6 +6,7 @@ import {
   UnauthorizedException,
   HttpException,
   HttpStatus,
+  Logger,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
@@ -20,6 +21,7 @@ import { PasswordService } from "./password.service";
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
@@ -259,7 +261,10 @@ export class AuthService {
    * 成功時は refreshToken をローテーション（新しいものを返す）
    */
   async refreshUsingToken(refreshToken: string) {
-    if (!refreshToken) throw new UnauthorizedException('Missing refresh token');
+    if (!refreshToken) {
+      this.logger.warn('Refresh attempt without token');
+      throw new UnauthorizedException('Missing refresh token');
+    }
     try {
       const payload = this.jwt.verify(refreshToken, {
         secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
@@ -276,7 +281,10 @@ export class AuthService {
           refreshToken: true,
         },
       });
-      if (!user) throw new UnauthorizedException('Invalid refresh token');
+      if (!user) {
+        this.logger.warn(`Refresh token mismatch or user not found (sub=${payload.sub})`);
+        throw new UnauthorizedException('Invalid refresh token');
+      }
 
       // generateTokens のために完全ユーザーが必要 => id で再取得
       const fullUser = await this.prisma.user.findUnique({ where: { id: user.id } });
@@ -293,6 +301,7 @@ export class AuthService {
         },
       };
     } catch (e) {
+      this.logger.warn(`Refresh verification failed: ${e instanceof Error ? e.message : e}`);
       throw new UnauthorizedException('Invalid refresh token');
     }
   }

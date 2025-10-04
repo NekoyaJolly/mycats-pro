@@ -1,6 +1,10 @@
 import { ValidationPipe, Logger } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
+import * as Sentry from '@sentry/node';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
+import cookieParser from 'cookie-parser';
+import { Logger as PinoLogger } from 'nestjs-pino';
 
 import { AppModule } from "./app.module";
 import { validateProductionEnvironment, logEnvironmentInfo } from "./common/environment.validation";
@@ -22,6 +26,7 @@ async function bootstrap() {
     logEnvironmentInfo();
 
     const app = await NestFactory.create(AppModule, {
+      bufferLogs: true,
       cors: {
         origin:
           process.env.NODE_ENV === "production"
@@ -36,7 +41,25 @@ async function bootstrap() {
       },
     });
 
-    // Global validation pipe
+  // Pino logger
+  app.useLogger(app.get(PinoLogger));
+
+  // Sentry (条件付き)
+  if (process.env.SENTRY_DSN) {
+    Sentry.init({
+      dsn: process.env.SENTRY_DSN,
+      environment: process.env.NODE_ENV || 'development',
+      tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE || 0.1),
+      profilesSampleRate: Number(process.env.SENTRY_PROFILES_SAMPLE_RATE || 0.1),
+      integrations: [nodeProfilingIntegration()],
+    });
+    logger.log('Sentry initialized');
+  }
+
+  // Cookie parser (for refresh token, etc.)
+  app.use(cookieParser());
+
+  // Global validation pipe
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -140,7 +163,7 @@ async function bootstrap() {
       SwaggerModule.setup("api/docs", app, document);
     }
 
-    const port = process.env.PORT || 3004;
+  const port = process.env.PORT || 3004;
     await app.listen(port);
 
     // Graceful shutdown

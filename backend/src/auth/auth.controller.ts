@@ -14,8 +14,10 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
+import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from "express";
 
+import { REFRESH_COOKIE_NAME, REFRESH_COOKIE_MAX_AGE_MS, REFRESH_COOKIE_SAMESITE, isSecureEnv } from './auth.constants';
 import { AuthService } from "./auth.service";
 import type { RequestUser } from "./auth.types";
 import { ChangePasswordDto } from "./dto/change-password.dto";
@@ -31,6 +33,7 @@ export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
   @Post("login")
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: "ログイン（JWT発行）" })
   @ApiResponse({ status: HttpStatus.OK })
   login(@Body() dto: LoginDto, @Req() req: Request, @Ip() ip: string, @Res({ passthrough: true }) res: Response) {
@@ -87,11 +90,12 @@ export class AuthController {
   }
 
   @Post("refresh")
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({ summary: "リフレッシュトークンでアクセストークン再取得" })
   @ApiResponse({ status: HttpStatus.OK })
   refresh(@Body() dto: RefreshTokenDto, @Res({ passthrough: true }) res: Response) {
     // DTO 互換モード: body に入っていれば利用、無ければ Cookie 参照（将来的には完全Cookie化）
-    const cookieToken = (res.req as Request).cookies?.rt;
+  const cookieToken = (res.req as Request).cookies?.[REFRESH_COOKIE_NAME];
     const token = dto?.refreshToken || cookieToken;
     return this.auth.refreshUsingToken(token).then(result => {
       this.setRefreshCookie(res, result.refresh_token);
@@ -106,21 +110,18 @@ export class AuthController {
   @ApiResponse({ status: HttpStatus.OK })
   logout(@GetUser() user: RequestUser | undefined, @Res({ passthrough: true }) res: Response) {
     // Cookie 無効化
-    res.cookie('rt', '', { httpOnly: true, secure: this.isSecure(), sameSite: 'lax', path: '/', maxAge: 0 });
+  res.cookie(REFRESH_COOKIE_NAME, '', { httpOnly: true, secure: isSecureEnv(), sameSite: REFRESH_COOKIE_SAMESITE, path: '/', maxAge: 0 });
     return this.auth.logout(user.userId);
   }
 
   private setRefreshCookie(res: Response, token: string) {
-    res.cookie('rt', token, {
+    res.cookie(REFRESH_COOKIE_NAME, token, {
       httpOnly: true,
-      secure: this.isSecure(),
-      sameSite: 'lax',
+      secure: isSecureEnv(),
+      sameSite: REFRESH_COOKIE_SAMESITE,
       path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
+      maxAge: REFRESH_COOKIE_MAX_AGE_MS,
     });
   }
 
-  private isSecure() {
-    return process.env.NODE_ENV === 'production';
-  }
 }

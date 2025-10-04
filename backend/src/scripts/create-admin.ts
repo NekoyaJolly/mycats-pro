@@ -5,8 +5,8 @@ const prisma = new PrismaClient();
 
 async function createAdmin() {
   try {
-    const email = 'admin@example.com';
-    const password = 'Admin123';
+  const email = process.env.ADMIN_EMAIL || 'admin@example.com';
+  const password = process.env.ADMIN_PASSWORD || 'Passw0rd!';
 
     console.log('🔍 管理者アカウントを確認中...');
 
@@ -14,8 +14,8 @@ async function createAdmin() {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       console.log('✅ 管理者アカウントは既に存在します');
-      console.log('📧 Email: admin@example.com');
-      console.log('🔑 Password: Admin123');
+  console.log(`📧 Email: ${email}`);
+  console.log(`🔑 Password: ${password}`);
       console.log('👤 Role:', existing.role);
       return;
     }
@@ -43,8 +43,8 @@ async function createAdmin() {
 
     console.log('✅ 管理者アカウントを作成しました！');
     console.log('');
-    console.log('📧 Email: admin@example.com');
-    console.log('🔑 Password: Admin123');
+  console.log(`📧 Email: ${email}`);
+  console.log(`🔑 Password: ${password}`);
     console.log('👤 Role: ADMIN');
     console.log('🆔 User ID:', admin.id);
     console.log('');

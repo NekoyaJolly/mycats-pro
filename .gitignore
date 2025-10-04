@@ -1,3 +1,7 @@
+# Local development database (PostgreSQL)
+.dev/
+.dev/postgres/
+.dev/postgres/data/
 # Dependencies
 node_modules/
 npm-debug.log*

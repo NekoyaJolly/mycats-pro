@@ -35,7 +35,7 @@ async function main() {
         lastName: "User",
       },
     });
-    // eslint-disable-next-line no-console
+     
     console.log("✅ Admin created", { id: created.id, email });
   } else {
     const updateData: Record<string, unknown> = {};
@@ -55,10 +55,10 @@ async function main() {
     }
     if (changed) {
       await prisma.user.update({ where: { email }, data: updateData });
-      // eslint-disable-next-line no-console
+       
       console.log(`♻️  Admin updated (${forceUpdate ? "password+meta" : "meta"})`, { email });
     } else {
-      // eslint-disable-next-line no-console
+       
       console.log("ℹ️  Admin unchanged", { email });
     }
   }
@@ -67,7 +67,7 @@ async function main() {
 }
 
 main().catch((e) => {
-  // eslint-disable-next-line no-console
+   
   console.error(e);
   process.exit(1);
 });
