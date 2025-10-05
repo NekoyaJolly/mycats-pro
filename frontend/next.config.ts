@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 import path from "path";
 
+// Bundle Analyzer (ANALYZE=true でビルド時に有効化)
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
+
 // GitHub Pages用の静的エクスポート設定を環境変数で制御
 const isStaticExport = process.env.EXPORT_STATIC === 'true';
 // GitHub Pages でのサブディレクトリ デプロイ用の base path 設定
@@ -35,9 +40,22 @@ const nextConfig: NextConfig = {
   // Build configuration
   generateEtags: false,
   poweredByHeader: false,
+  // Standalone output for production deployment
+  output: isStaticExport ? 'export' : 'standalone',
+  // Bundle size optimization
+  swcMinify: true,
+  // Experimental features for better performance
+  experimental: {
+    optimizePackageImports: [
+      '@mantine/core',
+      '@mantine/hooks',
+      '@mantine/notifications',
+      '@tabler/icons-react',
+    ],
+  },
   // モノレポ対応のためのワークスペースルート設定
   outputFileTracingRoot: path.join(__dirname, "../"),
   // Remove rewrites and headers as they don't work with static export
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);

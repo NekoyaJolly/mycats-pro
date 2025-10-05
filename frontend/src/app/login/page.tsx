@@ -71,6 +71,9 @@ export default function LoginPage() {
 
   return (
     <Box
+      component="main"
+      role="main"
+      aria-label="ログインページ"
       style={{
         minHeight: '100vh',
         display: 'flex',
@@ -106,7 +109,7 @@ export default function LoginPage() {
             </Box>
 
             <Paper radius="lg" p="xl" shadow="xl" style={{ boxShadow: '0 16px 40px rgba(15, 23, 42, 0.08)' }}>
-              <form onSubmit={form.onSubmit(handleSubmit)}>
+              <form onSubmit={form.onSubmit(handleSubmit)} aria-label="ログインフォーム">
                 <Stack gap="md">
                   {error && (
                     <Alert
@@ -115,6 +118,8 @@ export default function LoginPage() {
                       color="red"
                       onClose={clearError}
                       withCloseButton
+                      role="alert"
+                      aria-live="polite"
                     >
                       {error}
                     </Alert>
@@ -124,6 +129,9 @@ export default function LoginPage() {
                     label="メールアドレス"
                     placeholder="your@email.com"
                     size="md"
+                    aria-label="メールアドレス"
+                    aria-required="true"
+                    autoComplete="email"
                     {...form.getInputProps('email')}
                     disabled={isSubmitting || isLoading}
                     styles={{
@@ -136,6 +144,9 @@ export default function LoginPage() {
                     label="パスワード"
                     placeholder="パスワードを入力"
                     size="md"
+                    aria-label="パスワード"
+                    aria-required="true"
+                    autoComplete="current-password"
                     {...form.getInputProps('password')}
                     disabled={isSubmitting || isLoading}
                     styles={{
@@ -148,6 +159,7 @@ export default function LoginPage() {
                     fullWidth
                     size="md"
                     loading={isSubmitting || isLoading}
+                    aria-label="ログイン"
                     style={{
                       marginTop: '1rem',
                       background: 'var(--accent)',
