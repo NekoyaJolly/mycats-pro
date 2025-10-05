@@ -24,8 +24,18 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // === 開発用: 認証バイパスフラグ ===
+  // Security: 本番環境では認証バイパスを許可しない
   if (process.env.NEXT_PUBLIC_AUTH_DISABLED === '1') {
-    // /login /register はトップへリダイレクト（UIから不可視化）
+    if (process.env.NODE_ENV === 'production') {
+      console.error(
+        '❌ Security Error: AUTH_DISABLED cannot be enabled in production environment',
+      );
+      throw new Error(
+        'AUTH_DISABLED is not allowed in production. Please check your environment variables.',
+      );
+    }
+
+    // 開発環境のみ: /login /register はトップへリダイレクト（UIから不可視化）
     if (pathname.startsWith('/login') || pathname.startsWith('/register')) {
       return NextResponse.redirect(new URL('/', request.url));
     }

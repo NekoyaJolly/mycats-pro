@@ -29,6 +29,8 @@ import { ChangePasswordDto } from "./dto/change-password.dto";
 import { LoginDto } from "./dto/login.dto";
 import { PasswordResetDto } from "./dto/password-reset.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
+import { RequestPasswordResetDto } from "./dto/request-password-reset.dto";
+import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { GetUser } from "./get-user.decorator";
 import { JwtAuthGuard } from "./jwt-auth.guard";
 
@@ -109,10 +111,20 @@ export class AuthController {
   }
 
   @Post("request-password-reset")
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @ApiOperation({ summary: "パスワードリセット要求" })
-  @ApiResponse({ status: HttpStatus.OK })
-  requestPasswordReset(@Body() dto: PasswordResetDto) {
+  @ApiResponse({ status: HttpStatus.OK, description: 'リセット手順をメールで送信' })
+  requestPasswordReset(@Body() dto: RequestPasswordResetDto) {
     return this.auth.requestPasswordReset(dto.email);
+  }
+
+  @Post("reset-password")
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @ApiOperation({ summary: "パスワードリセット実行" })
+  @ApiResponse({ status: HttpStatus.OK, description: 'パスワードがリセットされました' })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: '無効または期限切れのトークン' })
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.auth.resetPassword(dto.token, dto.newPassword);
   }
 
   @Post("refresh")

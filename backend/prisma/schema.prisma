@@ -22,6 +22,8 @@ model User {
   isActive    Boolean  @default(true) @map("is_active")
   passwordHash String? @map("password_hash")
   refreshToken String?  @map("refresh_token") // JWT refresh token storage
+  resetPasswordToken String? @map("reset_password_token") // Password reset token
+  resetPasswordExpires DateTime? @map("reset_password_expires") // Token expiration
   failedLoginAttempts Int @default(0) @map("failed_login_attempts")
   lockedUntil DateTime? @map("locked_until")
   lastLoginAt DateTime? @map("last_login_at")
@@ -153,6 +155,10 @@ model Cat {
   tags            CatTag[]
   pedigreeId      String?   @map("pedigree_id") // PedigreeIDで紐付け（全頭ではない）
 
+  @@index([breedId])
+  @@index([fatherId])
+  @@index([motherId])
+  @@index([birthDate])
   @@map("cats")
 }
 
@@ -176,6 +182,10 @@ model BreedingRecord {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  @@index([maleId])
+  @@index([femaleId])
+  @@index([breedingDate])
+  @@index([status])
   @@map("breeding_records")
 }
 
@@ -198,6 +208,9 @@ model CareRecord {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  @@index([catId])
+  @@index([careDate])
+  @@index([careType])
   @@map("care_records")
 }
 
@@ -220,6 +233,10 @@ model Schedule {
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
 
+  @@index([scheduleDate])
+  @@index([status])
+  @@index([catId])
+  @@index([assignedTo])
   @@map("schedules")
 }
 
@@ -327,6 +344,11 @@ model Pedigree {
   
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
+  
+  @@index([breedCode])
+  @@index([genderCode])
+  @@index([coatColorCode])
+  @@index([catName])
   @@map("pedigrees")
 }
 

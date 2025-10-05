@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   HttpStatus,
+  Logger,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -23,6 +24,8 @@ import { CreateCatDto, UpdateCatDto, CatQueryDto } from "./dto";
 @ApiTags("Cats")
 @Controller("cats")
 export class CatsController {
+  private readonly logger = new Logger(CatsController.name);
+
   constructor(private readonly catsService: CatsService) {}
 
   @Post()
@@ -36,6 +39,12 @@ export class CatsController {
     description: "無効なデータです",
   })
   create(@Body() createCatDto: CreateCatDto) {
+    this.logger.log({
+      message: 'Creating new cat',
+      catName: createCatDto.name,
+      breedId: createCatDto.breedId,
+      timestamp: new Date().toISOString(),
+    });
     return this.catsService.create(createCatDto);
   }
 
@@ -136,6 +145,12 @@ export class CatsController {
   })
   @ApiParam({ name: "id", description: "猫データのID" })
   update(@Param("id") id: string, @Body() updateCatDto: UpdateCatDto) {
+    this.logger.log({
+      message: 'Updating cat',
+      catId: id,
+      fields: Object.keys(updateCatDto),
+      timestamp: new Date().toISOString(),
+    });
     return this.catsService.update(id, updateCatDto);
   }
 
@@ -151,6 +166,11 @@ export class CatsController {
   })
   @ApiParam({ name: "id", description: "猫データのID" })
   remove(@Param("id") id: string) {
+    this.logger.warn({
+      message: 'Deleting cat',
+      catId: id,
+      timestamp: new Date().toISOString(),
+    });
     return this.catsService.remove(id);
   }
 }

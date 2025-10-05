@@ -4,12 +4,15 @@ import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import { Logger as PinoLogger } from 'nestjs-pino';
 
 import { AppModule } from "./app.module";
 import { validateProductionEnvironment, logEnvironmentInfo } from "./common/environment.validation";
 import { GlobalExceptionFilter } from "./common/filters/global-exception.filter";
+import { EnhancedGlobalExceptionFilter } from "./common/filters/enhanced-global-exception.filter";
 import { TransformResponseInterceptor } from "./common/interceptors/transform-response.interceptor";
+import { PerformanceMonitoringInterceptor } from "./common/interceptors/performance-monitoring.interceptor";
 
 async function bootstrap() {
   const logger = new Logger("Bootstrap");
@@ -44,6 +47,35 @@ async function bootstrap() {
   // Pino logger
   app.useLogger(app.get(PinoLogger));
 
+  // Security: Helmet middleware for security headers
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          scriptSrc: ["'self'"],
+          imgSrc: ["'self'", "data:", "https:"],
+          connectSrc: ["'self'"],
+          fontSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          mediaSrc: ["'self'"],
+          frameSrc: ["'none'"],
+        },
+      },
+      hsts: {
+        maxAge: 31536000, // 1 year in seconds
+        includeSubDomains: true,
+        preload: true,
+      },
+      referrerPolicy: {
+        policy: 'strict-origin-when-cross-origin',
+      },
+      noSniff: true,
+      xssFilter: true,
+    }),
+  );
+
   // Sentry (条件付き)
   if (process.env.SENTRY_DSN) {
     Sentry.init({
@@ -71,8 +103,11 @@ async function bootstrap() {
     // Global response interceptor
     app.useGlobalInterceptors(new TransformResponseInterceptor());
 
-    // Global exception filter
-    app.useGlobalFilters(new GlobalExceptionFilter());
+    // Performance monitoring interceptor
+    app.useGlobalInterceptors(new PerformanceMonitoringInterceptor());
+
+    // Global exception filter (enhanced version)
+    app.useGlobalFilters(new EnhancedGlobalExceptionFilter());
 
     // API prefix
     app.setGlobalPrefix("api/v1");

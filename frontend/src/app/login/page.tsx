@@ -158,8 +158,12 @@ export default function LoginPage() {
                   </Button>
                   <Text size="sm" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
                     パスワードをお忘れですか？{' '}
-                    <Text component="span" style={{ color: 'var(--text-muted)', cursor: 'not-allowed', opacity: 0.5 }}>
-                      リセット（準備中）
+                    <Text
+                      component="span"
+                      style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: 500 }}
+                      onClick={() => router.push('/forgot-password')}
+                    >
+                      リセット
                     </Text>
                   </Text>
                   <Text size="sm" style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>

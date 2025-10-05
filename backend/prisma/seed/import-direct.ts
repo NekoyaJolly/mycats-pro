@@ -4,6 +4,23 @@ import * as path from 'path';
 import { parse } from 'csv-parse/sync';
 import { randomUUID } from 'crypto';
 
+/**
+ * CSV record type definition for pedigree data
+ */
+interface PedigreeCSVRecord {
+  pedigree_id: string;
+  cat_name?: string;
+  breed_code?: string;
+  gender_code?: string;
+  eye_color?: string;
+  coat_color_code?: string;
+  birth_date?: string;
+  breeder_name?: string;
+  registration_date?: string;
+  brother_count?: string;
+  sister_count?: string;
+}
+
 const client = new Client({
   host: 'localhost',
   port: 55432,
@@ -22,7 +39,7 @@ async function main() {
     columns: true,
     skip_empty_lines: true,
     trim: true,
-  });
+  }) as PedigreeCSVRecord[];
 
   console.log(`Found ${records.length} records to import`);
 
@@ -34,7 +51,7 @@ async function main() {
       const id = randomUUID();
       const now = new Date();
       
-      const pedigreeId = record['pedigree_id'];
+      const pedigreeId = record.pedigree_id;
       
       if (!pedigreeId) {
         console.error('Skipping record with missing pedigree_id');
@@ -56,16 +73,16 @@ async function main() {
       await client.query(query, [
         id,
         pedigreeId,
-        record['cat_name'] || null,
-        record['breed_code'] ? parseInt(record['breed_code']) : null,
-        record['gender_code'] ? parseInt(record['gender_code']) : null,
-        record['eye_color'] || null,
-        record['coat_color_code'] ? parseInt(record['coat_color_code']) : null,
-        record['birth_date'] || null,
-        record['breeder_name'] || null,
-        record['registration_date'] || null,
-        record['brother_count'] ? parseInt(record['brother_count']) : null,
-        record['sister_count'] ? parseInt(record['sister_count']) : null,
+        record.cat_name || null,
+        record.breed_code ? parseInt(record.breed_code, 10) : null,
+        record.gender_code ? parseInt(record.gender_code, 10) : null,
+        record.eye_color || null,
+        record.coat_color_code ? parseInt(record.coat_color_code, 10) : null,
+        record.birth_date || null,
+        record.breeder_name || null,
+        record.registration_date || null,
+        record.brother_count ? parseInt(record.brother_count, 10) : null,
+        record.sister_count ? parseInt(record.sister_count, 10) : null,
         now,
         now,
       ]);
@@ -74,9 +91,10 @@ async function main() {
       if (successCount % 10 === 0) {
         console.log(`Imported ${successCount} records...`);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       errorCount++;
-      console.error(`Error importing record ${record['pedigree_id']}:`, error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`Error importing record ${record.pedigree_id}:`, errorMessage);
     }
   }
 

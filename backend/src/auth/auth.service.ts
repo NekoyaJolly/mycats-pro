@@ -113,12 +113,29 @@ export class AuthService {
     await this.loginAttemptService.recordLoginAttempt(loginAttemptData);
 
     if (!user) {
+      this.logger.warn({
+        message: 'Login failed: Invalid credentials',
+        email,
+        ipAddress,
+        timestamp: new Date().toISOString(),
+      });
       throw new UnauthorizedException("認証情報が正しくありません");
     }
 
   // generateTokens にフルユーザー型が必要なため再取得
   const fullUser = await this.prisma.user.findUnique({ where: { id: user.id } });
   const tokens = await this.generateTokens(fullUser as User);
+
+    // ログイン成功ログ
+    this.logger.log({
+      message: 'Login successful',
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      ipAddress,
+      timestamp: new Date().toISOString(),
+    });
+
     return {
       success: true,
       data: {
@@ -200,6 +217,14 @@ export class AuthService {
       select: { id: true, email: true },
     });
 
+    // ユーザー登録成功ログ
+    this.logger.log({
+      message: 'User registered successfully',
+      userId: user.id,
+      email: user.email,
+      timestamp: new Date().toISOString(),
+    });
+
     return { success: true, data: { id: user.id, email: user.email } };
   }
 
@@ -215,11 +240,103 @@ export class AuthService {
       };
     }
 
-    // TODO: パスワードリセットトークンの生成とメール送信
-    // 現在は仮実装
+    // パスワードリセットトークンの生成（32バイトのランダム文字列）
+    const resetToken = require('crypto').randomBytes(32).toString('hex');
+    const resetTokenHash = await this.passwordService.hashPassword(resetToken);
+    
+    // トークンの有効期限（1時間）
+    const resetPasswordExpires = new Date();
+    resetPasswordExpires.setHours(resetPasswordExpires.getHours() + 1);
+
+    // トークンをデータベースに保存
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetPasswordToken: resetTokenHash,
+        resetPasswordExpires,
+      },
+    });
+
+    // パスワードリセットリクエストログ
+    this.logger.log({
+      message: 'Password reset requested',
+      email,
+      userExists: !!user,
+      timestamp: new Date().toISOString(),
+    });
+
+    // TODO: メール送信実装
+    // 開発環境ではコンソールにトークンを出力
+    if (process.env.NODE_ENV !== 'production') {
+      this.logger.log(`Password reset token for ${email}: ${resetToken}`);
+      this.logger.log(`Reset URL: http://localhost:3000/reset-password?token=${resetToken}`);
+    }
+
+    // 本番環境では、ここでメール送信サービスを呼び出す
+    // await this.mailService.sendPasswordResetEmail(user.email, resetToken);
+
     return {
       success: true,
       message: "パスワードリセット手順をメールで送信しました",
+      // 開発環境のみトークンを返す
+      ...(process.env.NODE_ENV !== 'production' && { token: resetToken }),
+    };
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    // トークンのハッシュ値を計算
+    const tokenHash = await this.passwordService.hashPassword(token);
+
+    // トークンでユーザーを検索
+    const user = await this.prisma.user.findFirst({
+      where: {
+        resetPasswordToken: { not: null },
+        resetPasswordExpires: { gte: new Date() },
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('無効または期限切れのトークンです');
+    }
+
+    // トークンを検証
+    const isValidToken = await this.passwordService.verifyPassword(
+      token,
+      user.resetPasswordToken!,
+    );
+
+    if (!isValidToken) {
+      throw new BadRequestException('無効または期限切れのトークンです');
+    }
+
+    // 新しいパスワードをハッシュ化
+    const newPasswordHash = await this.passwordService.hashPassword(newPassword);
+
+    // パスワードを更新し、トークンをクリア
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash: newPasswordHash,
+        resetPasswordToken: null,
+        resetPasswordExpires: null,
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+      },
+    });
+
+    this.logger.log(`Password reset successful for user: ${user.email}`);
+
+    // パスワードリセット成功詳細ログ
+    this.logger.log({
+      message: 'Password reset completed',
+      userId: user.id,
+      email: user.email,
+      timestamp: new Date().toISOString(),
+    });
+
+    return {
+      success: true,
+      message: 'パスワードが正常にリセットされました',
     };
   }
 

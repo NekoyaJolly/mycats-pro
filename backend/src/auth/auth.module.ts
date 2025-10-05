@@ -19,12 +19,20 @@ import { PasswordService } from "./password.service";
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>("JWT_SECRET") || "dev-secret",
-        signOptions: {
-          expiresIn: configService.get<string>("JWT_EXPIRES_IN") || "7d",
-        },
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const secret = configService.get<string>("JWT_SECRET");
+        if (!secret) {
+          throw new Error(
+            'JWT_SECRET environment variable is required. Please set it in your .env file.',
+          );
+        }
+        return {
+          secret,
+          signOptions: {
+            expiresIn: configService.get<string>("JWT_EXPIRES_IN") || "7d",
+          },
+        };
+      },
     }),
   ],
   controllers: [AuthController],
