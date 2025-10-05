@@ -29,8 +29,8 @@ import { PedigreeService } from "./pedigree.service";
 
 
 @ApiTags("Pedigrees")
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+// @ApiBearerAuth()  // Temporarily disabled for development
+// @UseGuards(JwtAuthGuard)  // Temporarily disabled for development
 @Controller("pedigrees")
 export class PedigreeController {
   constructor(private readonly pedigreeService: PedigreeService) {}

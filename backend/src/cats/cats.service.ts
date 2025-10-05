@@ -54,12 +54,9 @@ export class CatsService {
 
   // birthDate は必須。文字列入力（ISO8601想定）を Date に変換して保存
   const birth = new Date(birthDate);
-    function toGender(val: string | Gender): Gender {
-      if (val === Gender.MALE || val === Gender.FEMALE) return val;
-      if (typeof val === "string") {
-        if (val.toUpperCase() === Gender.MALE) return Gender.MALE;
-        if (val.toUpperCase() === Gender.FEMALE) return Gender.FEMALE;
-      }
+    function toGender(val: string): string {
+      const upperVal = val.toUpperCase();
+      if (upperVal === 'MALE' || upperVal === 'FEMALE') return upperVal;
       throw new BadRequestException("Invalid gender value");
     }
     return this.prisma.cat.create({
@@ -67,13 +64,12 @@ export class CatsService {
         registrationId,
         name,
         pattern,
-        gender: toGender(gender),
+        gender: toGender(gender) as any, // String type in database
         birthDate: birth,
         ...(typeof weight === "number" ? { weight } : {}),
         ...(microchipId ? { microchipId } : {}),
         ...(imageUrl ? { imageUrl } : {}),
         ...(notes ? { notes } : {}),
-        owner: { connect: { id: ownerId } },
         ...(breedId ? { breed: { connect: { id: breedId } } } : {}),
         ...(colorId ? { color: { connect: { id: colorId } } } : {}),
         ...(fatherId ? { father: { connect: { id: fatherId } } } : {}),
@@ -82,7 +78,6 @@ export class CatsService {
       include: {
         breed: true,
         color: true,
-        owner: true,
         father: true,
         mother: true,
         maleBreedingRecords: true,
@@ -124,7 +119,7 @@ export class CatsService {
     // Filters
     if (breedId) where.breedId = breedId;
     if (colorId) where.colorId = colorId;
-  if (gender) where.gender = (gender === Gender.MALE || gender === Gender.FEMALE) ? gender : undefined;
+  if (gender) where.gender = (gender === 'MALE' || gender === 'FEMALE') ? gender : undefined;
 
     // Age filters
     if (ageMin || ageMax) {
@@ -164,12 +159,6 @@ export class CatsService {
         include: {
           breed: true,
           color: true,
-          pedigrees: {
-            include: {
-              breed: true,
-              color: true,
-            },
-          },
         },
         orderBy,
       }),
@@ -193,24 +182,6 @@ export class CatsService {
       include: {
         breed: true,
         color: true,
-        pedigrees: {
-          include: {
-            breed: true,
-            color: true,
-            fatherPedigree: {
-              include: {
-                breed: true,
-                color: true,
-              },
-            },
-            motherPedigree: {
-              include: {
-                breed: true,
-                color: true,
-              },
-            },
-          },
-        },
         maleBreedingRecords: {
           include: {
             female: true,
@@ -294,7 +265,7 @@ export class CatsService {
         ...(microchipId ? { microchipId } : {}),
         ...(imageUrl ? { imageUrl } : {}),
         ...(notes ? { notes } : {}),
-  ...(gender ? { gender: (gender === Gender.MALE || gender === Gender.FEMALE) ? gender : undefined } : {}),
+  ...(gender ? { gender: (gender === 'MALE' || gender === 'FEMALE') ? gender : undefined } : {}),
         ...(birth ? { birthDate: birth } : {}),
         ...(ownerId ? { owner: { connect: { id: ownerId } } } : {}),
         ...(breedId ? { breed: { connect: { id: breedId } } } : {}),
@@ -305,12 +276,6 @@ export class CatsService {
       include: {
         breed: true,
         color: true,
-        pedigrees: {
-          include: {
-            breed: true,
-            color: true,
-          },
-        },
       },
     });
   }
@@ -329,7 +294,6 @@ export class CatsService {
       include: {
         breed: true,
         color: true,
-        pedigrees: true,
       },
     });
   }
@@ -390,8 +354,8 @@ export class CatsService {
     const [totalCats, totalMales, totalFemales, breedStats] = await Promise.all(
       [
         this.prisma.cat.count(),
-  this.prisma.cat.count({ where: { gender: Gender.MALE } }),
-  this.prisma.cat.count({ where: { gender: Gender.FEMALE } }),
+  this.prisma.cat.count({ where: { gender: 'MALE' } }),
+  this.prisma.cat.count({ where: { gender: 'FEMALE' } }),
         this.prisma.cat.groupBy({
           by: ["breedId"],
           _count: true,

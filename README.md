@@ -288,9 +288,21 @@ NEXT_PUBLIC_AUTH_DISABLED=1
 
 ルート (`package.json`) に集約された代表的なコマンド:
 
+### 開発サーバー起動
+
 | コマンド | 説明 |
 |----------|------|
-| `pnpm run dev` | backend + frontend + Prisma sync を並列起動 |
+| `pnpm run dev` | backend + frontend + Prisma sync を並列起動（フォアグラウンド） |
+| `pnpm run dev:stable` | **推奨**: バックグラウンドで安定起動（Ctrl+C の影響なし） |
+| `pnpm run dev:stop` | 安定版サーバーを停止 |
+| `pnpm run dev:health` | サーバーの稼働状況を確認 |
+
+> 💡 **安定版サーバーの詳細**: `pnpm run dev` は Ctrl+C で停止しやすい問題があります。長時間の開発には `pnpm run dev:stable` の使用を推奨します。詳細は [STABLE_SERVER_GUIDE.md](./STABLE_SERVER_GUIDE.md) を参照してください。
+
+### その他のコマンド
+
+| コマンド | 説明 |
+|----------|------|
 | `pnpm run backend:dev:clean` | ポート解放→前提チェック→バックエンド起動 (安定再起動用) |
 | `pnpm run db:migrate` | 開発用マイグレーション適用 (dev) |
 | `pnpm run db:deploy` | 本番向け migrate deploy |

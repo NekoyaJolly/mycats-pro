@@ -53,7 +53,6 @@ export class BreedsService {
           _count: {
             select: {
               cats: true,
-              pedigrees: true,
             },
           },
         },
@@ -85,18 +84,9 @@ export class BreedsService {
             name: "asc",
           },
         },
-        pedigrees: {
-          include: {
-            color: true,
-          },
-          orderBy: {
-            catName: "asc",
-          },
-        },
         _count: {
           select: {
             cats: true,
-            pedigrees: true,
           },
         },
       },
@@ -136,7 +126,7 @@ export class BreedsService {
     // Check if breed is being used
     const [catCount, pedigreeCount] = await Promise.all([
       this.prisma.cat.count({ where: { breedId: id } }),
-      this.prisma.pedigree.count({ where: { breedId: id } }),
+      this.prisma.pedigree.count({ where: { breedCode: parseInt(id) } }),
     ]);
 
     if (catCount > 0 || pedigreeCount > 0) {
@@ -159,7 +149,6 @@ export class BreedsService {
             _count: {
               select: {
                 cats: true,
-                pedigrees: true,
               },
             },
           },

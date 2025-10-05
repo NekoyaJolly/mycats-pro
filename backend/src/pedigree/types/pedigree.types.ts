@@ -8,9 +8,9 @@ export interface PedigreeWhereInput {
       mode?: 'insensitive';
     };
   }>;
-  breedId?: string;
-  colorId?: string;
-  gender?: number;
+  breedCode?: number;  // breedIdからbreedCodeに変更
+  coatColorCode?: number;  // colorIdからcoatColorCodeに変更
+  genderCode?: number;  // genderからgenderCodeに変更
   eyeColor?: string;
 }
 
@@ -26,13 +26,7 @@ export interface FieldMapping {
 
 // Pedigree with relationships for responses
 export type PedigreeWithRelations = Prisma.PedigreeGetPayload<{
-  include: {
-    breed: { select: { name: true } };
-    color: { select: { name: true } };
-    cat: { select: { id: true, name: true } };
-    fatherPedigree: { select: { id: true, catName: true } };
-    motherPedigree: { select: { id: true, catName: true } };
-  };
+  // 現在のスキーマにはリレーションが定義されていないため、基本型のみ使用
 }>;
 
 // API Response types
@@ -60,7 +54,7 @@ export interface PedigreeTreeNode {
   title?: string;
   gender?: number;
   eyeColor?: string;
-  birthDate?: Date;
+  birthDate?: string;  // PedigreeスキーマではbirthDateはstring型
   breed?: { name: string };
   color?: { name: string };
   fatherPedigreeId?: string;

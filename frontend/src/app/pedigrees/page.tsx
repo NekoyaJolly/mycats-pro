@@ -29,7 +29,10 @@ interface PedigreeData {
   pedigreeId: string;
   catName: string;
   breedCode: number | null;
-  gender: number | null;
+  genderCode: number | null;
+  gender?: { code: number; name: string } | null;
+  breed?: { code: number; name: string } | null;
+  coatColor?: { code: number; name: string } | null;
   birthDate: string | null;
   breederName: string | null;
   ownerName: string | null;
@@ -119,18 +122,28 @@ export default function PedigreesPage() {
     });
   };
 
-  const formatGender = (gender: number | null) => {
-    switch (gender) {
-      case 1: return '雄';
-      case 2: return '雌';
-      default: return '不明';
+  const formatGender = (pedigree: PedigreeData) => {
+    // gender オブジェクトがあればその name をそのまま使用
+    if (pedigree.gender?.name) {
+      return pedigree.gender.name;
+    }
+    // フォールバック: genderCode から判定
+    switch (pedigree.genderCode) {
+      case 1: return 'Male';
+      case 2: return 'Female';
+      case 3: return 'Neuter';
+      case 4: return 'Spay';
+      default: return 'Unknown';
     }
   };
 
-  const getGenderColor = (gender: number | null) => {
-    switch (gender) {
+  const getGenderColor = (pedigree: PedigreeData) => {
+    const code = pedigree.gender?.code ?? pedigree.genderCode;
+    switch (code) {
       case 1: return 'blue';
       case 2: return 'pink';
+      case 3: return 'cyan';
+      case 4: return 'violet';
       default: return 'gray';
     }
   };
@@ -225,8 +238,8 @@ export default function PedigreesPage() {
                     </Text>
                   </Table.Td>
                   <Table.Td>
-                    <Badge color={getGenderColor(pedigree.gender)} size="sm">
-                      {formatGender(pedigree.gender)}
+                    <Badge color={getGenderColor(pedigree)} size="sm" tt="none">
+                      {formatGender(pedigree)}
                     </Badge>
                   </Table.Td>
                   <Table.Td>

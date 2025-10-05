@@ -65,9 +65,10 @@ export class CreateCatDto {
   @MaxLength(50)
   microchipId?: string;
 
-  @ApiProperty({ description: "オーナーID", example: "owner-uuid-1234" })
+  @ApiPropertyOptional({ description: "オーナーID" })
+  @IsOptional()
   @IsString()
-  ownerId: string;
+  ownerId?: string;
 
   @ApiPropertyOptional({ description: "父猫のID" })
   @IsOptional()

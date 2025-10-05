@@ -13,9 +13,11 @@ OUTPUT = "/Users/nekoya/mycats/backend/prisma/seed/testdatepedigrees100_snake.cs
 def camel_to_snake(name):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     s2 = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1)
-    return s2.lower()
+    # 先頭のアンダースコアを削除（例: _pedigree_id → pedigree_id）
+    return s2.lower().lstrip('_')
 
-with open(INPUT, encoding="utf-8") as fin, open(OUTPUT, "w", encoding="utf-8", newline="") as fout:
+# BOMを除去してファイルを読み込む
+with open(INPUT, encoding="utf-8-sig") as fin, open(OUTPUT, "w", encoding="utf-8", newline="") as fout:
     reader = csv.reader(fin)
     writer = csv.writer(fout)
     header = next(reader)

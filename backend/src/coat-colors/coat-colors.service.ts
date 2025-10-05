@@ -58,7 +58,6 @@ export class CoatColorsService {
           _count: {
             select: {
               cats: true,
-              pedigrees: true,
             },
           },
         },
@@ -90,18 +89,9 @@ export class CoatColorsService {
             name: "asc",
           },
         },
-        pedigrees: {
-          include: {
-            breed: true,
-          },
-          orderBy: {
-            catName: "asc",
-          },
-        },
         _count: {
           select: {
             cats: true,
-            pedigrees: true,
           },
         },
       },
@@ -141,7 +131,7 @@ export class CoatColorsService {
     // Check if color is being used
     const [catCount, pedigreeCount] = await Promise.all([
       this.prisma.cat.count({ where: { colorId: id } }),
-      this.prisma.pedigree.count({ where: { colorId: id } }),
+      this.prisma.pedigree.count({ where: { coatColorCode: parseInt(id) } }),
     ]);
 
     if (catCount > 0 || pedigreeCount > 0) {
@@ -164,7 +154,6 @@ export class CoatColorsService {
             _count: {
               select: {
                 cats: true,
-                pedigrees: true,
               },
             },
           },
