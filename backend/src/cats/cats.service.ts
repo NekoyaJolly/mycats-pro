@@ -8,13 +8,13 @@ import { Prisma } from "@prisma/client";
 
 import { PrismaService } from "../prisma/prisma.service";
 
-import { CreateCatDto, UpdateCatDto, CatQueryDto } from "./dto";
 import {
   CatGender,
   InvalidGenderError,
   parseGenderInput,
   parseOptionalGenderInput,
 } from "./constants/gender";
+import { CreateCatDto, UpdateCatDto, CatQueryDto } from "./dto";
 
 @Injectable()
 export class CatsService {

@@ -21,7 +21,7 @@ export class PedigreeService {
 
   async create(createPedigreeDto: CreatePedigreeDto): Promise<PedigreeCreateResponse> {
     // Prisma の型に適合するようにデータを準備
-    const createData = {
+    const createData: Prisma.PedigreeCreateInput = {
       pedigreeId: createPedigreeDto.pedigreeId,
       catName: createPedigreeDto.catName,
       ...(createPedigreeDto.title && { title: createPedigreeDto.title }),
@@ -50,7 +50,7 @@ export class PedigreeService {
     };
 
     const result = await this.prisma.pedigree.create({
-      data: createData as any, // Type assertion for complex nested data
+      data: createData,
     });
 
     return { success: true, data: result };
@@ -154,7 +154,7 @@ export class PedigreeService {
     }
 
     // Prisma の型に適合するようにデータを準備
-    const updateData = {
+    const updateData: Prisma.PedigreeUpdateInput = {
       ...(updatePedigreeDto.pedigreeId && { pedigreeId: updatePedigreeDto.pedigreeId }),
       ...(updatePedigreeDto.catName && { catName: updatePedigreeDto.catName }),
       ...(updatePedigreeDto.title && { title: updatePedigreeDto.title }),
@@ -186,7 +186,7 @@ export class PedigreeService {
 
     const result = await this.prisma.pedigree.update({
       where: { id },
-      data: updateData as any, // Type assertion for complex nested data
+      data: updateData,
     });
 
     return { success: true, data: result };
