@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -252,16 +253,20 @@ export class PedigreeService {
   async getDescendants(id: string) {
     const pedigree = await this.findOne(id);
 
-    // Note: Pedigree table doesn't use relational foreign keys for parents
-    // Parent information is stored as text strings, not IDs
-    const descendants = await this.prisma.pedigree.findMany({
-      where: {
-        OR: [
-          { fatherName: { equals: pedigree.catName } },
-          { motherName: { equals: pedigree.catName } },
-        ],
-      } as any, // Using 'as any' because custom where clause
-    });
+    const nameConditions: Prisma.PedigreeWhereInput[] = [];
+
+    if (pedigree.catName) {
+      nameConditions.push({ fatherCatName: { equals: pedigree.catName } });
+      nameConditions.push({ motherCatName: { equals: pedigree.catName } });
+    }
+
+    const descendants = nameConditions.length
+      ? await this.prisma.pedigree.findMany({
+          where: {
+            OR: nameConditions,
+          },
+        })
+      : [];
 
     return {
       pedigree,

@@ -43,6 +43,7 @@ describe("Care & Tags flows (e2e)", () => {
     // create a cat (owned by the registered user)
     const catRes = await request(app.getHttpServer())
       .post("/api/v1/cats")
+      .set("Authorization", `Bearer ${token}`)
       .send({
         registrationId: `REG-${Date.now()}`,
         name: "E2E Kitty",
@@ -105,6 +106,7 @@ describe("Care & Tags flows (e2e)", () => {
     // create a cat
     const catRes = await request(app.getHttpServer())
       .post("/api/v1/cats")
+      .set("Authorization", `Bearer ${token}`)
       .send({
         registrationId: `REG-${Date.now()}`,
         name: "E2E Care Cat",

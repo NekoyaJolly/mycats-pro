@@ -1,16 +1,19 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 import {
   IsOptional,
   IsString,
   IsInt,
-  IsEnum,
   IsIn,
   Min,
   Max,
 } from "class-validator";
 
-import { CatGender } from "./create-cat.dto";
+import {
+  CatGenderInput,
+  GENDER_INPUT_VALUES,
+  transformGenderInput,
+} from "../constants/gender";
 
 export class CatQueryDto {
   @ApiPropertyOptional({ description: "ページ番号", default: 1 })
@@ -43,10 +46,15 @@ export class CatQueryDto {
   @IsString()
   colorId?: string;
 
-  @ApiPropertyOptional({ description: "性別", enum: CatGender })
+  @ApiPropertyOptional({
+    description: "性別",
+    enum: GENDER_INPUT_VALUES,
+  })
   @IsOptional()
-  @IsEnum(CatGender)
-  gender?: CatGender;
+  @Transform(({ value }) => transformGenderInput(value), { toClassOnly: true })
+  @IsString()
+  @IsIn(GENDER_INPUT_VALUES)
+  gender?: CatGenderInput;
 
   @ApiPropertyOptional({ description: "最小年齢" })
   @IsOptional()

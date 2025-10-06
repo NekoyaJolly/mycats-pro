@@ -1,18 +1,20 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 import {
   IsString,
   IsOptional,
-  IsEnum,
   IsDateString,
   MaxLength,
   IsNumber,
+  IsIn,
 } from "class-validator";
 
-export enum CatGender {
-  MALE = "MALE",
-  FEMALE = "FEMALE",
-}
+import {
+  CatGender,
+  CatGenderInput,
+  GENDER_INPUT_VALUES,
+  transformGenderInput,
+} from "../constants/gender";
 
 export class CreateCatDto {
   @ApiProperty({ description: "登録ID", example: "REG-ALPHA" })
@@ -42,12 +44,14 @@ export class CreateCatDto {
   pattern?: string;
 
   @ApiProperty({
-    description: "性別",
-    enum: CatGender,
+    description: "性別 (マスター名称またはキー)",
+    enum: GENDER_INPUT_VALUES,
     example: CatGender.MALE,
   })
-  @IsEnum(CatGender)
-  gender: CatGender;
+  @Transform(({ value }) => transformGenderInput(value), { toClassOnly: true })
+  @IsString()
+  @IsIn(GENDER_INPUT_VALUES)
+  gender: CatGenderInput;
 
   @ApiProperty({ description: "生年月日", example: "2024-05-01" })
   @IsDateString()
@@ -64,11 +68,6 @@ export class CreateCatDto {
   @IsString()
   @MaxLength(50)
   microchipId?: string;
-
-  @ApiPropertyOptional({ description: "オーナーID" })
-  @IsOptional()
-  @IsString()
-  ownerId?: string;
 
   @ApiPropertyOptional({ description: "父猫のID" })
   @IsOptional()

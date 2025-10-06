@@ -3,10 +3,12 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
 
+import { RateLimiterModule } from "../common/rate-limiter/rate-limiter.module";
 import { PrismaModule } from "../prisma/prisma.module";
 
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
+import { JwtAuthGuard } from "./jwt-auth.guard";
 import { JwtStrategy } from "./jwt.strategy";
 import { LoginAttemptService } from "./login-attempt.service";
 import { PasswordService } from "./password.service";
@@ -34,9 +36,10 @@ import { PasswordService } from "./password.service";
         };
       },
     }),
+    RateLimiterModule,
   ],
   controllers: [AuthController],
-  providers: [JwtStrategy, AuthService, PasswordService, LoginAttemptService],
-  exports: [JwtModule, PassportModule, PasswordService, LoginAttemptService],
+  providers: [JwtStrategy, AuthService, PasswordService, LoginAttemptService, JwtAuthGuard],
+  exports: [JwtModule, PassportModule, PasswordService, LoginAttemptService, JwtAuthGuard],
 })
 export class AuthModule {}

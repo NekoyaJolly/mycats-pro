@@ -44,6 +44,7 @@ describe("Care & Tags flows (e2e)", () => {
     // create a cat owned by the registered user (avoid seed dependency)
     const catRes = await request(server)
       .post("/api/v1/cats")
+      .set("Authorization", `Bearer ${token}`)
       .send({
         registrationId: `REG-${Date.now()}`,
         name: "E2E Kitty",
@@ -111,6 +112,7 @@ describe("Care & Tags flows (e2e)", () => {
     // create a cat (avoid dependency on existing data)
     const catRes = await request(server)
       .post("/api/v1/cats")
+      .set("Authorization", `Bearer ${token}`)
       .send({
         registrationId: `REG-${Date.now()}`,
         name: "E2E Tag Cat",

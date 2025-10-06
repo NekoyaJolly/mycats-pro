@@ -6,8 +6,8 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
 import * as Sentry from '@sentry/node';
+import { Request, Response } from 'express';
 
 /**
  * エラー監視を強化したグローバル例外フィルター
@@ -27,18 +27,43 @@ export class EnhancedGlobalExceptionFilter implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const message =
-      exception instanceof HttpException
-        ? exception.message
-        : 'Internal server error';
+    const exceptionResponse =
+      exception instanceof HttpException ? exception.getResponse() : undefined;
 
-    const errorResponse = {
+    const responseMessage =
+      typeof exceptionResponse === 'object' && exceptionResponse !== null
+        ? (exceptionResponse as Record<string, unknown>).message
+        : undefined;
+
+    const message = Array.isArray(responseMessage)
+      ? responseMessage.join(', ')
+      : typeof responseMessage === 'string'
+        ? responseMessage
+        : exception instanceof HttpException
+            ? exception.message
+            : 'Internal server error';
+
+    const errorResponse: Record<string, unknown> = {
       statusCode: status,
+      code: HttpStatus[status] ?? 'ERROR',
       message,
       timestamp: new Date().toISOString(),
       path: request.url,
       method: request.method,
     };
+
+    if (Array.isArray(responseMessage)) {
+      errorResponse.details = responseMessage;
+    }
+
+    if (
+      typeof exceptionResponse === 'object' &&
+      exceptionResponse !== null &&
+      'details' in exceptionResponse &&
+      !('details' in errorResponse)
+    ) {
+      errorResponse.details = (exceptionResponse as Record<string, unknown>).details;
+    }
 
     // 構造化エラーログ
     const logData = {

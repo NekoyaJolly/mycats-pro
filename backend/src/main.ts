@@ -9,10 +9,10 @@ import { Logger as PinoLogger } from 'nestjs-pino';
 
 import { AppModule } from "./app.module";
 import { validateProductionEnvironment, logEnvironmentInfo } from "./common/environment.validation";
-import { GlobalExceptionFilter } from "./common/filters/global-exception.filter";
 import { EnhancedGlobalExceptionFilter } from "./common/filters/enhanced-global-exception.filter";
-import { TransformResponseInterceptor } from "./common/interceptors/transform-response.interceptor";
+import { GlobalExceptionFilter } from "./common/filters/global-exception.filter";
 import { PerformanceMonitoringInterceptor } from "./common/interceptors/performance-monitoring.interceptor";
+import { TransformResponseInterceptor } from "./common/interceptors/transform-response.interceptor";
 
 async function bootstrap() {
   const logger = new Logger("Bootstrap");

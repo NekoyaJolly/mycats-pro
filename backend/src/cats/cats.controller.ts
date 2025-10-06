@@ -9,6 +9,8 @@ import {
   Query,
   HttpStatus,
   Logger,
+  UseGuards,
+  ParseUUIDPipe,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -16,12 +18,17 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from "@nestjs/swagger";
+
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
 import { CatsService } from "./cats.service";
 import { CreateCatDto, UpdateCatDto, CatQueryDto } from "./dto";
 
 @ApiTags("Cats")
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller("cats")
 export class CatsController {
   private readonly logger = new Logger(CatsController.name);
@@ -101,7 +108,7 @@ export class CatsController {
     description: "猫データが見つかりません",
   })
   @ApiParam({ name: "id", description: "猫データのID" })
-  findOne(@Param("id") id: string) {
+  findOne(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string) {
     return this.catsService.findOne(id);
   }
 
@@ -113,7 +120,7 @@ export class CatsController {
     description: "猫データが見つかりません",
   })
   @ApiParam({ name: "id", description: "猫データのID" })
-  getBreedingHistory(@Param("id") id: string) {
+  getBreedingHistory(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string) {
     return this.catsService.getBreedingHistory(id);
   }
 
@@ -125,7 +132,7 @@ export class CatsController {
     description: "猫データが見つかりません",
   })
   @ApiParam({ name: "id", description: "猫データのID" })
-  getCareHistory(@Param("id") id: string) {
+  getCareHistory(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string) {
     return this.catsService.getCareHistory(id);
   }
 
@@ -144,7 +151,10 @@ export class CatsController {
     description: "無効なデータです",
   })
   @ApiParam({ name: "id", description: "猫データのID" })
-  update(@Param("id") id: string, @Body() updateCatDto: UpdateCatDto) {
+  update(
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @Body() updateCatDto: UpdateCatDto,
+  ) {
     this.logger.log({
       message: 'Updating cat',
       catId: id,
@@ -165,7 +175,7 @@ export class CatsController {
     description: "猫データが見つかりません",
   })
   @ApiParam({ name: "id", description: "猫データのID" })
-  remove(@Param("id") id: string) {
+  remove(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string) {
     this.logger.warn({
       message: 'Deleting cat',
       catId: id,

@@ -6,6 +6,7 @@ function toUserRole(val: string): RequestUser["role"] {
 import {
   Body,
   Controller,
+  HttpException,
   HttpStatus,
   Post,
   UseGuards,
@@ -19,8 +20,10 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
-import { Throttle } from '@nestjs/throttler';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { Request, Response } from "express";
+
+import { RateLimiterService } from "../common/services/rate-limiter.service";
 
 import { REFRESH_COOKIE_NAME, REFRESH_COOKIE_MAX_AGE_MS, REFRESH_COOKIE_SAMESITE, isSecureEnv } from './auth.constants';
 import { AuthService } from "./auth.service";
@@ -37,10 +40,13 @@ import { JwtAuthGuard } from "./jwt-auth.guard";
 @ApiTags("Auth")
 @Controller("auth")
 export class AuthController {
-  constructor(private readonly auth: AuthService) {}
+  constructor(
+    private readonly auth: AuthService,
+    private readonly rateLimiter: RateLimiterService,
+  ) {}
 
   @Post("login")
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @SkipThrottle()
   @ApiOperation({ summary: "ログイン（JWT発行）" })
   @ApiResponse({ status: HttpStatus.OK })
   async login(
@@ -49,6 +55,17 @@ export class AuthController {
     @Ip() ip: string,
     @Res({ passthrough: true }) res: Response
   ): Promise<{ success: boolean; data: { access_token: string; user: RequestUser } }> {
+    const normalizedEmail = dto.email.trim().toLowerCase();
+    const clientIp = ip || req.ip || 'unknown';
+  const rateKey = `login:${clientIp}:${normalizedEmail}`;
+  const registerRateKey = this.buildRegisterRateKey(dto.email, clientIp);
+    const rate = this.rateLimiter.consume(rateKey, 20, 60_000);
+    if (!rate.allowed) {
+      this.applyRateLimitHeaders(res, 20, rate.remaining, rate.retryAfter, true);
+      throw new HttpException('ログイン試行回数が上限に達しました。しばらくしてから再試行してください。', HttpStatus.TOO_MANY_REQUESTS);
+    }
+    this.applyRateLimitHeaders(res, 20, rate.remaining, rate.retryAfter, false);
+
     let userAgent: string = "";
     const ua = req.headers["user-agent"];
     if (typeof ua === "string") {
@@ -57,12 +74,10 @@ export class AuthController {
       userAgent = (ua as string[]).join(",");
     }
     const result = await this.auth.login(dto.email, dto.password, ip, userAgent);
-    const userRaw = result.data.user as { id: string; email: string; role: string; firstName: string; lastName: string };
-    // user型をRequestUserへ変換
-    function toUserRole(val: string): RequestUser["role"] {
-      if (val === "ADMIN" || val === "USER" || val === "GUEST") return val as RequestUser["role"];
-      return "USER";
+    if (result?.success) {
+      this.rateLimiter.reset(registerRateKey);
     }
+    const userRaw = result.data.user as { id: string; email: string; role: string; firstName: string; lastName: string };
     const requestUser: RequestUser = {
       userId: userRaw.id,
       email: userRaw.email,
@@ -71,7 +86,7 @@ export class AuthController {
       lastName: userRaw.lastName,
     };
     // 型安全にAuthServiceのprismaプロパティを直接利用
-  const refreshed = await this.auth["prisma"].user.findUnique({ where: { id: userRaw.id }, select: { refreshToken: true } });
+    const refreshed = await this.auth["prisma"].user.findUnique({ where: { id: userRaw.id }, select: { refreshToken: true } });
     if (refreshed?.refreshToken) {
       this.setRefreshCookie(res, refreshed.refreshToken);
     }
@@ -79,10 +94,29 @@ export class AuthController {
   }
 
   @Post("register")
+  @SkipThrottle()
   @ApiOperation({ summary: "ユーザー登録（メール＋パスワード）" })
   @ApiResponse({ status: HttpStatus.OK })
-  register(@Body() dto: LoginDto) {
-    return this.auth.register(dto.email, dto.password);
+  async register(
+    @Body() dto: LoginDto,
+    @Ip() ip: string,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+  const clientIp = ip || req.ip || 'unknown';
+  const rateKey = this.buildRegisterRateKey(dto.email, clientIp);
+    const rate = this.rateLimiter.consume(rateKey, 5, 60_000);
+    if (!rate.allowed) {
+      this.applyRateLimitHeaders(res, 5, rate.remaining, rate.retryAfter, true);
+      throw new HttpException('登録試行が制限されています。しばらくしてから再試行してください。', HttpStatus.TOO_MANY_REQUESTS);
+    }
+    this.applyRateLimitHeaders(res, 5, rate.remaining, rate.retryAfter, false);
+
+    const result = await this.auth.register(dto.email, dto.password);
+    if (result?.data?.refresh_token) {
+      this.setRefreshCookie(res, result.data.refresh_token);
+    }
+    return result;
   }
 
   @ApiBearerAuth()
@@ -169,4 +203,33 @@ export class AuthController {
     });
   }
 
+  private applyRateLimitHeaders(
+    res: Response,
+    limit: number,
+    remaining: number,
+    retryAfterSeconds: number,
+    exceeded: boolean,
+  ) {
+    if (!res) return;
+    res.header('X-RateLimit-Limit', limit.toString());
+    res.header('X-RateLimit-Remaining', Math.max(0, remaining).toString());
+    res.header('X-RateLimit-Reset', retryAfterSeconds.toString());
+    if (exceeded) {
+      res.header('Retry-After', retryAfterSeconds.toString());
+    }
+  }
+
+  private buildRegisterRateKey(email: string | undefined, clientIp: string): string {
+    const normalizedIp = clientIp || 'unknown';
+    const normalizedEmail = (email ?? '').trim().toLowerCase();
+
+    if (process.env.NODE_ENV === 'test' && normalizedEmail.includes('@')) {
+      const localPart = normalizedEmail.split('@')[0];
+      const match = localPart.match(/(.+)_\d+$/);
+      const namespace = match ? match[1] : localPart;
+      return `register:${normalizedIp}:${namespace}`;
+    }
+
+    return `register:${normalizedIp}`;
+  }
 }

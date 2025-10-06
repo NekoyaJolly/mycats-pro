@@ -1,4 +1,4 @@
-import { randomUUID } from "crypto";
+import { randomUUID, randomBytes } from "crypto";
 
 import {
   BadRequestException,
@@ -214,8 +214,9 @@ export class AuthService {
         lockedUntil: null,
         lastLoginAt: null,
       },
-      select: { id: true, email: true },
     });
+
+    const tokens = await this.generateTokens(user);
 
     // ユーザー登録成功ログ
     this.logger.log({
@@ -225,7 +226,22 @@ export class AuthService {
       timestamp: new Date().toISOString(),
     });
 
-    return { success: true, data: { id: user.id, email: user.email } };
+    return {
+      success: true,
+      data: {
+        id: user.id,
+        email: user.email,
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        },
+      },
+    };
   }
 
   async requestPasswordReset(email: string) {
@@ -240,8 +256,8 @@ export class AuthService {
       };
     }
 
-    // パスワードリセットトークンの生成（32バイトのランダム文字列）
-    const resetToken = require('crypto').randomBytes(32).toString('hex');
+  // パスワードリセットトークンの生成（32バイトのランダム文字列）
+  const resetToken = randomBytes(32).toString('hex');
     const resetTokenHash = await this.passwordService.hashPassword(resetToken);
     
     // トークンの有効期限（1時間）
@@ -284,28 +300,37 @@ export class AuthService {
   }
 
   async resetPassword(token: string, newPassword: string) {
-    // トークンのハッシュ値を計算
-    const tokenHash = await this.passwordService.hashPassword(token);
-
-    // トークンでユーザーを検索
-    const user = await this.prisma.user.findFirst({
+    const candidates = await this.prisma.user.findMany({
       where: {
         resetPasswordToken: { not: null },
         resetPasswordExpires: { gte: new Date() },
       },
+      select: {
+        id: true,
+        email: true,
+        resetPasswordToken: true,
+      },
     });
 
-    if (!user) {
+    if (!candidates.length) {
       throw new BadRequestException('無効または期限切れのトークンです');
     }
 
-    // トークンを検証
-    const isValidToken = await this.passwordService.verifyPassword(
-      token,
-      user.resetPasswordToken!,
-    );
+    let matchedUser: { id: string; email: string } | null = null;
 
-    if (!isValidToken) {
+    for (const user of candidates) {
+      if (!user.resetPasswordToken) continue;
+      const isValidToken = await this.passwordService.verifyPassword(
+        token,
+        user.resetPasswordToken,
+      );
+      if (isValidToken) {
+        matchedUser = { id: user.id, email: user.email };
+        break;
+      }
+    }
+
+    if (!matchedUser) {
       throw new BadRequestException('無効または期限切れのトークンです');
     }
 
@@ -314,7 +339,7 @@ export class AuthService {
 
     // パスワードを更新し、トークンをクリア
     await this.prisma.user.update({
-      where: { id: user.id },
+      where: { id: matchedUser.id },
       data: {
         passwordHash: newPasswordHash,
         resetPasswordToken: null,
@@ -324,13 +349,13 @@ export class AuthService {
       },
     });
 
-    this.logger.log(`Password reset successful for user: ${user.email}`);
+    this.logger.log(`Password reset successful for user: ${matchedUser.email}`);
 
     // パスワードリセット成功詳細ログ
     this.logger.log({
       message: 'Password reset completed',
-      userId: user.id,
-      email: user.email,
+      userId: matchedUser.id,
+      email: matchedUser.email,
       timestamp: new Date().toISOString(),
     });
 
@@ -424,13 +449,18 @@ export class AuthService {
   }
 
   private async generateTokens(user: User) {
-    const accessPayload = { sub: user.id, email: user.email, role: user.role };
+    const accessPayload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      jti: randomUUID(),
+    };
     const access_token = await this.jwt.signAsync(accessPayload, {
       expiresIn: '15m',
       secret: process.env.JWT_SECRET,
     });
     const refresh_token = await this.jwt.signAsync(
-      { sub: user.id, type: 'refresh' },
+      { sub: user.id, type: 'refresh', jti: randomUUID() },
       {
         expiresIn: '7d',
         secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,

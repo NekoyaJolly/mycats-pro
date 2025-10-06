@@ -1,5 +1,6 @@
-import { Module, MiddlewareConsumer, NestModule, NestMiddleware } from "@nestjs/common";
+import { Module, MiddlewareConsumer, NestModule } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { APP_GUARD } from "@nestjs/core";
 import { ThrottlerModule } from "@nestjs/throttler";
 import { LoggerModule } from 'nestjs-pino';
 
@@ -9,8 +10,11 @@ import { BreedsModule } from "./breeds/breeds.module";
 import { CareModule } from "./care/care.module";
 import { CatsModule } from "./cats/cats.module";
 import { CoatColorsModule } from "./coat-colors/coat-colors.module";
+import { AppThrottlerGuard } from "./common/guards/app-throttler.guard";
+import { CorsMiddleware } from "./common/middleware/cors.middleware";
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { SecurityMiddleware } from "./common/middleware/security.middleware";
+import { HealthModule } from "./health/health.module";
 import { PedigreeModule } from "./pedigree/pedigree.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { ScheduleModule } from "./schedule/schedule.module";
@@ -55,17 +59,20 @@ import { UsersModule } from "./users/users.module";
     ScheduleModule,
     UploadModule,
     TagsModule,
+    HealthModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: AppThrottlerGuard,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    // Apply security middleware globally in production
-  const chain: Array<{ new (...args: unknown[]): NestMiddleware }> = [RequestIdMiddleware];
-    if (process.env.NODE_ENV === 'production') {
-      chain.push(SecurityMiddleware);
-    }
-    consumer.apply(...chain).forRoutes('*');
+    consumer
+      .apply(CorsMiddleware, RequestIdMiddleware, SecurityMiddleware)
+      .forRoutes('*');
   }
 }
