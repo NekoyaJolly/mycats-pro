@@ -70,7 +70,7 @@ export class EnhancedGlobalExceptionFilter implements ExceptionFilter {
       ...errorResponse,
       ip: request.ip,
       userAgent: request.get('user-agent'),
-      userId: (request as any).user?.userId,
+      userId: request.user?.userId,
       error: exception instanceof Error ? exception.stack : String(exception),
     };
 
@@ -92,8 +92,8 @@ export class EnhancedGlobalExceptionFilter implements ExceptionFilter {
               headers: request.headers,
             },
             user: {
-              id: (request as any).user?.userId,
-              email: (request as any).user?.email,
+              id: request.user?.userId,
+              email: request.user?.email,
             },
           },
         });

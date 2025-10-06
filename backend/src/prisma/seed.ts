@@ -73,7 +73,7 @@ async function main() {
     create: {
       registrationId: "REG-ALPHA",
       name: "Alpha",
-      gender: 'MALE' as any,
+      gender: 'MALE',
       birthDate: new Date("2023-01-01"),
       isActive: true,
     },
@@ -85,7 +85,7 @@ async function main() {
     create: {
       registrationId: "REG-BETA",
       name: "Beta",
-      gender: 'FEMALE' as any,
+      gender: 'FEMALE',
       birthDate: new Date("2023-02-01"),
       isActive: true,
     },

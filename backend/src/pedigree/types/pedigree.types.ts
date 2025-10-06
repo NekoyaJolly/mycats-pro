@@ -26,8 +26,12 @@ export interface FieldMapping {
 
 // Pedigree with relationships for responses
 export type PedigreeWithRelations = Prisma.PedigreeGetPayload<{
-  // 現在のスキーマにはリレーションが定義されていないため、基本型のみ使用
-}>;
+  include: {
+    breed: true;
+    coatColor: true;
+    gender: true;
+  };
+}> | Prisma.PedigreeGetPayload<Record<string, never>>;
 
 // API Response types
 export interface PedigreeCreateResponse {

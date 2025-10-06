@@ -18,7 +18,7 @@ export class PerformanceMonitoringInterceptor implements NestInterceptor {
   private readonly SLOW_REQUEST_THRESHOLD_MS = 1000; // 1秒以上を遅いと判定
   private readonly VERY_SLOW_REQUEST_THRESHOLD_MS = 3000; // 3秒以上を非常に遅いと判定
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest();
     const { method, url, ip } = request;
     const userAgent = request.get('user-agent') || '';
