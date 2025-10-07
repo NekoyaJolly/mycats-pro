@@ -47,7 +47,7 @@ const nextConfig: NextConfig = {
   // Standalone output for production deployment
   output: isStaticExport ? 'export' : 'standalone',
   // Bundle size optimization
-  swcMinify: true,
+  // swcMinify: true, // Removed in Next.js 15 as it's default
   // Experimental features for better performance
   experimental: {
     optimizePackageImports: [
