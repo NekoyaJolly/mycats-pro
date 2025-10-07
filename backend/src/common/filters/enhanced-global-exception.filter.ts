@@ -9,6 +9,8 @@ import {
 import * as Sentry from '@sentry/node';
 import { Request, Response } from 'express';
 
+import type { RequestUser } from '../../auth/auth.types';
+
 /**
  * エラー監視を強化したグローバル例外フィルター
  * Sentryと構造化ログに対応
@@ -20,7 +22,7 @@ export class EnhancedGlobalExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
+    const request = ctx.getRequest<Request & { user?: RequestUser }>();
 
     const status =
       exception instanceof HttpException
