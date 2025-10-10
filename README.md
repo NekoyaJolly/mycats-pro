@@ -467,79 +467,9 @@ NODE_ENV=production node backend/dist/main.js
 
 ## 🌐 デプロイオプション
 
-### 1. GitHub Pages（フロントエンドのみ・静的サイト）
+> **Note:** GitHub Pages へのデプロイは廃止しました。以下のオプションから環境に合わせて選択してください。
 
-**適用対象**: フロントエンドの静的サイトとしてのデプロイ
-
-#### 設定手順
-
-1. **Next.js設定の変更** (`frontend/next.config.ts`)
-
-```typescript
-// GitHub Pages用の静的エクスポート設定を環境変数で制御
-const isStaticExport = process.env.EXPORT_STATIC === 'true';
-
-const nextConfig: NextConfig = {
-  // GitHub Pages static export configuration (環境変数で制御)
-  ...(isStaticExport && {
-    output: "export", // 静的エクスポートを有効化
-    trailingSlash: true, // GitHub Pages用の推奨設定
-  }),
-  images: {
-    unoptimized: isStaticExport, // GitHub Pages用の場合のみ画像最適化を無効化
-  },
-  // ... その他の設定
-};
-```
-
-1. **GitHub Actions ワークフローの作成** (`.github/workflows/deploy.yml`)
-
-```yaml
-name: Deploy to GitHub Pages
-on:
-  push:
-    branches: [main]
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "pnpm"
-
-      - name: Install and Build
-        run: |
-          cd frontend
-          pnpm install
-          pnpm run build:static
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./frontend/out
-```
-
-1. **リポジトリ設定**
-   - Settings → Pages → Source: "GitHub Actions"
-
-#### 制限事項
-
-- SSR/API Routes利用不可
-- バックエンドAPIは別途デプロイが必要
-- パブリック公開（プライベート公開はEnterprise Cloudのみ）
-
-### 2. Vercel（推奨）
+### 1. Vercel（推奨）
 
 **適用対象**: フロントエンド + API Routes（フルスタック）
 
@@ -557,7 +487,7 @@ vercel
 - プライベート公開対応
 - Edge Functions対応
 
-### 3. Railway/Heroku（フルスタック）
+### 2. Railway/Heroku（フルスタック）
 
 **適用対象**: フロントエンド + バックエンド + データベース
 
@@ -575,7 +505,7 @@ railway up
 - フルスタックアプリケーション対応
 - 環境変数管理
 
-### 4. 自前サーバー（VPS/クラウド）
+### 3. 自前サーバー（VPS/クラウド）
 
 **適用対象**: 完全な制御が必要な場合
 
@@ -592,12 +522,11 @@ docker-compose up -d
 
 ### デプロイ方式の比較
 
-| 方式           | フロント | バック | DB  | プライベート   | コスト |
-| -------------- | -------- | ------ | --- | -------------- | ------ |
-| GitHub Pages   | ✅       | ❌     | ❌  | Enterprise限定 | 無料   |
-| Vercel         | ✅       | 部分的 | ❌  | ✅             | 無料〜 |
-| Railway/Heroku | ✅       | ✅     | ✅  | ✅             | 有料   |
-| 自前サーバー   | ✅       | ✅     | ✅  | ✅             | VPS代  |
+| 方式           | フロント | バック | DB  | プライベート | コスト |
+| -------------- | -------- | ------ | --- | ------------ | ------ |
+| Vercel         | ✅       | 部分的 | ❌  | ✅           | 無料〜 |
+| Railway/Heroku | ✅       | ✅     | ✅  | ✅           | 有料   |
+| 自前サーバー   | ✅       | ✅     | ✅  | ✅           | VPS代  |
 
 ## 🔍 トラブルシューティング
 
@@ -637,13 +566,6 @@ docker-compose up -d
 5. **フロントエンドビルド失敗 (型)**
 
    Mantine カラーパレット型エラー時は `providers.tsx` の `MantineColorsTuple` 定義を確認。
-
-6. **GitHub Pages 静的エクスポート**
-
-   ```bash
-   cd frontend
-   pnpm run build:static   # out/ に生成
-   ```
 
 ### ログの確認
 

@@ -10,25 +10,9 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 });
 
-// GitHub Pages用の静的エクスポート設定を環境変数で制御
-const isStaticExport = process.env.EXPORT_STATIC === 'true';
-// GitHub Pages でのサブディレクトリ デプロイ用の base path 設定
-const basePath = isStaticExport ? '/mycats' : '';
-
 const nextConfig: NextConfig = {
   /* config options here */
   serverExternalPackages: [],
-  // GitHub Pages base path 設定（サブディレクトリ デプロイ用）
-  ...(basePath && { basePath }),
-  // GitHub Pages static export configuration (環境変数で制御)
-  ...(isStaticExport && {
-    output: "export", // 静的エクスポートを有効化
-    trailingSlash: true, // GitHub Pages用の推奨設定
-    assetPrefix: basePath, // アセット用のプレフィックス設定
-  }),
-  images: {
-    unoptimized: isStaticExport, // GitHub Pages用の場合のみ画像最適化を無効化
-  },
   eslint: {
     // 本番ビルド時にESLintエラーを無視
     ignoreDuringBuilds: true,
@@ -45,7 +29,7 @@ const nextConfig: NextConfig = {
   generateEtags: false,
   poweredByHeader: false,
   // Standalone output for production deployment
-  output: isStaticExport ? 'export' : 'standalone',
+  output: 'standalone',
   // Bundle size optimization
   // swcMinify: true, // Removed in Next.js 15 as it's default
   // Experimental features for better performance
