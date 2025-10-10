@@ -4,6 +4,23 @@
  */
 
 // NOTE: generated/schema.ts は最初の型生成後にインポート可能になります
+async function parseJson(response: Response): Promise<unknown> {
+  const text = await response.text();
+
+  if (text.length === 0) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text) as unknown;
+  } catch (error) {
+    const parseError = error instanceof Error ? error : undefined;
+    if (parseError) {
+      throw parseError;
+    }
+    throw new Error('JSONレスポンスの解析に失敗しました');
+  }
+}
 // import type { paths } from './generated/schema';
 
 /**
@@ -28,11 +45,35 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public status: number,
-    public response?: object,
+    public response?: unknown,
   ) {
     super(message);
     this.name = 'ApiError';
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isApiResponse(value: unknown): value is ApiResponse<unknown> {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  if (typeof value.success !== 'boolean') {
+    return false;
+  }
+
+  if ('message' in value && value.message !== undefined && typeof value.message !== 'string') {
+    return false;
+  }
+
+  if ('error' in value && value.error !== undefined && typeof value.error !== 'string') {
+    return false;
+  }
+
+  return true;
 }
 
 /**
@@ -120,6 +161,14 @@ export function clearTokens(): void {
 /**
  * トークンリフレッシュ
  */
+function isTokenPair(value: unknown): value is { accessToken: string; refreshToken: string } {
+  return (
+    isRecord(value)
+    && typeof value.accessToken === 'string'
+    && typeof value.refreshToken === 'string'
+  );
+}
+
 async function refreshAccessToken(): Promise<string | null> {
   const token = getRefreshToken();
   if (!token) {
@@ -140,9 +189,13 @@ async function refreshAccessToken(): Promise<string | null> {
       return null;
     }
 
-    const data: ApiResponse<{ accessToken: string; refreshToken: string }> = await response.json();
-    
-    if (data.success && data.data) {
+    const data = await parseJson(response);
+
+    if (!isApiResponse(data)) {
+      throw new ApiError('トークンリフレッシュのレスポンス形式が不正です', response.status, data);
+    }
+
+    if (data.success && data.data && isTokenPair(data.data)) {
       setTokens(data.data.accessToken, data.data.refreshToken);
       return data.data.accessToken;
     }
@@ -227,13 +280,13 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
 
   if (!response.ok) {
     let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-    let errorData: object | undefined;
+    let errorData: unknown;
 
     if (isJson) {
       try {
-        errorData = await response.json();
-        if (typeof errorData === 'object' && errorData !== null && 'message' in errorData) {
-          errorMessage = String((errorData as { message?: string }).message);
+        errorData = await parseJson(response);
+        if (isRecord(errorData) && 'message' in errorData && typeof errorData.message === 'string') {
+          errorMessage = errorData.message;
         }
       } catch {
         // JSON解析失敗
@@ -244,8 +297,21 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
   }
 
   if (isJson) {
-    const data = await response.json();
-    return data as ApiResponse<T>;
+    try {
+      const data = await parseJson(response);
+      if (!isApiResponse(data)) {
+        throw new ApiError('APIレスポンスの形式が不正です', response.status, data);
+      }
+      return data as ApiResponse<T>;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
+        error instanceof Error ? error.message : 'JSONレスポンスの解析に失敗しました',
+        response.status,
+      );
+    }
   }
 
   return {

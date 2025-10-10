@@ -4,7 +4,6 @@
  */
 
 
-/* eslint-disable no-undef */
 /* global process, console */
 import fs from 'fs/promises';
 import fetch from 'node-fetch';

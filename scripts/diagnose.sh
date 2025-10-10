@@ -125,6 +125,6 @@ echo "   6. Full setup from scratch:    pnpm run setup"
 echo ""
 
 echo "📚 Documentation:"
-echo "   - README.md: Project overview"
-echo "   - DEVELOPMENT.md: Development setup"
+echo "   - docs/README.md: Documentation index"
+echo "   - docs/functional-blueprint.md: UI/API/DB overview"
 echo "   - docs/troubleshooting.md: Detailed troubleshooting"

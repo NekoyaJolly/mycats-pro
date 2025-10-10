@@ -1,12 +1,9 @@
 import type { NextConfig } from "next";
 import path from "path";
-import { createRequire } from "module";
-
-const require = createRequire(import.meta.url);
-
 // Bundle Analyzer (ANALYZE=true でビルド時に有効化)
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const withBundleAnalyzer = require('@next/bundle-analyzer')({
+import withBundleAnalyzer from '@next/bundle-analyzer';
+
+const bundleAnalyzer = withBundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
 });
 
@@ -46,4 +43,4 @@ const nextConfig: NextConfig = {
   // Remove rewrites and headers as they don't work with static export
 };
 
-export default withBundleAnalyzer(nextConfig);
+export default bundleAnalyzer(nextConfig);

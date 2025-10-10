@@ -649,9 +649,8 @@ MIT License
 
 ### 🛠️ 開発ガイド
 
-- **[開発環境構築](./DEVELOPMENT.md)** - 開発環境セットアップ
-- **[セットアップオプション](./SETUP_OPTIONS.md)** - 詳細セットアップ手順
-- **[フロントエンド統合](./FRONTEND_INTEGRATION.md)** - UI/UX連携ガイド
+- **[Functional Blueprint](./docs/functional-blueprint.md)** - UI→API→DB の連携概要とコンポーネント一覧
+- **[安定版サーバーガイド](./STABLE_SERVER_GUIDE.md)** - 長時間稼働向けの起動・停止手順
 
 ## 🙋‍♂️ サポート
 
