@@ -211,7 +211,7 @@ export default function CarePage() {
         name: trimmedName,
         catId: createForm.catId,
         careType: createForm.careType,
-        scheduledDate: dayjs(createForm.scheduledDate).format('YYYY-MM-DD'),
+        scheduledDate: dayjs(createForm.scheduledDate).toISOString(),
         description: trimmedDescription || undefined,
       },
       {
