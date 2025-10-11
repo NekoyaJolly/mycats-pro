@@ -1,4 +1,4 @@
-// Prisma Schema - Last Updated: 2025-10-07T19:51:16.727Z
+// Prisma Schema - Last Updated: 2025-10-11T10:58:15.735Z
 // Auto-generated from schema.prisma
 
 // This is your Prisma schema file,
@@ -192,6 +192,23 @@ model BreedingRecord {
   @@map("breeding_records")
 }
 
+model BreedingNgRule {
+  id               String             @id @default(uuid())
+  name             String
+  description      String?
+  type             BreedingNgRuleType @default(TAG_COMBINATION)
+  maleConditions   String[]           @default([]) @map("male_conditions")
+  femaleConditions String[]           @default([]) @map("female_conditions")
+  maleNames        String[]           @default([]) @map("male_names")
+  femaleNames      String[]           @default([]) @map("female_names")
+  generationLimit  Int?               @map("generation_limit")
+  active           Boolean            @default(true)
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+
+  @@map("breeding_ng_rules")
+}
+
 model CareRecord {
   id          String   @id @default(uuid())
   catId       String   @map("cat_id")
@@ -380,6 +397,12 @@ enum BreedingStatus {
   IN_PROGRESS
   COMPLETED
   FAILED
+}
+
+enum BreedingNgRuleType {
+  TAG_COMBINATION
+  INDIVIDUAL_PROHIBITION
+  GENERATION_LIMIT
 }
 
 enum CareType {

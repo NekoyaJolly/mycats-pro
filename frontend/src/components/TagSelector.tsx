@@ -40,6 +40,7 @@ interface TagSelectorProps {
   placeholder?: string;
   label?: string;
   categories?: TagCategory[];
+  disabled?: boolean;
 }
 
 // デフォルトのタグカテゴリ（実際の実装では外部から取得）
@@ -83,10 +84,17 @@ export default function TagSelector({
   onChange, 
   placeholder = "タグを選択", 
   label = "タグ",
-  categories = defaultCategories 
+  categories = defaultCategories,
+  disabled = false,
 }: TagSelectorProps) {
   const [opened, { open, close }] = useDisclosure(false);
   const [allTags, setAllTags] = useState<Tag[]>([]);
+
+  useEffect(() => {
+    if (disabled && opened) {
+      close();
+    }
+  }, [disabled, opened, close]);
 
   useEffect(() => {
     // 全カテゴリからタグを抽出
@@ -164,6 +172,7 @@ export default function TagSelector({
           variant="light" 
           leftSection={<IconPlus size={12} />}
           onClick={open}
+          disabled={disabled}
         >
           カテゴリ別選択
         </Button>
@@ -176,6 +185,7 @@ export default function TagSelector({
         onChange={onChange}
         searchable
         clearable
+        disabled={disabled}
         renderOption={({ option }) => {
           const tag = allTags.find(t => t.id === option.value);
           return (

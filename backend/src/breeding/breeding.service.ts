@@ -6,14 +6,23 @@ import {
 
 import { PrismaService } from "../prisma/prisma.service";
 
-import { BreedingQueryDto, CreateBreedingDto, UpdateBreedingDto } from "./dto";
+import {
+  BreedingQueryDto,
+  CreateBreedingDto,
+  UpdateBreedingDto,
+  CreateBreedingNgRuleDto,
+  UpdateBreedingNgRuleDto,
+} from "./dto";
 import {
   BreedingWhereInput,
   CatWithGender,
   BreedingListResponse,
   BreedingCreateResponse,
   BreedingSuccessResponse,
+  BreedingNgRuleListResponse,
+  BreedingNgRuleResponse,
 } from "./types/breeding.types";
+import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class BreedingService {
@@ -128,6 +137,70 @@ export class BreedingService {
 
   async remove(id: string): Promise<BreedingSuccessResponse> {
     await this.prisma.breedingRecord.delete({ where: { id } });
+    return { success: true };
+  }
+
+  async findNgRules(): Promise<BreedingNgRuleListResponse> {
+    const rules = await this.prisma.breedingNgRule.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+
+    return { success: true, data: rules };
+  }
+
+  async createNgRule(dto: CreateBreedingNgRuleDto): Promise<BreedingNgRuleResponse> {
+    const rule = await this.prisma.breedingNgRule.create({
+      data: {
+        name: dto.name,
+        description: dto.description,
+        type: dto.type,
+        active: dto.active ?? true,
+        maleConditions: dto.maleConditions ?? [],
+        femaleConditions: dto.femaleConditions ?? [],
+        maleNames: dto.maleNames ?? [],
+        femaleNames: dto.femaleNames ?? [],
+        generationLimit: dto.generationLimit,
+      },
+    });
+
+    return { success: true, data: rule };
+  }
+
+  async updateNgRule(id: string, dto: UpdateBreedingNgRuleDto): Promise<BreedingNgRuleResponse> {
+    const data: Prisma.BreedingNgRuleUpdateInput = {
+      name: dto.name,
+      description: dto.description,
+      type: dto.type,
+      active: dto.active,
+      generationLimit: dto.generationLimit,
+    };
+
+    if (dto.maleConditions !== undefined) {
+      data.maleConditions = { set: dto.maleConditions };
+    }
+
+    if (dto.femaleConditions !== undefined) {
+      data.femaleConditions = { set: dto.femaleConditions };
+    }
+
+    if (dto.maleNames !== undefined) {
+      data.maleNames = { set: dto.maleNames };
+    }
+
+    if (dto.femaleNames !== undefined) {
+      data.femaleNames = { set: dto.femaleNames };
+    }
+
+    const rule = await this.prisma.breedingNgRule.update({
+      where: { id },
+      data,
+    });
+
+    return { success: true, data: rule };
+  }
+
+  async removeNgRule(id: string): Promise<BreedingSuccessResponse> {
+    await this.prisma.breedingNgRule.delete({ where: { id } });
     return { success: true };
   }
 }
