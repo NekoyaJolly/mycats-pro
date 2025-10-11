@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { BreedingNgRuleType } from "@prisma/client";
 import {
   ArrayNotEmpty,
   IsArray,
@@ -10,7 +11,6 @@ import {
   Min,
   ValidateIf,
 } from "class-validator";
-import { BreedingNgRuleType } from "@prisma/client";
 
 export class CreateBreedingNgRuleDto {
   @ApiProperty({ description: "ルール名", example: "近親交配防止" })
