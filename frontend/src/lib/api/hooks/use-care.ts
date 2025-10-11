@@ -65,9 +65,7 @@ export type GetCareSchedulesParams = ApiQueryParams<'/care/schedules', 'get'>;
 export type CreateCareScheduleRequest = ApiRequestBody<'/care/schedules', 'post'>;
 export type CompleteCareScheduleRequest = ApiRequestBody<'/care/schedules/{id}/complete', 'patch'>;
 
-type CreateCareSchedulePayload = CreateCareScheduleRequest & {
-  name: string;
-};
+// Removed redundant CreateCareSchedulePayload type; use CreateCareScheduleRequest directly.
 
 const careScheduleKeys = createDomainQueryKeys<string, GetCareSchedulesParams>('care-schedules');
 
