@@ -38,6 +38,7 @@
 - 提供メソッド: `get`, `post`, `patch`, `delete`
 - 戻り値: 共通レスポンス型 `ApiResponse<T> = { success: boolean; data?: T; error?: string; message?: string }`
 - トークン管理: `setTokens` / `getAccessToken` / `getRefreshToken` / `clearTokens` でメモリ・`localStorage`・Cookie を三重管理。
+- OpenAPI から生成された `paths` と紐付いた型安全なリクエストが可能。例: `apiClient.get('/api/v1/cats', { query: { limit: 20 } })` でクエリ型が自動補完される。
 
 ### 2.2 エラーハンドリングとリフレッシュ
 
@@ -56,8 +57,8 @@
 
 ### 2.4 レガシー API ユーティリティ
 
-- `frontend/src/lib/api.ts` に `apiGet`, `apiPost` 等の薄いラッパが残存。
-- `pedigrees` ページ等で利用中。段階的に `apiClient` / React Query へ移行し、トークン付与・エラーハンドリングを一元化する。
+- `frontend/src/lib/api.ts` に `apiGet`, `apiPost` 等の薄いラッパが残存（@deprecated を付与済み）。
+- `pedigrees` ページ等で利用中。段階的に `apiClient` / React Query へ移行し、トークン付与・エラーハンドリングを一元化する。新規機能での利用は禁止し、既存コードは順次置き換える。
 
 ---
 

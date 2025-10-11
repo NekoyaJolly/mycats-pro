@@ -15,4 +15,4 @@ export { QueryClientProvider } from './query-client';
 export * from './hooks/use-cats';
 
 // 型定義（生成後に利用可能）
-// export type { paths, components } from './generated/schema';
+export type { paths, components, operations } from './generated/schema';

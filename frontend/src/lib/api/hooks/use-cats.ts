@@ -3,7 +3,8 @@
  */
 
 import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
-import { apiClient, type ApiResponse } from '../client';
+import { apiClient, type ApiPathParams, type ApiQueryParams, type ApiRequestBody, type ApiResponse } from '../client';
+import { createDomainQueryKeys } from './query-key-factory';
 import { notifications } from '@mantine/notifications';
 
 /**
@@ -48,6 +49,9 @@ export interface GetCatsParams {
   isInHouse?: boolean;
 }
 
+type CatsListQuery = ApiQueryParams<'/cats', 'get'>;
+type CatDetailPathParams = ApiPathParams<'/cats/{id}', 'get'>;
+
 /**
  * 猫一覧レスポンス
  */
@@ -82,15 +86,13 @@ export type UpdateCatRequest = Partial<CreateCatRequest>;
 /**
  * クエリキー定義
  */
+const baseCatKeys = createDomainQueryKeys<string, GetCatsParams>('cats');
+
 export const catKeys = {
-  all: ['cats'] as const,
-  lists: () => [...catKeys.all, 'list'] as const,
-  list: (params: GetCatsParams) => [...catKeys.lists(), params] as const,
-  details: () => [...catKeys.all, 'detail'] as const,
-  detail: (id: string) => [...catKeys.details(), id] as const,
-  statistics: () => [...catKeys.all, 'statistics'] as const,
-  breedingHistory: (id: string) => [...catKeys.all, id, 'breeding-history'] as const,
-  careHistory: (id: string) => [...catKeys.all, id, 'care-history'] as const,
+  ...baseCatKeys,
+  statistics: () => [...baseCatKeys.all, 'statistics'] as const,
+  breedingHistory: (id: string) => [...baseCatKeys.all, 'breeding-history', id] as const,
+  careHistory: (id: string) => [...baseCatKeys.all, 'care-history', id] as const,
 };
 
 /**
@@ -102,7 +104,7 @@ export function useGetCats(
 ) {
   return useQuery({
     queryKey: catKeys.list(params),
-    queryFn: () => apiClient.get<GetCatsResponse>('/cats', params as Record<string, string | number | boolean | undefined>),
+    queryFn: () => apiClient.get('/cats', { query: params as CatsListQuery }) as Promise<ApiResponse<GetCatsResponse>>,
     ...options,
   });
 }
@@ -116,7 +118,7 @@ export function useGetCat(
 ) {
   return useQuery({
     queryKey: catKeys.detail(id),
-    queryFn: () => apiClient.get<Cat>(`/cats/${id}`),
+  queryFn: () => apiClient.get('/cats/{id}', { pathParams: { id } as CatDetailPathParams }) as Promise<ApiResponse<Cat>>,
     enabled: !!id,
     ...options,
   });
@@ -142,7 +144,10 @@ export function useCreateCat() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateCatRequest) => apiClient.post<Cat>('/cats', data),
+    mutationFn: (data: CreateCatRequest) =>
+      apiClient.post('/cats', {
+        body: data as unknown as ApiRequestBody<'/cats', 'post'>,
+      }) as Promise<ApiResponse<Cat>>,
   onSuccess: (_response) => {
       // キャッシュを無効化して再フェッチ
       void queryClient.invalidateQueries({ queryKey: catKeys.lists() });
@@ -171,7 +176,11 @@ export function useUpdateCat(id: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: UpdateCatRequest) => apiClient.patch<Cat>(`/cats/${id}`, data),
+    mutationFn: (data: UpdateCatRequest) =>
+      apiClient.patch('/cats/{id}', {
+        pathParams: { id } as ApiPathParams<'/cats/{id}', 'patch'>,
+        body: data as unknown as ApiRequestBody<'/cats/{id}', 'patch'>,
+      }) as Promise<ApiResponse<Cat>>,
   onSuccess: (_response) => {
       // 特定の猫の詳細キャッシュを更新
       void queryClient.invalidateQueries({ queryKey: catKeys.detail(id) });
@@ -202,7 +211,9 @@ export function useDeleteCat() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => apiClient.delete(`/cats/${id}`),
+    mutationFn: (id: string) => apiClient.delete('/cats/{id}', {
+      pathParams: { id } as ApiPathParams<'/cats/{id}', 'delete'>,
+    }),
   onSuccess: (_response, id) => {
       // 削除した猫のキャッシュを削除
       void queryClient.removeQueries({ queryKey: catKeys.detail(id) });

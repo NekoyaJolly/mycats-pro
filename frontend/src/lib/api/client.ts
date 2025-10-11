@@ -3,6 +3,8 @@
  * バックエンドAPIとの通信を行う共通クライアント
  */
 
+import type { operations, paths } from './generated/schema';
+
 // NOTE: generated/schema.ts は最初の型生成後にインポート可能になります
 async function parseJson(response: Response): Promise<unknown> {
   const text = await response.text();
@@ -31,7 +33,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004/a
 /**
  * APIレスポンスの共通型
  */
-export interface ApiResponse<T = object> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -51,6 +53,119 @@ export class ApiError extends Error {
     this.name = 'ApiError';
   }
 }
+
+type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete';
+export type ApiHttpMethod = HttpMethod;
+
+type ApiPrefix = '/api/v1';
+
+type NormalizePath<Path extends string> = Path extends `${ApiPrefix}${infer Rest}`
+  ? Rest extends ''
+    ? '/'
+    : Rest extends `/${string}`
+      ? Rest
+      : `/${Rest}`
+  : Path;
+
+type CanonicalPath<Path extends string> = Path extends `${ApiPrefix}${string}`
+  ? Path
+  : `${ApiPrefix}${Path extends `/${string}` ? Path : `/${Path}`}`;
+
+type FilterPathsByMethod<M extends HttpMethod> = {
+  [P in keyof paths]: paths[P][M] extends never ? never : NormalizePath<P & string>;
+}[keyof paths];
+
+type ExtractOperation<P extends string, M extends HttpMethod> = CanonicalPath<P> extends infer Canonical
+  ? Canonical extends keyof paths
+    ? paths[Canonical][M] extends operations[keyof operations]
+      ? paths[Canonical][M]
+      : never
+    : never
+  : never;
+
+type PathParamsFor<P extends string, M extends HttpMethod> = ExtractOperation<P, M> extends {
+  parameters: { path: infer Params };
+}
+  ? Params
+  : Record<string, never>;
+
+type QueryParamsFor<P extends string, M extends HttpMethod> = ExtractOperation<P, M> extends {
+  parameters: { query: infer Params };
+}
+  ? Params
+  : Record<string, never>;
+
+type RequestBodyFor<P extends string, M extends HttpMethod> = ExtractOperation<P, M> extends {
+  requestBody: { content: infer Content };
+}
+  ? Content extends { 'application/json': infer Json }
+    ? Json
+    : Content extends Record<string, unknown>
+      ? Content[keyof Content]
+      : unknown
+  : never;
+
+type ResponsesOf<Operation> = Operation extends { responses: infer Responses } ? Responses : never;
+
+type ExtractJsonContent<Response> = Response extends { content: { 'application/json': infer Json } }
+  ? Json
+  : Response extends { content: infer Content }
+    ? Content extends Record<string, unknown>
+      ? Content[keyof Content]
+      : unknown
+    : unknown;
+
+type ExtractResponsePayload<Responses, Status extends number> = Responses extends Record<number | string, unknown>
+  ? Status extends keyof Responses
+    ? ExtractJsonContent<Responses[Status]>
+    : undefined
+  : undefined;
+
+type ExtractSuccessResponse<Operation> = Operation extends never
+  ? unknown
+  : ResponsesOf<Operation> extends infer Responses
+    ? Responses extends Record<number | string, unknown>
+      ? ExtractResponsePayload<Responses, 200> extends infer R200
+        ? [R200] extends [undefined]
+          ? ExtractResponsePayload<Responses, 201> extends infer R201
+            ? [R201] extends [undefined]
+              ? ExtractResponsePayload<Responses, 202> extends infer R202
+                ? [R202] extends [undefined]
+                  ? ExtractResponsePayload<Responses, 204> extends infer R204
+                    ? [R204] extends [undefined]
+                      ? unknown
+                      : R204
+                    : unknown
+                  : R202
+                : unknown
+              : R201
+            : unknown
+          : R200
+        : unknown
+      : unknown
+    : unknown;
+
+export type ApiSuccessData<P extends FilterPathsByMethod<M>, M extends HttpMethod> = ExtractSuccessResponse<
+  ExtractOperation<P, M>
+>;
+
+export type ApiRequestOptions<P extends FilterPathsByMethod<M>, M extends HttpMethod> = {
+  pathParams?: PathParamsFor<P, M>;
+  query?: QueryParamsFor<P, M>;
+  body?: RequestBodyFor<P, M>;
+  init?: Omit<RequestInit, 'method' | 'body'>;
+  retryOnUnauthorized?: boolean;
+};
+
+type AllPaths = {
+  [P in keyof paths]: NormalizePath<P & string>;
+}[keyof paths];
+
+export type ApiPath = AllPaths;
+export type ApiMethodPaths<M extends HttpMethod> = FilterPathsByMethod<M>;
+export type ApiPathParams<P extends FilterPathsByMethod<M>, M extends HttpMethod> = PathParamsFor<P, M>;
+export type ApiQueryParams<P extends FilterPathsByMethod<M>, M extends HttpMethod> = QueryParamsFor<P, M>;
+export type ApiRequestBody<P extends FilterPathsByMethod<M>, M extends HttpMethod> = RequestBodyFor<P, M>;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -74,6 +189,96 @@ function isApiResponse(value: unknown): value is ApiResponse<unknown> {
   }
 
   return true;
+}
+
+function applyPathParams(path: string, params?: Record<string, unknown>): string {
+  if (!params || Object.keys(params).length === 0) {
+    if (/\{[^}]+\}/.test(path)) {
+      throw new Error(`必須のパスパラメータが指定されていません: ${path}`);
+    }
+    return path;
+  }
+
+  const resolved = path.replace(/\{([^}]+)\}/g, (_segment, key: string) => {
+    if (!(key in params)) {
+      throw new Error(`パスパラメータ '${key}' が不足しています`);
+    }
+
+    const value = params[key];
+
+    if (value === undefined || value === null) {
+      throw new Error(`パスパラメータ '${key}' が無効です`);
+    }
+
+    return encodeURIComponent(String(value));
+  });
+
+  if (/\{[^}]+\}/.test(resolved)) {
+    throw new Error(`未解決のパスパラメータが存在します: ${resolved}`);
+  }
+
+  return resolved;
+}
+
+function serializeQueryValue(value: unknown): string {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+
+  if (typeof value === 'object') {
+    return JSON.stringify(value);
+  }
+
+  return String(value ?? '');
+}
+
+function buildQueryString(query?: Record<string, unknown>): string {
+  if (!query) {
+    return '';
+  }
+
+  const searchParams = new URLSearchParams();
+
+  Object.entries(query).forEach(([key, value]) => {
+    if (value === undefined || value === null) {
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach((item) => {
+        if (item === undefined || item === null) {
+          return;
+        }
+        searchParams.append(key, serializeQueryValue(item));
+      });
+      return;
+    }
+
+    searchParams.append(key, serializeQueryValue(value));
+  });
+
+  const queryString = searchParams.toString();
+  return queryString ? `?${queryString}` : '';
+}
+
+function buildRequestUrl<Method extends HttpMethod, PathKey extends FilterPathsByMethod<Method>>(
+  path: PathKey,
+  options: Pick<ApiRequestOptions<PathKey, Method>, 'pathParams' | 'query'> = {},
+): string {
+  const resolvedPath = applyPathParams(
+    path as string,
+    options.pathParams as unknown as Record<string, unknown> | undefined,
+  );
+  const queryString = buildQueryString(options.query as unknown as Record<string, unknown> | undefined);
+  return `${resolvedPath}${queryString}`;
 }
 
 /**
@@ -211,52 +416,50 @@ async function refreshAccessToken(): Promise<string | null> {
 /**
  * API リクエスト共通処理
  */
-export async function apiRequest<T = object>(
+export async function apiRequest<T = unknown>(
   url: string,
   options: RequestInit = {},
   retryOnUnauthorized = true,
 ): Promise<ApiResponse<T>> {
   const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
-  
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+  const headers = new Headers(options.headers);
+
+  if (!headers.has('Accept')) {
+    headers.set('Accept', 'application/json');
+  }
+
+  if (options.body && typeof options.body === 'string' && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  const token = getAccessToken();
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  const requestInit: RequestInit = {
+    ...options,
+    headers,
   };
 
-  // 既存のヘッダーをマージ
-  if (options.headers) {
-    const existingHeaders = options.headers as Record<string, string>;
-    Object.assign(headers, existingHeaders);
-  }
-
-  // 認証トークンを追加
-  const token = getAccessToken();
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
   try {
-    const response = await fetch(fullUrl, {
-      ...options,
-      headers,
-    });
+    const response = await fetch(fullUrl, requestInit);
 
-    // 401 Unauthorized の場合、トークンをリフレッシュしてリトライ
     if (response.status === 401 && retryOnUnauthorized) {
       const newToken = await refreshAccessToken();
       if (newToken) {
-        headers['Authorization'] = `Bearer ${newToken}`;
+        headers.set('Authorization', `Bearer ${newToken}`);
         const retryResponse = await fetch(fullUrl, {
-          ...options,
+          ...requestInit,
           headers,
         });
         return handleResponse<T>(retryResponse);
-      } else {
-        // リフレッシュ失敗 - ログインページへリダイレクト
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
-        }
-        throw new ApiError('認証が必要です', 401);
       }
+
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+      throw new ApiError('認証が必要です', 401);
     }
 
     return handleResponse<T>(response);
@@ -320,70 +523,52 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
   };
 }
 
-/**
- * GET リクエスト
- */
-export async function get<T = object>(
-  url: string,
-  params?: Record<string, string | number | boolean | undefined>,
-): Promise<ApiResponse<T>> {
-  let fullUrl = url;
-  
-  if (params) {
-    const searchParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined) {
-        searchParams.append(key, String(value));
-      }
-    });
-    const queryString = searchParams.toString();
-    if (queryString) {
-      fullUrl = `${url}?${queryString}`;
-    }
-  }
+export async function request<M extends HttpMethod, P extends FilterPathsByMethod<M>>(
+  path: P,
+  method: M,
+  options: ApiRequestOptions<P, M> = {},
+): Promise<ApiResponse<ApiSuccessData<P, M>>> {
+  const { pathParams, query, body, init, retryOnUnauthorized } = options;
+  const url = buildRequestUrl<M, P>(path, { pathParams, query });
+  const requestInit: RequestInit = {
+    ...init,
+    method: method.toUpperCase() as Uppercase<M>,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  };
 
-  return apiRequest<T>(fullUrl, { method: 'GET' });
+  return apiRequest<ApiSuccessData<P, M>>(url, requestInit, retryOnUnauthorized);
 }
 
-/**
- * POST リクエスト
- */
-export async function post<T = object>(
-  url: string,
-  body?: object,
-): Promise<ApiResponse<T>> {
-  return apiRequest<T>(url, {
-    method: 'POST',
-    body: body ? JSON.stringify(body) : undefined,
-  });
+export async function get<P extends FilterPathsByMethod<'get'>>(
+  path: P,
+  options: ApiRequestOptions<P, 'get'> = {},
+): Promise<ApiResponse<ApiSuccessData<P, 'get'>>> {
+  return request(path, 'get', options);
 }
 
-/**
- * PATCH リクエスト
- */
-export async function patch<T = object>(
-  url: string,
-  body?: object,
-): Promise<ApiResponse<T>> {
-  return apiRequest<T>(url, {
-    method: 'PATCH',
-    body: body ? JSON.stringify(body) : undefined,
-  });
+export async function post<P extends FilterPathsByMethod<'post'>>(
+  path: P,
+  options: ApiRequestOptions<P, 'post'> = {},
+): Promise<ApiResponse<ApiSuccessData<P, 'post'>>> {
+  return request(path, 'post', options);
 }
 
-/**
- * DELETE リクエスト
- */
-export async function del<T = object>(
-  url: string,
-): Promise<ApiResponse<T>> {
-  return apiRequest<T>(url, { method: 'DELETE' });
+export async function patch<P extends FilterPathsByMethod<'patch'>>(
+  path: P,
+  options: ApiRequestOptions<P, 'patch'> = {},
+): Promise<ApiResponse<ApiSuccessData<P, 'patch'>>> {
+  return request(path, 'patch', options);
 }
 
-/**
- * 型安全なAPIクライアント（OpenAPI型定義を使用）
- */
+export async function del<P extends FilterPathsByMethod<'delete'>>(
+  path: P,
+  options: ApiRequestOptions<P, 'delete'> = {},
+): Promise<ApiResponse<ApiSuccessData<P, 'delete'>>> {
+  return request(path, 'delete', options);
+}
+
 export type ApiClient = {
+  request: typeof request;
   get: typeof get;
   post: typeof post;
   patch: typeof patch;
@@ -391,6 +576,7 @@ export type ApiClient = {
 };
 
 export const apiClient: ApiClient = {
+  request,
   get,
   post,
   patch,

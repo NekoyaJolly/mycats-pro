@@ -5,45 +5,65 @@
 
 
 /* global process, console */
-import fs from 'fs/promises';
-import fetch from 'node-fetch';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import openapiTS from 'openapi-typescript';
+import { access, writeFile, mkdir } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import openapiTS, { astToString } from 'openapi-typescript';
+
+const DEFAULT_SCHEMA_PATH = path.join(process.cwd(), '../backend/openapi.json');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004';
-const SWAGGER_URL = `${BACKEND_URL}/api/docs-json`;
 const OUTPUT_PATH = path.join(__dirname, '../src/lib/api/generated/schema.ts');
+function createGeneratedBanner() {
+  return `/* eslint-disable */
+/* tslint:disable */
+/**
+ * 🔒 このファイルは自動生成されています。
+ * 生成コマンド: pnpm --filter frontend generate:api-types
+ * 直接編集せず、OpenAPI スキーマを更新して再生成してください。
+ */
+`;
+}
+
+function resolveSchemaPath() {
+  if (process.env.OPENAPI_SCHEMA_PATH) {
+    return path.resolve(process.cwd(), process.env.OPENAPI_SCHEMA_PATH);
+  }
+
+  return DEFAULT_SCHEMA_PATH;
+}
+
+async function ensureSchemaExists(schemaPath) {
+  try {
+    await access(schemaPath);
+  } catch {
+    throw new Error(`OpenAPI スキーマファイルが見つかりません: ${schemaPath}`);
+  }
+}
 
 async function generateTypes() {
   try {
     console.log('🔄 OpenAPI型定義を生成中...');
-    console.log(`📡 Swagger URL: ${SWAGGER_URL}`);
+    const schemaPath = resolveSchemaPath();
+    console.log(`📄 読み込みファイル: ${schemaPath}`);
 
-    // バックエンドのSwagger JSONを取得
-    const response = await fetch(SWAGGER_URL);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch OpenAPI schema: ${response.statusText}`);
-    }
+    await ensureSchemaExists(schemaPath);
 
-    const schema = await response.json();
-
-    // 出力ディレクトリを作成
     const outputDir = path.dirname(OUTPUT_PATH);
-    await fs.mkdir(outputDir, { recursive: true });
+    await mkdir(outputDir, { recursive: true });
 
     // TypeScript型定義を生成
-    const output = await openapiTS(schema, {
+    const ast = await openapiTS(pathToFileURL(schemaPath), {
       exportType: true,
       defaultNonNullable: true,
     });
+    const generated = astToString(ast);
 
-    // ファイルに書き込み
-    await fs.writeFile(OUTPUT_PATH, output);
+    const fileContent = `${createGeneratedBanner()}${generated}\n`;
+
+    await writeFile(OUTPUT_PATH, fileContent, 'utf8');
 
     console.log(`✅ 型定義を生成しました: ${OUTPUT_PATH}`);
   } catch (error) {

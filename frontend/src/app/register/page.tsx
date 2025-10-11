@@ -30,15 +30,6 @@ interface RegisterFormValues {
   confirmPassword: string;
 }
 
-interface RegisterResponse {
-  success: boolean;
-  message: string;
-  data?: {
-    id: string;
-    email: string;
-  };
-}
-
 export default function RegisterPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -77,9 +68,11 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      const response = await apiClient.post<RegisterResponse>('/auth/register', {
-        email: values.email,
-        password: values.password,
+      const response = await apiClient.post('/auth/register', {
+        body: {
+          email: values.email,
+          password: values.password,
+        },
       });
 
       if (response.success) {

@@ -73,10 +73,10 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         set({ isLoading: true, error: null });
 
         try {
-          const response = await apiClient.post<LoginResponse>('/auth/login', credentials);
+          const response = await apiClient.post('/auth/login', { body: credentials });
 
           if (response.success && response.data) {
-            const { user, accessToken, refreshToken } = response.data;
+            const { user, accessToken, refreshToken } = response.data as LoginResponse;
             
             // トークンをセット
             setApiTokens(accessToken, refreshToken);

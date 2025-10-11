@@ -1,0 +1,79 @@
+name: API Type Synchronization
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "backend/**"
+      - "frontend/scripts/generate-api-types.mjs"
+      - "frontend/src/lib/api/generated/**"
+      - ".github/workflows/api-types.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9"
+
+jobs:
+  verify-api-types:
+    name: Ensure Swagger & API types are in sync
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Determine pnpm store directory
+        id: pnpm-cache-dir
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache-dir.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Swagger schema
+        run: pnpm --filter backend swagger:gen
+
+      - name: Confirm Swagger schema is committed
+        run: |
+          if ! git diff --quiet --exit-code backend/openapi.json; then
+            echo "::error::backend/openapi.json に差分が検出されました。'pnpm --filter backend swagger:gen' を実行してコミットしてください。"
+            git diff --stat -- backend/openapi.json
+            exit 1
+          fi
+
+      - name: Generate API types
+        run: pnpm --filter frontend generate:api-types
+
+      - name: Confirm generated API types are committed
+        run: |
+          if ! git diff --quiet --exit-code frontend/src/lib/api/generated/schema.ts; then
+            echo "::error::API 型定義に差分が検出されました。'pnpm --filter frontend generate:api-types' を実行してコミットしてください。"
+            git diff --stat -- frontend/src/lib/api/generated/schema.ts
+            exit 1
+          fi
+
+      - name: Lint frontend source
+        run: pnpm --filter frontend lint
