@@ -1,57 +1,58 @@
 'use client';
 
-import { useState } from 'react';
-import { Container, Paper, Title, Text, TextInput, Button, Alert, Group, Anchor } from '@mantine/core';
-import { IconMail, IconCheck, IconAlertCircle } from '@tabler/icons-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Container, Paper, Title, Text, TextInput, Button, Alert, Group, Anchor, CopyButton, ActionIcon, Tooltip, Code } from '@mantine/core';
+import { IconMail, IconCheck, IconAlertCircle, IconCopy, IconCheck as IconCheckmark } from '@tabler/icons-react';
 import Link from 'next/link';
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
-}
+import { useSearchParams } from 'next/navigation';
+import { usePasswordResetActions, usePasswordResetSelectors } from '@/lib/auth/password-reset-store';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const { requestStatus, requestError, devToken, lastRequestedEmail } = usePasswordResetSelectors();
+  const { requestPasswordReset, resetRequestState, clearDevToken } = usePasswordResetActions();
+
+  const returnTo = searchParams?.get('returnTo') ?? null;
+  const targetPath = useMemo(() => {
+    if (!returnTo || !returnTo.startsWith('/') || returnTo.startsWith('//')) {
+      return '/';
+    }
+    const disallowed = ['/login', '/register', '/forgot-password'];
+    return disallowed.includes(returnTo) ? '/' : returnTo;
+  }, [returnTo]);
+
+  const loginHref = useMemo(() => {
+    if (returnTo && targetPath !== '/') {
+      return `/login?returnTo=${encodeURIComponent(targetPath)}`;
+    }
+    return '/login';
+  }, [returnTo, targetPath]);
+
+  useEffect(() => {
+    resetRequestState();
+    clearDevToken();
+    return () => {
+      resetRequestState();
+      clearDevToken();
+    };
+  }, [resetRequestState, clearDevToken]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
+    setLocalError(null);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004/api/v1'}/auth/request-password-reset`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      const data: unknown = await response.json();
-
-      if (!response.ok) {
-        const message = isRecord(data) && typeof data.message === 'string'
-          ? data.message
-          : 'リクエストに失敗しました';
-        throw new Error(message);
-      }
-
-      setSuccess(true);
-      
-      // 開発環境でトークンが返却された場合はコンソールに出力
-      if (isRecord(data) && typeof data.token === 'string') {
-        console.log('🔑 Password reset token:', data.token);
-        console.log('🔗 Reset URL:', `${window.location.origin}/reset-password?token=${data.token}`);
-      }
-
+      await requestPasswordReset(email);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'エラーが発生しました');
-    } finally {
-      setLoading(false);
+      setLocalError(err instanceof Error ? err.message : 'エラーが発生しました');
     }
   };
+
+  const loading = requestStatus === 'loading';
+  const success = requestStatus === 'success';
+  const error = localError || requestError;
 
   if (success) {
     return (
@@ -60,9 +61,33 @@ export default function ForgotPasswordPage() {
           <Alert icon={<IconCheck size={16} />} title="メールを送信しました" color="green" mb="lg">
             パスワードリセットの手順を記載したメールを送信しました。
             メールに記載されたリンクをクリックして、パスワードをリセットしてください。
+            {lastRequestedEmail && (
+              <Text size="sm" mt="sm">
+                送信先: <strong>{lastRequestedEmail}</strong>
+              </Text>
+            )}
+            {devToken && (
+              <Alert mt="md" variant="light" color="blue" title="開発モード情報">
+                <Text size="sm" mb="xs">
+                  下記トークンでリセットページにアクセスできます。
+                </Text>
+                <Group justify="space-between" wrap="nowrap">
+                  <Code style={{ flex: 1, overflowX: 'auto' }}>{devToken}</Code>
+                  <CopyButton value={devToken} timeout={1500}>
+                    {({ copied, copy }) => (
+                      <Tooltip label={copied ? 'コピーしました' : 'コピー'} withArrow position="left">
+                        <ActionIcon variant="subtle" color={copied ? 'teal' : 'blue'} onClick={copy}>
+                          {copied ? <IconCheckmark size={16} /> : <IconCopy size={16} />}
+                        </ActionIcon>
+                      </Tooltip>
+                    )}
+                  </CopyButton>
+                </Group>
+              </Alert>
+            )}
           </Alert>
           <Group justify="center">
-            <Anchor component={Link} href="/login">
+            <Anchor component={Link} href={loginHref}>
               ログインページに戻る
             </Anchor>
           </Group>
@@ -110,7 +135,7 @@ export default function ForgotPasswordPage() {
           </Button>
 
           <Group justify="center">
-            <Anchor component={Link} href="/login" size="sm">
+            <Anchor component={Link} href={loginHref} size="sm">
               ログインページに戻る
             </Anchor>
           </Group>

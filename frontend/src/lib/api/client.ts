@@ -322,18 +322,31 @@ function deleteCookie(name: string): void {
   document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
 }
 
-export function setTokens(access: string, refresh: string): void {
-  accessToken = access;
-  refreshToken = refresh;
-  
-  // ブラウザ環境ではlocalStorageとCookieに保存
+export function setTokens(access: string | null, refresh?: string | null): void {
+  accessToken = access ?? null;
+
+  if (refresh !== undefined) {
+    refreshToken = refresh ?? null;
+  }
+
   if (typeof window !== 'undefined') {
-    localStorage.setItem('accessToken', access);
-    localStorage.setItem('refreshToken', refresh);
-    
-    // Cookieにも保存（middlewareで使用）
-    setCookie('accessToken', access, 7);
-    setCookie('refreshToken', refresh, 7);
+    if (access) {
+      localStorage.setItem('accessToken', access);
+      setCookie('accessToken', access, 7);
+    } else {
+      localStorage.removeItem('accessToken');
+      deleteCookie('accessToken');
+    }
+
+    if (refresh !== undefined) {
+      if (refresh) {
+        localStorage.setItem('refreshToken', refresh);
+        setCookie('refreshToken', refresh, 7);
+      } else {
+        localStorage.removeItem('refreshToken');
+        deleteCookie('refreshToken');
+      }
+    }
   }
 }
 
@@ -376,9 +389,6 @@ function isTokenPair(value: unknown): value is { accessToken: string; refreshTok
 
 async function refreshAccessToken(): Promise<string | null> {
   const token = getRefreshToken();
-  if (!token) {
-    return null;
-  }
 
   try {
     const response = await fetch(`${API_BASE_URL.replace('/api/v1', '')}/api/v1/auth/refresh`, {
@@ -386,7 +396,8 @@ async function refreshAccessToken(): Promise<string | null> {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ refreshToken: token }),
+      body: token ? JSON.stringify({ refreshToken: token }) : JSON.stringify({}),
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -403,6 +414,15 @@ async function refreshAccessToken(): Promise<string | null> {
     if (data.success && data.data && isTokenPair(data.data)) {
       setTokens(data.data.accessToken, data.data.refreshToken);
       return data.data.accessToken;
+    }
+
+    if (data.success && data.data && isRecord(data.data) && typeof data.data.access_token === 'string') {
+      const access = data.data.access_token;
+      const refresh = 'refresh_token' in data.data && typeof data.data.refresh_token === 'string'
+        ? data.data.refresh_token
+        : undefined;
+      setTokens(access, refresh ?? null);
+      return access;
     }
 
     return null;
@@ -440,6 +460,7 @@ export async function apiRequest<T = unknown>(
   const requestInit: RequestInit = {
     ...options,
     headers,
+    credentials: options.credentials ?? 'include',
   };
 
   try {

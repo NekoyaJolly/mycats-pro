@@ -6,7 +6,7 @@
 export * from './client';
 
 // 認証ストア
-export * from './auth-store';
+export * from '../auth/store';
 
 // React Query Provider
 export { QueryClientProvider } from './query-client';
