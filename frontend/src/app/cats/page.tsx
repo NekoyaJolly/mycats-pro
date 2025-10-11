@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Container,
@@ -21,17 +21,42 @@ import {
 import { PageTitle } from '@/components/PageTitle';
 import { IconSearch, IconPlus, IconAlertCircle } from '@tabler/icons-react';
 import { useGetCats } from '@/lib/api/hooks/use-cats';
+import { useDebouncedValue } from '@mantine/hooks';
+import type { GetCatsParams } from '@/lib/api/hooks/use-cats';
 
 export default function CatsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('cats');
   const [sortBy, setSortBy] = useState('name');
+  const [debouncedSearch] = useDebouncedValue(searchTerm, 300);
   const router = useRouter();
 
+  const queryParams = useMemo<GetCatsParams>(() => {
+    const params: GetCatsParams = {};
+
+    if (debouncedSearch) {
+      params.search = debouncedSearch;
+    }
+
+    switch (activeTab) {
+      case 'male':
+        params.gender = 'MALE';
+        break;
+      case 'female':
+        params.gender = 'FEMALE';
+        break;
+      case 'raising':
+        params.isInHouse = true;
+        break;
+      default:
+        break;
+    }
+
+    return params;
+  }, [debouncedSearch, activeTab]);
+
   // API連携でデータ取得
-  const { data, isLoading, isError, error } = useGetCats({
-    search: searchTerm || undefined,
-  });
+  const { data, isLoading, isError, error, isRefetching } = useGetCats(queryParams);
 
   const apiCats = data?.data?.cats || [];
 
@@ -56,18 +81,18 @@ export default function CatsPage() {
 
   // タブ別フィルタリングとソート
   const getFilteredCats = () => {
-    let filtered = apiCats;
+    let filtered = Array.from(apiCats);
     
     switch (activeTab) {
       case 'male':
-        filtered = apiCats.filter(cat => cat.gender === 'MALE');
+        filtered = apiCats.filter((cat) => cat.gender === 'MALE');
         break;
       case 'female':
-        filtered = apiCats.filter(cat => cat.gender === 'FEMALE');
+        filtered = apiCats.filter((cat) => cat.gender === 'FEMALE');
         break;
       case 'kitten':
         // 1歳未満を子猫とする
-        filtered = apiCats.filter(cat => {
+        filtered = apiCats.filter((cat) => {
           const birthDate = new Date(cat.birthDate);
           const today = new Date();
           const ageInMonths = (today.getFullYear() - birthDate.getFullYear()) * 12 + (today.getMonth() - birthDate.getMonth());
@@ -75,7 +100,7 @@ export default function CatsPage() {
         });
         break;
       case 'raising':
-        filtered = apiCats.filter(cat => cat.isInHouse);
+        filtered = apiCats.filter((cat) => cat.isInHouse);
         break;
       default:
         filtered = apiCats;
@@ -112,7 +137,7 @@ export default function CatsPage() {
   const filteredCats = getFilteredCats();
 
   return (
-  <Box style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)' }}>
+    <Box style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)' }}>
       {/* ヘッダー */}
       <Box
         style={{
@@ -182,7 +207,7 @@ export default function CatsPage() {
         )}
 
         {/* ローディング */}
-        {isLoading && (
+        {(isLoading || isRefetching) && (
           <Stack gap="xs">
             {[...Array(4)].map((_, i) => (
               <Skeleton key={i} height={60} radius="md" />

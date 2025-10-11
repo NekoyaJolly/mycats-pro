@@ -479,6 +479,42 @@ export type paths = {
         patch: operations["BreedingController_update"];
         trace?: never;
     };
+    "/api/v1/breeding/ng-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** NGペアルール一覧の取得 */
+        get: operations["BreedingController_findNgRules"];
+        put?: never;
+        /** NGペアルールの作成 */
+        post: operations["BreedingController_createNgRule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/breeding/ng-rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** NGペアルールの削除 */
+        delete: operations["BreedingController_removeNgRule"];
+        options?: never;
+        head?: never;
+        /** NGペアルールの更新 */
+        patch: operations["BreedingController_updateNgRule"];
+        trace?: never;
+    };
     "/api/v1/care/schedules": {
         parameters: {
             query?: never;
@@ -800,6 +836,39 @@ export type components = {
             notes?: string;
         };
         UpdateBreedingDto: Record<string, never>;
+        CreateBreedingNgRuleDto: {
+            /**
+             * @description ルール名
+             * @example 近親交配防止
+             */
+            name: string;
+            /**
+             * @description 説明
+             * @example 血統書付き同士の交配を避ける
+             */
+            description?: string;
+            /**
+             * @example TAG_COMBINATION
+             * @enum {string}
+             */
+            type: "TAG_COMBINATION" | "INDIVIDUAL_PROHIBITION" | "GENERATION_LIMIT";
+            /**
+             * @description 有効フラグ
+             * @default true
+             */
+            active: boolean;
+            /** @description オス側のタグ条件 */
+            maleConditions?: string[];
+            /** @description メス側のタグ条件 */
+            femaleConditions?: string[];
+            /** @description 禁止するオス猫の名前 */
+            maleNames?: string[];
+            /** @description 禁止するメス猫の名前 */
+            femaleNames?: string[];
+            /** @description 世代制限 (親等) */
+            generationLimit?: number;
+        };
+        UpdateBreedingNgRuleDto: Record<string, never>;
         CreateCareScheduleDto: {
             /**
              * @description 猫ID
@@ -2050,6 +2119,86 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UpdateBreedingDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_findNgRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_createNgRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBreedingNgRuleDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_removeNgRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BreedingController_updateNgRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBreedingNgRuleDto"];
             };
         };
         responses: {

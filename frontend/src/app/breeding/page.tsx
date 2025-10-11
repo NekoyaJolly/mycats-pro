@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Box,
@@ -12,6 +12,7 @@ import {
   Stack,
   Flex,
   Badge,
+  MultiSelect,
   Tabs,
   Table,
   Modal,
@@ -20,7 +21,6 @@ import {
   ScrollArea,
   TextInput,
   Checkbox,
-  MultiSelect,
   NumberInput,
   Radio,
 } from '@mantine/core';
@@ -41,18 +41,42 @@ import {
   IconEdit,
 } from '@tabler/icons-react';
 
+import {
+  useGetBreedingNgRules,
+  useCreateBreedingNgRule,
+  useUpdateBreedingNgRule,
+  useDeleteBreedingNgRule,
+  type BreedingNgRuleType,
+  type CreateBreedingNgRuleRequest,
+} from '@/lib/api/hooks/use-breeding';
+
 // 型定義
+type NgRuleType = BreedingNgRuleType;
+
 interface NgPairingRule {
   id: string;
   name: string;
-  type: 'tag_combination' | 'individual_prohibition' | 'generation_limit';
+  type: NgRuleType;
   maleConditions?: string[];
   femaleConditions?: string[];
   maleNames?: string[];
   femaleNames?: string[];
-  generationLimit?: number;
-  description: string;
+  generationLimit?: number | null;
+  description?: string | null;
   active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface NewRuleState {
+  name: string;
+  type: NgRuleType;
+  maleConditions: string[];
+  femaleConditions: string[];
+  maleNames: string[];
+  femaleNames: string[];
+  generationLimit: number | null;
+  description: string;
 }
 
 interface BreedingCat {
@@ -105,7 +129,7 @@ const initialNgPairingRules: NgPairingRule[] = [
   {
     id: '1',
     name: '近親交配防止',
-    type: 'tag_combination',
+    type: 'TAG_COMBINATION',
     maleConditions: ['血統書付き'],
     femaleConditions: ['血統書付き'],
     description: '血統書付き同士の交配は避ける',
@@ -114,7 +138,7 @@ const initialNgPairingRules: NgPairingRule[] = [
   {
     id: '2',
     name: 'サイズ不適合',
-    type: 'tag_combination',
+    type: 'TAG_COMBINATION',
     maleConditions: ['大型'],
     femaleConditions: ['小型'],
     description: '大型オスと小型メスの交配は避ける',
@@ -180,17 +204,46 @@ export default function BreedingPage() {
   // 交配チェック記録管理 - キー: "オスID-メスID-日付", 値: チェック回数
   const [matingChecks, setMatingChecks] = useState<{[key: string]: number}>({});
   
-  const [ngPairingRules, setNgPairingRules] = useState(initialNgPairingRules);
-  const [newRule, setNewRule] = useState({
+  const [ngPairingRules, setNgPairingRules] = useState<NgPairingRule[]>(initialNgPairingRules);
+  const [rulesError, setRulesError] = useState<string | null>(null);
+  const [newRule, setNewRule] = useState<NewRuleState>({
     name: '',
-    type: 'tag_combination',
-    maleNames: [] as string[],
-    femaleNames: [] as string[],
-    maleConditions: [] as string[],
-    femaleConditions: [] as string[],
+    type: 'TAG_COMBINATION',
+    maleNames: [],
+    femaleNames: [],
+    maleConditions: [],
+    femaleConditions: [],
     generationLimit: 3,
     description: '',
   });
+
+  const ngRulesQuery = useGetBreedingNgRules();
+  const {
+    data: ngRulesResponse,
+    isLoading: isNgRulesLoading,
+    isFetching: isNgRulesFetching,
+    error: ngRulesError,
+  } = ngRulesQuery;
+
+  useEffect(() => {
+    if (!ngRulesResponse) {
+      return;
+    }
+
+  const remoteRules = (ngRulesResponse.data ?? []) as NgPairingRule[];
+  setNgPairingRules(remoteRules.map(rule => ({ ...rule })));
+  }, [ngRulesResponse]);
+
+  useEffect(() => {
+    if (ngRulesError) {
+      setRulesError(ngRulesError instanceof Error ? ngRulesError.message : 'NGルールの取得に失敗しました');
+    } else {
+      setRulesError(null);
+    }
+  }, [ngRulesError]);
+  const createNgRuleMutation = useCreateBreedingNgRule();
+  const updateNgRuleMutation = useUpdateBreedingNgRule();
+  const deleteNgRuleMutation = useDeleteBreedingNgRule();
 
   // 次のルール番号を生成する関数
   const getNextRuleName = () => {
@@ -221,18 +274,18 @@ export default function BreedingPage() {
     return ngPairingRules.some(rule => {
       if (!rule.active) return false;
       
-      if (rule.type === 'tag_combination' && rule.maleConditions && rule.femaleConditions) {
+      if (rule.type === 'TAG_COMBINATION' && rule.maleConditions && rule.femaleConditions) {
         const maleMatches = rule.maleConditions.some(condition => male.tags.includes(condition));
         const femaleMatches = rule.femaleConditions.some(condition => female.tags.includes(condition));
         return maleMatches && femaleMatches;
       }
       
-      if (rule.type === 'individual_prohibition' && rule.maleNames && rule.femaleNames) {
+      if (rule.type === 'INDIVIDUAL_PROHIBITION' && rule.maleNames && rule.femaleNames) {
         return rule.maleNames.includes(male.name) && rule.femaleNames.includes(female.name);
       }
       
       // generation_limit の実装（将来的にpedigree機能連携）
-      if (rule.type === 'generation_limit') {
+      if (rule.type === 'GENERATION_LIMIT') {
         // 血統データとの連携は将来実装予定
         return false;
       }
@@ -352,13 +405,13 @@ export default function BreedingPage() {
         const ngRule = ngPairingRules.find(rule => {
           if (!rule.active) return false;
           
-          if (rule.type === 'tag_combination' && rule.maleConditions && rule.femaleConditions) {
+          if (rule.type === 'TAG_COMBINATION' && rule.maleConditions && rule.femaleConditions) {
             const maleMatches = rule.maleConditions.some(condition => male.tags.includes(condition));
             const femaleMatches = rule.femaleConditions.some(condition => female.tags.includes(condition));
             return maleMatches && femaleMatches;
           }
           
-          if (rule.type === 'individual_prohibition' && rule.maleNames && rule.femaleNames) {
+          if (rule.type === 'INDIVIDUAL_PROHIBITION' && rule.maleNames && rule.femaleNames) {
             return rule.maleNames.includes(male.name) && rule.femaleNames.includes(female.name);
           }
           
@@ -366,7 +419,7 @@ export default function BreedingPage() {
         });
         
         const confirmed = window.confirm(
-          `警告: このペアは「${ngRule?.name}」ルールに該当します。\n${ngRule?.description}\n\n本当に交配を予定しますか？`
+          `警告: このペアは「${ngRule?.name}」ルールに該当します。\n${ngRule?.description ?? '詳細が設定されていません。'}\n\n本当に交配を予定しますか？`
         );
         
         if (!confirmed) {
@@ -463,34 +516,43 @@ export default function BreedingPage() {
 
   // NGルール管理機能
   const addNewRule = () => {
-    const id = Date.now().toString();
-    const ruleToAdd: NgPairingRule = {
-      id,
+    if (createNgRuleMutation.isPending) {
+      return;
+    }
+
+    const payload: CreateBreedingNgRuleRequest = {
       name: newRule.name,
-      type: newRule.type as 'tag_combination' | 'individual_prohibition' | 'generation_limit',
-      description: newRule.description,
+      description: newRule.description.trim() ? newRule.description.trim() : undefined,
+      type: newRule.type,
       active: true,
     };
 
-    if (newRule.type === 'tag_combination') {
-      ruleToAdd.maleConditions = newRule.maleConditions;
-      ruleToAdd.femaleConditions = newRule.femaleConditions;
-    } else if (newRule.type === 'individual_prohibition') {
-      ruleToAdd.maleNames = newRule.maleNames;
-      ruleToAdd.femaleNames = newRule.femaleNames;
-    } else if (newRule.type === 'generation_limit') {
-      ruleToAdd.generationLimit = newRule.generationLimit;
+    if (newRule.type === 'TAG_COMBINATION') {
+      payload.maleConditions = newRule.maleConditions;
+      payload.femaleConditions = newRule.femaleConditions;
+    } else if (newRule.type === 'INDIVIDUAL_PROHIBITION') {
+      payload.maleNames = newRule.maleNames;
+      payload.femaleNames = newRule.femaleNames;
+    } else if (newRule.type === 'GENERATION_LIMIT' && newRule.generationLimit) {
+      payload.generationLimit = newRule.generationLimit;
     }
 
-    setNgPairingRules(prev => [...prev, ruleToAdd]);
-    resetNewRuleForm();
-    closeNewRuleModal();
+    setRulesError(null);
+    createNgRuleMutation.mutate(payload, {
+      onSuccess: () => {
+        resetNewRuleForm();
+        closeNewRuleModal();
+      },
+      onError: (error: unknown) => {
+        setRulesError(error instanceof Error ? error.message : 'NGルールの登録に失敗しました');
+      },
+    });
   };
 
   const resetNewRuleForm = () => {
     setNewRule({
       name: getNextRuleName(),
-      type: 'tag_combination',
+      type: 'TAG_COMBINATION',
       maleNames: [],
       femaleNames: [],
       maleConditions: [],
@@ -517,26 +579,48 @@ export default function BreedingPage() {
     }
 
     // ルールタイプ別のバリデーション
-    if (newRule.type === 'tag_combination') {
+    if (newRule.type === 'TAG_COMBINATION') {
       return newRule.maleConditions.length > 0 && newRule.femaleConditions.length > 0;
-    } else if (newRule.type === 'individual_prohibition') {
+    } else if (newRule.type === 'INDIVIDUAL_PROHIBITION') {
       return newRule.maleNames.length > 0 && newRule.femaleNames.length > 0;
-    } else if (newRule.type === 'generation_limit') {
-      return newRule.generationLimit > 0;
+    } else if (newRule.type === 'GENERATION_LIMIT') {
+      return (newRule.generationLimit ?? 0) > 0;
     }
 
     return false;
   };
 
   const deleteRule = (ruleId: string) => {
+    const previousRules = [...ngPairingRules];
+    setRulesError(null);
     setNgPairingRules(prev => prev.filter(rule => rule.id !== ruleId));
+    deleteNgRuleMutation.mutate(ruleId, {
+      onError: (error: unknown) => {
+        setRulesError(error instanceof Error ? error.message : 'NGルールの削除に失敗しました');
+        setNgPairingRules(previousRules);
+      },
+    });
   };
 
   const toggleRule = (ruleId: string) => {
-    setNgPairingRules(prev => 
-      prev.map(rule => 
-        rule.id === ruleId ? { ...rule, active: !rule.active } : rule
-      )
+    const previousRules = ngPairingRules.map(rule => ({ ...rule }));
+    const target = previousRules.find(rule => rule.id === ruleId);
+    if (!target) return;
+
+    const nextActive = !target.active;
+    setRulesError(null);
+    setNgPairingRules(prev =>
+      prev.map(rule => (rule.id === ruleId ? { ...rule, active: nextActive } : rule)),
+    );
+
+    updateNgRuleMutation.mutate(
+      { id: ruleId, payload: { active: nextActive } },
+      {
+        onError: (error: unknown) => {
+          setRulesError(error instanceof Error ? error.message : 'NGルールの更新に失敗しました');
+          setNgPairingRules(previousRules);
+        },
+      },
     );
   };
 
@@ -1127,6 +1211,18 @@ export default function BreedingPage() {
             </Button>
           </Group>
 
+          {(isNgRulesLoading || isNgRulesFetching) && (
+            <Text size="sm" c="dimmed">
+              NGルールを読み込み中です...
+            </Text>
+          )}
+
+          {rulesError && (
+            <Text size="sm" c="red">
+              {rulesError}
+            </Text>
+          )}
+
           {ngPairingRules.map((rule) => (
             <Card key={rule.id} shadow="sm" padding="md" radius="md" withBorder>
               <Group justify="space-between" mb="xs">
@@ -1154,11 +1250,11 @@ export default function BreedingPage() {
                 </Group>
               </Group>
               <Text size="sm" c="dimmed" mb="xs">
-                {rule.description}
+                {rule.description ?? '説明が設定されていません'}
               </Text>
 
               {/* ルールタイプ別の詳細表示 */}
-              {rule.type === 'tag_combination' && rule.maleConditions && rule.femaleConditions && (
+              {rule.type === 'TAG_COMBINATION' && rule.maleConditions && rule.femaleConditions && (
                 <Group gap="xs">
                   <Text size="xs">オス条件:</Text>
                   {rule.maleConditions.map((condition: string) => (
@@ -1175,7 +1271,7 @@ export default function BreedingPage() {
                 </Group>
               )}
 
-              {rule.type === 'individual_prohibition' && rule.maleNames && rule.femaleNames && (
+              {rule.type === 'INDIVIDUAL_PROHIBITION' && rule.maleNames && rule.femaleNames && (
                 <Group gap="xs">
                   <Text size="xs">禁止ペア:</Text>
                   {rule.maleNames.map((maleName, _index) => 
@@ -1188,7 +1284,7 @@ export default function BreedingPage() {
                 </Group>
               )}
 
-              {rule.type === 'generation_limit' && (
+              {rule.type === 'GENERATION_LIMIT' && (
                 <Text size="xs" c="dimmed">
                   近親係数制限: {rule.generationLimit}親等まで禁止
                 </Text>
@@ -1223,23 +1319,25 @@ export default function BreedingPage() {
           <Radio.Group
             label="ルールタイプ"
             value={newRule.type}
-            onChange={(value) => setNewRule(prev => ({ ...prev, type: value }))}
+            onChange={(value) =>
+              setNewRule(prev => ({ ...prev, type: (value as NgRuleType) ?? prev.type }))
+            }
             required
           >
             <Stack gap="xs">
-              <Radio value="tag_combination" label="タグ組み合わせ禁止" />
-              <Radio value="individual_prohibition" label="個別ペア禁止" />
-              <Radio value="generation_limit" label="近親係数制限" />
+              <Radio value="TAG_COMBINATION" label="タグ組み合わせ禁止" />
+              <Radio value="INDIVIDUAL_PROHIBITION" label="個別ペア禁止" />
+              <Radio value="GENERATION_LIMIT" label="近親係数制限" />
             </Stack>
           </Radio.Group>
 
-          {newRule.type === 'tag_combination' && (
+          {newRule.type === 'TAG_COMBINATION' && (
             <>
               <MultiSelect
                 label="オス猫の条件タグ"
                 data={availableTags}
                 value={newRule.maleConditions}
-                onChange={(value) => setNewRule(prev => ({ ...prev, maleConditions: value }))}
+                onChange={(value: string[]) => setNewRule(prev => ({ ...prev, maleConditions: value }))}
                 placeholder="禁止するオス猫のタグを選択"
                 required
               />
@@ -1247,20 +1345,20 @@ export default function BreedingPage() {
                 label="メス猫の条件タグ"
                 data={availableTags}
                 value={newRule.femaleConditions}
-                onChange={(value) => setNewRule(prev => ({ ...prev, femaleConditions: value }))}
+                onChange={(value: string[]) => setNewRule(prev => ({ ...prev, femaleConditions: value }))}
                 placeholder="禁止するメス猫のタグを選択"
                 required
               />
             </>
           )}
 
-          {newRule.type === 'individual_prohibition' && (
+          {newRule.type === 'INDIVIDUAL_PROHIBITION' && (
             <>
               <MultiSelect
                 label="禁止するオス猫"
                 data={maleCats.map(cat => ({ value: cat.name, label: cat.name }))}
                 value={newRule.maleNames}
-                onChange={(value) => setNewRule(prev => ({ ...prev, maleNames: value }))}
+                onChange={(value: string[]) => setNewRule(prev => ({ ...prev, maleNames: value }))}
                 placeholder="禁止するオス猫を選択"
                 required
               />
@@ -1268,19 +1366,24 @@ export default function BreedingPage() {
                 label="禁止するメス猫"
                 data={femaleCats.map(cat => ({ value: cat.name, label: cat.name }))}
                 value={newRule.femaleNames}
-                onChange={(value) => setNewRule(prev => ({ ...prev, femaleNames: value }))}
+                onChange={(value: string[]) => setNewRule(prev => ({ ...prev, femaleNames: value }))}
                 placeholder="禁止するメス猫を選択"
                 required
               />
             </>
           )}
 
-          {newRule.type === 'generation_limit' && (
+          {newRule.type === 'GENERATION_LIMIT' && (
             <NumberInput
               label="親等制限"
               description="指定した親等以内の近親交配を禁止します"
-              value={newRule.generationLimit}
-              onChange={(value) => setNewRule(prev => ({ ...prev, generationLimit: typeof value === 'number' ? value : 3 }))}
+              value={newRule.generationLimit ?? 3}
+              onChange={(value: string | number) =>
+                setNewRule(prev => ({
+                  ...prev,
+                  generationLimit: typeof value === 'number' ? value : prev.generationLimit,
+                }))
+              }
               min={1}
               max={10}
               suffix="親等"
@@ -1301,9 +1404,9 @@ export default function BreedingPage() {
             </Button>
             <Button 
               onClick={addNewRule}
-              disabled={!isNewRuleValid()}
+              disabled={!isNewRuleValid() || createNgRuleMutation.isPending}
             >
-              ルール作成
+              {createNgRuleMutation.isPending ? '作成中…' : 'ルール作成'}
             </Button>
           </Group>
         </Stack>

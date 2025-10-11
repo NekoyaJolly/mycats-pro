@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import type { Prisma, BreedingNgRuleType } from '@prisma/client';
 
 export interface BreedingWhereInput {
   femaleId?: string;
@@ -42,4 +42,29 @@ export interface BreedingCreateResponse {
 
 export interface BreedingSuccessResponse {
   success: true;
+}
+
+export interface BreedingNgRule {
+  id: string;
+  name: string;
+  description: string | null;
+  type: BreedingNgRuleType;
+  maleConditions: string[];
+  femaleConditions: string[];
+  maleNames: string[];
+  femaleNames: string[];
+  generationLimit: number | null;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface BreedingNgRuleListResponse {
+  success: true;
+  data: BreedingNgRule[];
+}
+
+export interface BreedingNgRuleResponse {
+  success: true;
+  data: BreedingNgRule;
 }

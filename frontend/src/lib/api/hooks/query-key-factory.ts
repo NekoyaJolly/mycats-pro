@@ -8,13 +8,13 @@ export type DomainQueryKeyFactory<Identifier = string, Filters = Record<string, 
   list: (filters?: Filters) => readonly [string, 'list', Filters | undefined];
   details: () => readonly [string, 'detail'];
   detail: (id: Identifier) => readonly [string, 'detail', Identifier];
-  extras?: Record<string, (...args: never[]) => readonly unknown[]>;
+  extras?: Record<string, (...args: unknown[]) => readonly unknown[]>;
 };
 
 export function createDomainQueryKeys<Identifier = string, Filters = Record<string, unknown>>(
   domain: string,
   options?: {
-    extras?: Record<string, (...args: never[]) => readonly unknown[]>;
+    extras?: Record<string, (...args: unknown[]) => readonly unknown[]>;
   },
 ): DomainQueryKeyFactory<Identifier, Filters> {
   const base = [domain] as const;
@@ -31,7 +31,7 @@ export function createDomainQueryKeys<Identifier = string, Filters = Record<stri
     factory.extras = Object.fromEntries(
       Object.entries(options.extras).map(([key, builder]) => [
         key,
-        (...args: never[]) => [...base, key, ...builder(...args)] as const,
+        (...args: unknown[]) => [...base, key, ...builder(...args)] as const,
       ]),
     );
   }

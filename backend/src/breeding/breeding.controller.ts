@@ -23,7 +23,13 @@ import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
 
 import { BreedingService } from "./breeding.service";
-import { BreedingQueryDto, CreateBreedingDto, UpdateBreedingDto } from "./dto";
+import {
+  BreedingQueryDto,
+  CreateBreedingDto,
+  UpdateBreedingDto,
+  CreateBreedingNgRuleDto,
+  UpdateBreedingNgRuleDto,
+} from "./dto";
 
 @ApiTags("Breeding")
 @Controller("breeding")
@@ -67,5 +73,41 @@ export class BreedingController {
   @ApiParam({ name: "id" })
   remove(@Param("id") id: string) {
     return this.breedingService.remove(id);
+  }
+
+  @Get("ng-rules")
+  @ApiOperation({ summary: "NGペアルール一覧の取得" })
+  @ApiResponse({ status: HttpStatus.OK })
+  findNgRules() {
+    return this.breedingService.findNgRules();
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post("ng-rules")
+  @ApiOperation({ summary: "NGペアルールの作成" })
+  @ApiResponse({ status: HttpStatus.CREATED })
+  createNgRule(@Body() dto: CreateBreedingNgRuleDto) {
+    return this.breedingService.createNgRule(dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch("ng-rules/:id")
+  @ApiOperation({ summary: "NGペアルールの更新" })
+  @ApiResponse({ status: HttpStatus.OK })
+  @ApiParam({ name: "id" })
+  updateNgRule(@Param("id") id: string, @Body() dto: UpdateBreedingNgRuleDto) {
+    return this.breedingService.updateNgRule(id, dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Delete("ng-rules/:id")
+  @ApiOperation({ summary: "NGペアルールの削除" })
+  @ApiResponse({ status: HttpStatus.OK })
+  @ApiParam({ name: "id" })
+  removeNgRule(@Param("id") id: string) {
+    return this.breedingService.removeNgRule(id);
   }
 }

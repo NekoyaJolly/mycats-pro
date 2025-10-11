@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Box,
@@ -9,60 +9,127 @@ import {
   Container,
   Group,
   Stack,
-  Title,
   TextInput,
   Textarea,
   Select,
-  Tabs,
+  Switch,
   Flex,
+  Alert,
+  LoadingOverlay,
 } from '@mantine/core';
+import { Controller, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { IconArrowLeft, IconDeviceFloppy } from '@tabler/icons-react';
-import TagSelector from '../../../components/TagSelector';
+import { z } from 'zod';
+import { PageTitle } from '@/components/PageTitle';
+import { useCreateCat, type CreateCatRequest } from '@/lib/api/hooks/use-cats';
+import { useGetTags } from '@/lib/api/hooks/use-tags';
+import TagSelector, { type TagCategory } from '@/components/TagSelector';
+
+const optionalString = z
+  .string()
+  .optional()
+  .transform((value) => (value?.trim() ? value.trim() : undefined));
+
+const catFormSchema = z.object({
+  name: z.string().min(1, '名前は必須です'),
+  gender: z.enum(['MALE', 'FEMALE'], {
+    errorMap: () => ({ message: '性別を選択してください' }),
+  }),
+  birthDate: z
+    .string()
+    .min(1, '生年月日を入力してください')
+    .regex(/^\d{4}-\d{2}-\d{2}$/, '生年月日はYYYY-MM-DD形式で入力してください'),
+  breedId: optionalString,
+  coatColorId: optionalString,
+  microchipNumber: optionalString,
+  registrationNumber: optionalString,
+  description: optionalString,
+  isInHouse: z.boolean().default(true),
+  tagIds: z.array(z.string()).default([]),
+});
+
+type CatFormValues = z.infer<typeof catFormSchema>;
 
 export default function CatRegistrationPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('register');
-  
-  // 登録フォーム用の状態
-  const [registerForm, setRegisterForm] = useState({
-    name: '',
-    breed: '',
-    gender: '',
-    birthDate: '',
-    color: '',
-    weight: '',
-    microchip: '',
-    description: '',
-    tags: [] as string[],
+  const createCat = useCreateCat();
+  const { data: tagsResponse, isLoading: isLoadingTags } = useGetTags();
+
+  const tagCategories = useMemo<TagCategory[] | undefined>(() => {
+    if (!tagsResponse?.data) {
+      return undefined;
+    }
+
+    const fallbackColor = '#228be6';
+
+    return [
+      {
+        id: 'all',
+        name: '全タグ',
+        description: '登録済みのタグから選択できます',
+        color: fallbackColor,
+        tags: tagsResponse.data.map((tag) => ({
+          id: tag.id,
+          name: tag.name,
+          categoryId: 'all',
+          color: tag.color || fallbackColor,
+          description: tag.description,
+          usageCount: tag.usage_count ?? 0,
+        })),
+      },
+    ];
+  }, [tagsResponse]);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<CatFormValues>({
+    resolver: zodResolver(catFormSchema),
+    defaultValues: {
+      name: '',
+      gender: 'MALE',
+      birthDate: '',
+      breedId: undefined,
+      coatColorId: undefined,
+      microchipNumber: undefined,
+      registrationNumber: undefined,
+      description: undefined,
+      isInHouse: true,
+      tagIds: [],
+    },
   });
 
-  // 編集フォーム用の状態
-  const [editForm, setEditForm] = useState({
-    name: 'レオ',
-    breed: '雑種',
-    gender: 'オス',
-    birthDate: '2023-03-15',
-    color: '茶トラ',
-    weight: '4.2',
-    microchip: 'MC123456789',
-    description: 'とても元気なオス猫。',
-    tags: ['t1', 't4', 't8'] as string[], // サンプルタグ
-  });
+  const onSubmit = async (values: CatFormValues) => {
+    const payload: CreateCatRequest = {
+      name: values.name,
+      gender: values.gender,
+      birthDate: values.birthDate,
+      breedId: values.breedId ?? null,
+      coatColorId: values.coatColorId ?? null,
+      microchipNumber: values.microchipNumber,
+      registrationNumber: values.registrationNumber,
+      description: values.description,
+      isInHouse: values.isInHouse,
+      tagIds: values.tagIds.length > 0 ? values.tagIds : undefined,
+    };
 
-  const handleRegisterSubmit = () => {
-    console.log('Registration data:', registerForm);
-    router.push('/');
+    try {
+      const response = await createCat.mutateAsync(payload);
+      reset();
+      const newCatId = response.data?.id;
+      router.replace(newCatId ? `/cats/${newCatId}` : '/cats');
+    } catch {
+      // エラーハンドリングは useCreateCat 内で通知を表示
+    }
   };
 
-  const handleEditSubmit = () => {
-    console.log('Edit data:', editForm);
-    // ここで実際の編集処理を行う
-    router.push('/cats/1');
-  };
+  const isSubmitting = createCat.isPending;
 
   return (
-  <Box style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)' }}>
-      {/* ヘッダー */}
+    <Box style={{ minHeight: '100vh', backgroundColor: 'var(--background-base)' }}>
       <Box
         style={{
           backgroundColor: 'var(--surface)',
@@ -84,194 +151,201 @@ export default function CatRegistrationPage() {
         </Container>
       </Box>
 
-      <Container size="lg" style={{ paddingTop: '2rem' }}>
+      <Container size="lg" style={{ paddingTop: '2rem', position: 'relative' }}>
+        <LoadingOverlay visible={isSubmitting} zIndex={1000} overlayProps={{ blur: 2 }} />
 
-        <Tabs value={activeTab} onChange={(value) => setActiveTab(value || 'register')} variant="outline">
-          <Tabs.List>
-            <Tabs.Tab value="register">新規登録</Tabs.Tab>
-            <Tabs.Tab value="edit">編集</Tabs.Tab>
-          </Tabs.List>
+        <Stack gap="xl">
+          <Group justify="space-between">
+            <PageTitle>猫の新規登録</PageTitle>
+            <Button
+              leftSection={<IconDeviceFloppy size={16} />}
+              onClick={handleSubmit(onSubmit)}
+              loading={isSubmitting}
+            >
+              登録する
+            </Button>
+          </Group>
 
-          {/* 新規登録タブ */}
-          <Tabs.Panel value="register" pt="md">
-            <Card shadow="sm" padding="lg" radius="md" withBorder>
-              <Title order={2} mb="lg">新しい猫を登録</Title>
+          <Card shadow="sm" padding="lg" radius="md" withBorder>
+            <form onSubmit={handleSubmit(onSubmit)}>
               <Stack gap="md">
-                <TextInput
-                  label="猫の名前"
-                  placeholder="名前を入力してください"
-                  value={registerForm.name}
-                  onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
-                  required
+                <Controller
+                  name="name"
+                  control={control}
+                  render={({ field }) => (
+                    <TextInput
+                      label="猫の名前"
+                      placeholder="名前を入力してください"
+                      required
+                      error={errors.name?.message}
+                      {...field}
+                      value={field.value}
+                    />
+                  )}
                 />
-                
+
                 <Group grow>
-                  <TextInput
-                    label="品種"
-                    placeholder="例: 雑種、アメリカンショートヘア"
-                    value={registerForm.breed}
-                    onChange={(e) => setRegisterForm({ ...registerForm, breed: e.target.value })}
+                  <Controller
+                    name="breedId"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="品種 ID"
+                        placeholder="品種IDまたは未設定"
+                        error={errors.breedId?.message}
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    )}
                   />
-                  <Select
-                    label="性別"
-                    placeholder="性別を選択"
-                    data={[
-                      { value: 'オス', label: 'オス' },
-                      { value: 'メス', label: 'メス' },
-                    ]}
-                    value={registerForm.gender}
-                    onChange={(value) => setRegisterForm({ ...registerForm, gender: value || '' })}
-                    required
+
+                  <Controller
+                    name="gender"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        label="性別"
+                        placeholder="性別を選択"
+                        data={[
+                          { value: 'MALE', label: 'オス' },
+                          { value: 'FEMALE', label: 'メス' },
+                        ]}
+                        required
+                        error={errors.gender?.message}
+                        value={field.value}
+                        onChange={(value) => field.onChange(value ?? field.value)}
+                      />
+                    )}
                   />
                 </Group>
 
                 <Group grow>
-                  <TextInput
-                    label="生年月日"
-                    placeholder="YYYY-MM-DD"
-                    value={registerForm.birthDate}
-                    onChange={(e) => setRegisterForm({ ...registerForm, birthDate: e.target.value })}
+                  <Controller
+                    name="birthDate"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="生年月日"
+                        placeholder="YYYY-MM-DD"
+                        error={errors.birthDate?.message}
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    )}
                   />
-                  <TextInput
-                    label="色柄"
-                    placeholder="例: 茶トラ、三毛"
-                    value={registerForm.color}
-                    onChange={(e) => setRegisterForm({ ...registerForm, color: e.target.value })}
+
+                  <Controller
+                    name="coatColorId"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="色柄 ID"
+                        placeholder="色柄IDまたは未設定"
+                        error={errors.coatColorId?.message}
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    )}
                   />
                 </Group>
 
                 <Group grow>
-                  <TextInput
-                    label="体重"
-                    placeholder="例: 4.2"
-                    value={registerForm.weight}
-                    onChange={(e) => setRegisterForm({ ...registerForm, weight: e.target.value })}
+                  <Controller
+                    name="microchipNumber"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="マイクロチップ番号"
+                        placeholder="マイクロチップ番号"
+                        error={errors.microchipNumber?.message}
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    )}
                   />
-                  <TextInput
-                    label="マイクロチップ"
-                    placeholder="マイクロチップ番号"
-                    value={registerForm.microchip}
-                    onChange={(e) => setRegisterForm({ ...registerForm, microchip: e.target.value })}
+
+                  <Controller
+                    name="registrationNumber"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="登録番号"
+                        placeholder="登録番号"
+                        error={errors.registrationNumber?.message}
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    )}
                   />
                 </Group>
 
-                <Textarea
-                  label="備考"
-                  placeholder="特徴や性格などを記入してください"
-                  value={registerForm.description}
-                  onChange={(e) => setRegisterForm({ ...registerForm, description: e.target.value })}
-                  minRows={3}
+                <Controller
+                  name="description"
+                  control={control}
+                  render={({ field }) => (
+                    <Textarea
+                      label="備考"
+                      placeholder="特徴や性格などを記入してください"
+                      minRows={3}
+                      error={errors.description?.message}
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  )}
                 />
 
-                <TagSelector
-                  selectedTags={registerForm.tags}
-                  onChange={(tags) => setRegisterForm({ ...registerForm, tags })}
-                  label="タグ"
-                  placeholder="猫の特徴タグを選択"
+                <Controller
+                  name="isInHouse"
+                  control={control}
+                  render={({ field }) => (
+                    <Switch
+                      label="施設内に在舎している猫です"
+                      checked={field.value}
+                      onChange={(event) => field.onChange(event.currentTarget.checked)}
+                    />
+                  )}
                 />
 
-                <Group justify="center" mt="xl">
+                <Controller
+                  name="tagIds"
+                  control={control}
+                  render={({ field }) => (
+                    <TagSelector
+                      selectedTags={field.value ?? []}
+                      onChange={field.onChange}
+                      label="タグ"
+                      placeholder="猫の特徴タグを選択"
+                      categories={tagCategories ?? []}
+                      disabled={isLoadingTags}
+                    />
+                  )}
+                />
+
+                {createCat.isError && (
+                  <Alert color="red" title="登録に失敗しました">
+                    {(createCat.error as Error)?.message ?? '時間をおいて再度お試しください。'}
+                  </Alert>
+                )}
+
+                <Group justify="flex-end" mt="sm">
                   <Button
+                    type="submit"
                     leftSection={<IconDeviceFloppy size={16} />}
-                    onClick={handleRegisterSubmit}
+                    loading={isSubmitting}
                   >
-                    登録
+                    登録する
                   </Button>
                 </Group>
               </Stack>
-            </Card>
-          </Tabs.Panel>
+            </form>
+          </Card>
 
-          {/* 編集タブ */}
-          <Tabs.Panel value="edit" pt="md">
-            <Card shadow="sm" padding="lg" radius="md" withBorder>
-              <Title order={2} mb="lg">猫の情報を編集</Title>
-              <Stack gap="md">
-                <TextInput
-                  label="猫の名前"
-                  placeholder="名前を入力してください"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  required
-                />
-                
-                <Group grow>
-                  <TextInput
-                    label="品種"
-                    placeholder="例: 雑種、アメリカンショートヘア"
-                    value={editForm.breed}
-                    onChange={(e) => setEditForm({ ...editForm, breed: e.target.value })}
-                  />
-                  <Select
-                    label="性別"
-                    placeholder="性別を選択"
-                    data={[
-                      { value: 'オス', label: 'オス' },
-                      { value: 'メス', label: 'メス' },
-                    ]}
-                    value={editForm.gender}
-                    onChange={(value) => setEditForm({ ...editForm, gender: value || '' })}
-                    required
-                  />
-                </Group>
-
-                <Group grow>
-                  <TextInput
-                    label="生年月日"
-                    placeholder="YYYY-MM-DD"
-                    value={editForm.birthDate}
-                    onChange={(e) => setEditForm({ ...editForm, birthDate: e.target.value })}
-                  />
-                  <TextInput
-                    label="色柄"
-                    placeholder="例: 茶トラ、三毛"
-                    value={editForm.color}
-                    onChange={(e) => setEditForm({ ...editForm, color: e.target.value })}
-                  />
-                </Group>
-
-                <Group grow>
-                  <TextInput
-                    label="体重"
-                    placeholder="例: 4.2"
-                    value={editForm.weight}
-                    onChange={(e) => setEditForm({ ...editForm, weight: e.target.value })}
-                  />
-                  <TextInput
-                    label="マイクロチップ"
-                    placeholder="マイクロチップ番号"
-                    value={editForm.microchip}
-                    onChange={(e) => setEditForm({ ...editForm, microchip: e.target.value })}
-                  />
-                </Group>
-
-                <Textarea
-                  label="備考"
-                  placeholder="特徴や性格などを記入してください"
-                  value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  minRows={3}
-                />
-
-                <TagSelector
-                  selectedTags={editForm.tags}
-                  onChange={(tags) => setEditForm({ ...editForm, tags })}
-                  label="タグ"
-                  placeholder="猫の特徴タグを選択"
-                />
-
-                <Group justify="center" mt="xl">
-                  <Button
-                    leftSection={<IconDeviceFloppy size={16} />}
-                    onClick={handleEditSubmit}
-                  >
-                    更新
-                  </Button>
-                </Group>
-              </Stack>
-            </Card>
-          </Tabs.Panel>
-        </Tabs>
+          {isLoadingTags && (
+            <Alert color="blue" title="タグを取得しています" variant="light">
+              タグ情報を読み込み中です。
+            </Alert>
+          )}
+        </Stack>
       </Container>
     </Box>
   );

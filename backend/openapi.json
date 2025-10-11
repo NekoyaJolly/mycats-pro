@@ -1604,6 +1604,115 @@
         ]
       }
     },
+    "/api/v1/breeding/ng-rules": {
+      "get": {
+        "operationId": "BreedingController_findNgRules",
+        "summary": "NGペアルール一覧の取得",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ]
+      },
+      "post": {
+        "operationId": "BreedingController_createNgRule",
+        "summary": "NGペアルールの作成",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBreedingNgRuleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/breeding/ng-rules/{id}": {
+      "patch": {
+        "operationId": "BreedingController_updateNgRule",
+        "summary": "NGペアルールの更新",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBreedingNgRuleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "BreedingController_removeNgRule",
+        "summary": "NGペアルールの削除",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/care/schedules": {
       "get": {
         "operationId": "CareController_findSchedules",
@@ -2305,6 +2414,76 @@
         ]
       },
       "UpdateBreedingDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateBreedingNgRuleDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "ルール名",
+            "example": "近親交配防止"
+          },
+          "description": {
+            "type": "string",
+            "description": "説明",
+            "example": "血統書付き同士の交配を避ける"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "TAG_COMBINATION",
+              "INDIVIDUAL_PROHIBITION",
+              "GENERATION_LIMIT"
+            ],
+            "example": "TAG_COMBINATION"
+          },
+          "active": {
+            "type": "boolean",
+            "description": "有効フラグ",
+            "default": true
+          },
+          "maleConditions": {
+            "description": "オス側のタグ条件",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "femaleConditions": {
+            "description": "メス側のタグ条件",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "maleNames": {
+            "description": "禁止するオス猫の名前",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "femaleNames": {
+            "description": "禁止するメス猫の名前",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "generationLimit": {
+            "type": "number",
+            "description": "世代制限 (親等)",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "name",
+          "type"
+        ]
+      },
+      "UpdateBreedingNgRuleDto": {
         "type": "object",
         "properties": {}
       },
