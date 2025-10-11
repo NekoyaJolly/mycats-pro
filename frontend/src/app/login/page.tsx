@@ -4,8 +4,8 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Container,
   Paper,
@@ -21,7 +21,7 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { IconAlertCircle } from '@tabler/icons-react';
-import { useAuth } from '@/lib/api/auth-store';
+import { useAuth } from '@/lib/auth/store';
 
 interface LoginFormValues {
   email: string;
@@ -30,8 +30,27 @@ interface LoginFormValues {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated, isLoading, error, clearError } = useAuth();
+  const searchParams = useSearchParams();
+  const { login, isAuthenticated, isLoading, error, clearError, initialized } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const returnTo = searchParams?.get('returnTo') ?? null;
+  const targetPath = useMemo(() => {
+    if (typeof returnTo !== 'string' || returnTo.length === 0) {
+      return '/';
+    }
+
+    if (!returnTo.startsWith('/') || returnTo.startsWith('//')) {
+      return '/';
+    }
+
+    const disallowed = ['/login', '/register'];
+    if (disallowed.includes(returnTo)) {
+      return '/';
+    }
+
+    return returnTo;
+  }, [returnTo]);
 
   const form = useForm<LoginFormValues>({
     initialValues: { email: '', password: '' },
@@ -51,8 +70,10 @@ export default function LoginPage() {
 
   // 既ログイン時リダイレクト
   useEffect(() => {
-    if (isAuthenticated) router.push('/');
-  }, [isAuthenticated, router]);
+    if (initialized && isAuthenticated) {
+      router.replace(targetPath);
+    }
+  }, [initialized, isAuthenticated, router, targetPath]);
 
   // アンマウント時エラークリア
   useEffect(() => () => clearError(), [clearError]);
@@ -173,7 +194,14 @@ export default function LoginPage() {
                     <Text
                       component="span"
                       style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: 500 }}
-                      onClick={() => router.push('/forgot-password')}
+                      onClick={() => {
+                        const params = new URLSearchParams();
+                        if (returnTo) {
+                          params.set('returnTo', targetPath);
+                        }
+                        const query = params.toString();
+                        router.push(query ? `/forgot-password?${query}` : '/forgot-password');
+                      }}
                     >
                       リセット
                     </Text>
@@ -183,7 +211,14 @@ export default function LoginPage() {
                     <Text
                       component="span"
                       style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: 500 }}
-                      onClick={() => router.push('/register')}
+                      onClick={() => {
+                        const params = new URLSearchParams();
+                        if (returnTo) {
+                          params.set('returnTo', targetPath);
+                        }
+                        const query = params.toString();
+                        router.push(query ? `/register?${query}` : '/register');
+                      }}
                     >
                       新規登録
                     </Text>

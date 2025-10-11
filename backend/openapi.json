@@ -1,0 +1,2408 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "summary": "ログイン（JWT発行）",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "summary": "ユーザー登録（メール＋パスワード）",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/set-password": {
+      "post": {
+        "operationId": "AuthController_setPassword",
+        "summary": "パスワード設定/変更（要JWT）",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/change-password": {
+      "post": {
+        "operationId": "AuthController_changePassword",
+        "summary": "パスワード変更（現在のパスワード確認必要）",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/request-password-reset": {
+      "post": {
+        "operationId": "AuthController_requestPasswordReset",
+        "summary": "パスワードリセット要求",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestPasswordResetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "リセット手順をメールで送信"
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/reset-password": {
+      "post": {
+        "operationId": "AuthController_resetPassword",
+        "summary": "パスワードリセット実行",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "パスワードがリセットされました"
+          },
+          "400": {
+            "description": "無効または期限切れのトークン"
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh",
+        "summary": "リフレッシュトークンでアクセストークン再取得",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "summary": "ログアウト（リフレッシュトークン削除）",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/cats": {
+      "post": {
+        "operationId": "CatsController_create",
+        "summary": "猫データを作成",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCatDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "猫データが正常に作成されました"
+          },
+          "400": {
+            "description": "無効なデータです"
+          }
+        },
+        "tags": [
+          "Cats"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "CatsController_findAll",
+        "summary": "猫データを検索・一覧取得",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "ページ番号",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "1ページあたりの件数",
+            "schema": {
+              "default": 10,
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "検索キーワード",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "breedId",
+            "required": false,
+            "in": "query",
+            "description": "品種ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "colorId",
+            "required": false,
+            "in": "query",
+            "description": "毛色ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "gender",
+            "required": false,
+            "in": "query",
+            "description": "性別",
+            "schema": {
+              "enum": [
+                "MALE",
+                "FEMALE",
+                "NEUTER",
+                "SPAY",
+                "1",
+                "2",
+                "3",
+                "4"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "ageMin",
+            "required": false,
+            "in": "query",
+            "description": "最小年齢",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "ageMax",
+            "required": false,
+            "in": "query",
+            "description": "最大年齢",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "ソート項目",
+            "schema": {
+              "default": "createdAt",
+              "example": "createdAt",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "required": false,
+            "in": "query",
+            "description": "ソート順",
+            "schema": {
+              "default": "desc",
+              "example": "desc",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "ステータス",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "猫データの一覧"
+          }
+        },
+        "tags": [
+          "Cats"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/cats/statistics": {
+      "get": {
+        "operationId": "CatsController_getStatistics",
+        "summary": "猫データの統計情報を取得",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "統計情報"
+          }
+        },
+        "tags": [
+          "Cats"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/cats/{id}": {
+      "get": {
+        "operationId": "CatsController_findOne",
+        "summary": "IDで猫データを取得",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "猫データのID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "猫データ"
+          },
+          "404": {
+            "description": "猫データが見つかりません"
+          }
+        },
+        "tags": [
+          "Cats"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "CatsController_update",
+        "summary": "猫データを更新",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "猫データのID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCatDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "猫データが正常に更新されました"
+          },
+          "400": {
+            "description": "無効なデータです"
+          },
+          "404": {
+            "description": "猫データが見つかりません"
+          }
+        },
+        "tags": [
+          "Cats"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "CatsController_remove",
+        "summary": "猫データを削除",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "猫データのID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "猫データが正常に削除されました"
+          },
+          "404": {
+            "description": "猫データが見つかりません"
+          }
+        },
+        "tags": [
+          "Cats"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/cats/{id}/breeding-history": {
+      "get": {
+        "operationId": "CatsController_getBreedingHistory",
+        "summary": "猫の繁殖履歴を取得",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "猫データのID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "繁殖履歴"
+          },
+          "404": {
+            "description": "猫データが見つかりません"
+          }
+        },
+        "tags": [
+          "Cats"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/cats/{id}/care-history": {
+      "get": {
+        "operationId": "CatsController_getCareHistory",
+        "summary": "猫のケア履歴を取得",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "猫データのID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ケア履歴"
+          },
+          "404": {
+            "description": "猫データが見つかりません"
+          }
+        },
+        "tags": [
+          "Cats"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/pedigrees": {
+      "post": {
+        "operationId": "PedigreeController_create",
+        "summary": "血統書データを作成（管理者のみ）",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePedigreeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "血統書データが正常に作成されました"
+          },
+          "400": {
+            "description": "無効なデータです"
+          },
+          "403": {
+            "description": "管理者権限が必要です"
+          }
+        },
+        "tags": [
+          "Pedigrees"
+        ]
+      },
+      "get": {
+        "operationId": "PedigreeController_findAll",
+        "summary": "血統書データを検索・一覧取得",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "ページ番号",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "1ページあたりの件数",
+            "schema": {
+              "default": 10,
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "検索キーワード",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "breedId",
+            "required": false,
+            "in": "query",
+            "description": "品種ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "colorId",
+            "required": false,
+            "in": "query",
+            "description": "毛色ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "gender",
+            "required": false,
+            "in": "query",
+            "description": "性別 (1: オス, 2: メス)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "catName2",
+            "required": false,
+            "in": "query",
+            "description": "キャッテリー名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "eyeColor",
+            "required": false,
+            "in": "query",
+            "description": "目の色",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "ソート項目",
+            "schema": {
+              "default": "createdAt",
+              "example": "createdAt",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "required": false,
+            "in": "query",
+            "description": "ソート順",
+            "schema": {
+              "default": "desc",
+              "example": "desc",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "血統書データの一覧"
+          }
+        },
+        "tags": [
+          "Pedigrees"
+        ]
+      }
+    },
+    "/api/v1/pedigrees/pedigree-id/{pedigreeId}": {
+      "get": {
+        "operationId": "PedigreeController_findByPedigreeId",
+        "summary": "血統書番号で血統書データを取得",
+        "parameters": [
+          {
+            "name": "pedigreeId",
+            "required": true,
+            "in": "path",
+            "description": "血統書番号",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "血統書データ"
+          },
+          "404": {
+            "description": "血統書データが見つかりません"
+          }
+        },
+        "tags": [
+          "Pedigrees"
+        ]
+      }
+    },
+    "/api/v1/pedigrees/{id}": {
+      "get": {
+        "operationId": "PedigreeController_findOne",
+        "summary": "IDで血統書データを取得",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "血統書データのID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "血統書データ"
+          },
+          "404": {
+            "description": "血統書データが見つかりません"
+          }
+        },
+        "tags": [
+          "Pedigrees"
+        ]
+      },
+      "patch": {
+        "operationId": "PedigreeController_update",
+        "summary": "血統書データを更新（管理者のみ）",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "血統書データのID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePedigreeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "血統書データが正常に更新されました"
+          },
+          "400": {
+            "description": "無効なデータです"
+          },
+          "403": {
+            "description": "管理者権限が必要です"
+          },
+          "404": {
+            "description": "血統書データが見つかりません"
+          }
+        },
+        "tags": [
+          "Pedigrees"
+        ]
+      },
+      "delete": {
+        "operationId": "PedigreeController_remove",
+        "summary": "血統書データを削除（管理者のみ）",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "血統書データのID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "血統書データが正常に削除されました"
+          },
+          "403": {
+            "description": "管理者権限が必要です"
+          },
+          "404": {
+            "description": "血統書データが見つかりません"
+          }
+        },
+        "tags": [
+          "Pedigrees"
+        ]
+      }
+    },
+    "/api/v1/pedigrees/{id}/family-tree": {
+      "get": {
+        "operationId": "PedigreeController_getFamilyTree",
+        "summary": "血統書の家系図を取得",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "血統書データのID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "家系図データ"
+          },
+          "404": {
+            "description": "血統書データが見つかりません"
+          }
+        },
+        "tags": [
+          "Pedigrees"
+        ]
+      }
+    },
+    "/api/v1/pedigrees/{id}/family": {
+      "get": {
+        "operationId": "PedigreeController_getFamily",
+        "summary": "血統書データの家系図を取得",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "血統書データのID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "generations",
+            "required": false,
+            "in": "query",
+            "description": "取得する世代数",
+            "schema": {
+              "example": 3,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "家系図データ"
+          },
+          "404": {
+            "description": "血統書データが見つかりません"
+          }
+        },
+        "tags": [
+          "Pedigrees"
+        ]
+      }
+    },
+    "/api/v1/pedigrees/{id}/descendants": {
+      "get": {
+        "operationId": "PedigreeController_getDescendants",
+        "summary": "血統書データの子孫を取得",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "血統書データのID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "子孫データ"
+          },
+          "404": {
+            "description": "血統書データが見つかりません"
+          }
+        },
+        "tags": [
+          "Pedigrees"
+        ]
+      }
+    },
+    "/api/v1/breeds": {
+      "post": {
+        "operationId": "BreedsController_create",
+        "summary": "品種データを作成（管理者のみ）",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBreedDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "品種データが正常に作成されました"
+          },
+          "400": {
+            "description": "無効なデータです"
+          },
+          "403": {
+            "description": "管理者権限が必要です"
+          }
+        },
+        "tags": [
+          "Breeds"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "BreedsController_findAll",
+        "summary": "品種データを検索・一覧取得",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "ページ番号",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "1ページあたりの件数",
+            "schema": {
+              "default": 50,
+              "example": 50,
+              "type": "number"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "検索キーワード",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "ソート項目",
+            "schema": {
+              "default": "name",
+              "example": "name",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "required": false,
+            "in": "query",
+            "description": "ソート順",
+            "schema": {
+              "default": "asc",
+              "example": "asc",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "品種データの一覧"
+          }
+        },
+        "tags": [
+          "Breeds"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/breeds/statistics": {
+      "get": {
+        "operationId": "BreedsController_getStatistics",
+        "summary": "品種データの統計情報を取得",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "統計情報"
+          }
+        },
+        "tags": [
+          "Breeds"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/breeds/{id}": {
+      "get": {
+        "operationId": "BreedsController_findOne",
+        "summary": "IDで品種データを取得",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "品種データのID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "品種データ"
+          },
+          "404": {
+            "description": "品種データが見つかりません"
+          }
+        },
+        "tags": [
+          "Breeds"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "BreedsController_update",
+        "summary": "品種データを更新（管理者のみ）",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "品種データのID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBreedDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "品種データが正常に更新されました"
+          },
+          "400": {
+            "description": "無効なデータです"
+          },
+          "403": {
+            "description": "管理者権限が必要です"
+          },
+          "404": {
+            "description": "品種データが見つかりません"
+          }
+        },
+        "tags": [
+          "Breeds"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "BreedsController_remove",
+        "summary": "品種データを削除（管理者のみ）",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "品種データのID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "品種データが正常に削除されました"
+          },
+          "403": {
+            "description": "管理者権限が必要です"
+          },
+          "404": {
+            "description": "品種データが見つかりません"
+          }
+        },
+        "tags": [
+          "Breeds"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/coat-colors": {
+      "post": {
+        "operationId": "CoatColorsController_create",
+        "summary": "毛色データを作成（管理者のみ）",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCoatColorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "毛色データが正常に作成されました"
+          },
+          "400": {
+            "description": "無効なデータです"
+          },
+          "403": {
+            "description": "管理者権限が必要です"
+          }
+        },
+        "tags": [
+          "Coat Colors"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "CoatColorsController_findAll",
+        "summary": "毛色データを検索・一覧取得",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "ページ番号",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "1ページあたりの件数",
+            "schema": {
+              "default": 50,
+              "example": 50,
+              "type": "number"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "検索キーワード",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "ソート項目",
+            "schema": {
+              "default": "name",
+              "example": "name",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "required": false,
+            "in": "query",
+            "description": "ソート順",
+            "schema": {
+              "default": "asc",
+              "example": "asc",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "毛色データの一覧"
+          }
+        },
+        "tags": [
+          "Coat Colors"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/coat-colors/statistics": {
+      "get": {
+        "operationId": "CoatColorsController_getStatistics",
+        "summary": "毛色データの統計情報を取得",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "統計情報"
+          }
+        },
+        "tags": [
+          "Coat Colors"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/coat-colors/{id}": {
+      "get": {
+        "operationId": "CoatColorsController_findOne",
+        "summary": "IDで毛色データを取得",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "毛色データのID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "毛色データ"
+          },
+          "404": {
+            "description": "毛色データが見つかりません"
+          }
+        },
+        "tags": [
+          "Coat Colors"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "CoatColorsController_update",
+        "summary": "毛色データを更新（管理者のみ）",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "毛色データのID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCoatColorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "毛色データが正常に更新されました"
+          },
+          "400": {
+            "description": "無効なデータです"
+          },
+          "403": {
+            "description": "管理者権限が必要です"
+          },
+          "404": {
+            "description": "毛色データが見つかりません"
+          }
+        },
+        "tags": [
+          "Coat Colors"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "CoatColorsController_remove",
+        "summary": "毛色データを削除（管理者のみ）",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "毛色データのID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "毛色データが正常に削除されました"
+          },
+          "403": {
+            "description": "管理者権限が必要です"
+          },
+          "404": {
+            "description": "毛色データが見つかりません"
+          }
+        },
+        "tags": [
+          "Coat Colors"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/breeding": {
+      "get": {
+        "operationId": "BreedingController_findAll",
+        "summary": "交配記録一覧の取得",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "motherId",
+            "required": false,
+            "in": "query",
+            "description": "母猫ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fatherId",
+            "required": false,
+            "in": "query",
+            "description": "父猫ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "description": "開始日(YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "description": "終了日(YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "createdAt",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "desc",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ]
+      },
+      "post": {
+        "operationId": "BreedingController_create",
+        "summary": "交配記録の新規作成",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBreedingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/breeding/{id}": {
+      "patch": {
+        "operationId": "BreedingController_update",
+        "summary": "交配記録の更新",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBreedingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "BreedingController_remove",
+        "summary": "交配記録の削除",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Breeding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/care/schedules": {
+      "get": {
+        "operationId": "CareController_findSchedules",
+        "summary": "ケアスケジュール一覧の取得",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "catId",
+            "required": false,
+            "in": "query",
+            "description": "猫ID",
+            "schema": {
+              "example": "e7b6a7a7-2d7f-4b2f-9f3a-1c2b3d4e5f60",
+              "type": "string"
+            }
+          },
+          {
+            "name": "careType",
+            "required": false,
+            "in": "query",
+            "description": "ケア種別",
+            "schema": {
+              "example": "VACCINATION",
+              "enum": [
+                "VACCINATION",
+                "HEALTH_CHECK",
+                "GROOMING",
+                "DENTAL_CARE",
+                "MEDICATION",
+                "SURGERY",
+                "OTHER"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "description": "開始日 (YYYY-MM-DD)",
+            "schema": {
+              "example": "2025-08-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "description": "終了日 (YYYY-MM-DD)",
+            "schema": {
+              "example": "2025-08-31",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Care"
+        ]
+      },
+      "post": {
+        "operationId": "CareController_addSchedule",
+        "summary": "ケアスケジュールの追加",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCareScheduleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Care"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/care/schedules/{id}/complete": {
+      "patch": {
+        "operationId": "CareController_complete",
+        "summary": "ケア完了処理（PATCH/PUT対応）",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteCareDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Care"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tags": {
+      "get": {
+        "operationId": "TagsController_findAll",
+        "summary": "タグ一覧の取得",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Tags"
+        ]
+      },
+      "post": {
+        "operationId": "TagsController_create",
+        "summary": "タグの作成",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Tags"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tags/{id}": {
+      "delete": {
+        "operationId": "TagsController_remove",
+        "summary": "タグの削除",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Tags"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tags/cats/{id}/tags": {
+      "post": {
+        "operationId": "TagsController_assign",
+        "summary": "猫にタグを付与",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "付与成功（重複時もOK）"
+          }
+        },
+        "tags": [
+          "Tags"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tags/cats/{id}/tags/{tagId}": {
+      "delete": {
+        "operationId": "TagsController_unassign",
+        "summary": "猫からタグを剥奪",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tagId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Tags"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    }
+  },
+  "info": {
+    "title": "Cat Management System API",
+    "description": "API for managing cat breeding and care records",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "ログインに使用するメールアドレス",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "description": "パスワード (8文字以上推奨)",
+            "example": "SecurePassword123!",
+            "minLength": 6
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "ChangePasswordDto": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "description": "現在のパスワード",
+            "example": "oldPassword123!"
+          },
+          "newPassword": {
+            "type": "string",
+            "description": "新しいパスワード（8文字以上、大文字・小文字・数字・特殊文字を含む）",
+            "example": "NewSecurePassword123!",
+            "minLength": 8
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ]
+      },
+      "RequestPasswordResetDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "メールアドレス",
+            "example": "user@example.com"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "ResetPasswordDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "パスワードリセットトークン",
+            "example": "a1b2c3d4e5f6..."
+          },
+          "newPassword": {
+            "type": "string",
+            "description": "新しいパスワード",
+            "example": "NewSecurePassword123!"
+          }
+        },
+        "required": [
+          "token",
+          "newPassword"
+        ]
+      },
+      "RefreshTokenDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "リフレッシュトークン (Cookie利用時は省略可)",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          }
+        }
+      },
+      "CreateCatDto": {
+        "type": "object",
+        "properties": {
+          "registrationId": {
+            "type": "string",
+            "description": "登録ID",
+            "example": "REG-ALPHA"
+          },
+          "name": {
+            "type": "string",
+            "description": "猫の名前",
+            "example": "Alpha"
+          },
+          "breedId": {
+            "type": "string",
+            "description": "品種ID"
+          },
+          "colorId": {
+            "type": "string",
+            "description": "毛色ID"
+          },
+          "pattern": {
+            "type": "string",
+            "description": "パターン"
+          },
+          "gender": {
+            "type": "string",
+            "description": "性別 (マスター名称またはキー)",
+            "enum": [
+              "MALE",
+              "FEMALE",
+              "NEUTER",
+              "SPAY",
+              "1",
+              "2",
+              "3",
+              "4"
+            ],
+            "example": "MALE"
+          },
+          "birthDate": {
+            "type": "string",
+            "description": "生年月日",
+            "example": "2024-05-01"
+          },
+          "weight": {
+            "type": "number",
+            "description": "体重 (kg)"
+          },
+          "microchipId": {
+            "type": "string",
+            "description": "マイクロチップID"
+          },
+          "fatherId": {
+            "type": "string",
+            "description": "父猫のID"
+          },
+          "motherId": {
+            "type": "string",
+            "description": "母猫のID"
+          },
+          "imageUrl": {
+            "type": "string",
+            "description": "写真URL"
+          },
+          "notes": {
+            "type": "string",
+            "description": "備考"
+          }
+        },
+        "required": [
+          "registrationId",
+          "name",
+          "gender",
+          "birthDate"
+        ]
+      },
+      "UpdateCatDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreatePedigreeDto": {
+        "type": "object",
+        "properties": {
+          "pedigreeId": {
+            "type": "string",
+            "description": "血統書番号"
+          },
+          "catName": {
+            "type": "string",
+            "description": "猫の名前"
+          },
+          "title": {
+            "type": "string",
+            "description": "タイトル"
+          },
+          "catName2": {
+            "type": "string",
+            "description": "キャッテリー名"
+          },
+          "gender": {
+            "type": "number",
+            "description": "性別 (1: オス, 2: メス)"
+          },
+          "eyeColor": {
+            "type": "string",
+            "description": "目の色"
+          },
+          "birthDate": {
+            "type": "string",
+            "description": "生年月日"
+          },
+          "registrationDate": {
+            "type": "string",
+            "description": "登録年月日"
+          },
+          "breederName": {
+            "type": "string",
+            "description": "ブリーダー名"
+          },
+          "ownerName": {
+            "type": "string",
+            "description": "オーナー名"
+          },
+          "brotherCount": {
+            "type": "number",
+            "description": "兄弟の人数"
+          },
+          "sisterCount": {
+            "type": "number",
+            "description": "姉妹の人数"
+          },
+          "notes": {
+            "type": "string",
+            "description": "備考"
+          },
+          "notes2": {
+            "type": "string",
+            "description": "備考２"
+          },
+          "otherNo": {
+            "type": "string",
+            "description": "他団体No"
+          },
+          "oldCode": {
+            "type": "string",
+            "description": "旧コード"
+          },
+          "catId": {
+            "type": "string",
+            "description": "関連する猫のID"
+          },
+          "breedId": {
+            "type": "string",
+            "description": "品種ID"
+          },
+          "colorId": {
+            "type": "string",
+            "description": "毛色ID"
+          },
+          "pedigreeIssueDate": {
+            "type": "string",
+            "description": "血統書発行日"
+          },
+          "breedCode": {
+            "type": "number",
+            "description": "品種コード"
+          },
+          "coatColorCode": {
+            "type": "number",
+            "description": "毛色コード"
+          },
+          "fatherPedigreeId": {
+            "type": "string",
+            "description": "父の血統書ID"
+          },
+          "motherPedigreeId": {
+            "type": "string",
+            "description": "母の血統書ID"
+          },
+          "paternalGrandfatherId": {
+            "type": "string",
+            "description": "父方祖父の血統書ID"
+          },
+          "paternalGrandmotherId": {
+            "type": "string",
+            "description": "父方祖母の血統書ID"
+          },
+          "maternalGrandfatherId": {
+            "type": "string",
+            "description": "母方祖父の血統書ID"
+          },
+          "maternalGrandmotherId": {
+            "type": "string",
+            "description": "母方祖母の血統書ID"
+          }
+        },
+        "required": [
+          "pedigreeId",
+          "catName"
+        ]
+      },
+      "UpdatePedigreeDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateBreedDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "number",
+            "description": "品種コード"
+          },
+          "name": {
+            "type": "string",
+            "description": "品種名"
+          },
+          "description": {
+            "type": "string",
+            "description": "品種の説明"
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ]
+      },
+      "UpdateBreedDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateCoatColorDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "number",
+            "description": "毛色コード"
+          },
+          "name": {
+            "type": "string",
+            "description": "毛色名"
+          },
+          "description": {
+            "type": "string",
+            "description": "毛色の説明"
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ]
+      },
+      "UpdateCoatColorDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateBreedingDto": {
+        "type": "object",
+        "properties": {
+          "motherId": {
+            "type": "string",
+            "description": "母猫のID",
+            "example": "11111111-1111-1111-1111-111111111111"
+          },
+          "fatherId": {
+            "type": "string",
+            "description": "父猫のID",
+            "example": "22222222-2222-2222-2222-222222222222"
+          },
+          "matingDate": {
+            "type": "string",
+            "description": "交配日",
+            "example": "2025-08-01"
+          },
+          "expectedBirthDate": {
+            "type": "string",
+            "description": "出産予定日 (YYYY-MM-DD)",
+            "example": "2025-10-01"
+          },
+          "notes": {
+            "type": "string",
+            "description": "メモ",
+            "example": "初回の交配。"
+          }
+        },
+        "required": [
+          "motherId",
+          "fatherId",
+          "matingDate"
+        ]
+      },
+      "UpdateBreedingDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateCareScheduleDto": {
+        "type": "object",
+        "properties": {
+          "catId": {
+            "type": "string",
+            "description": "猫ID",
+            "example": "e7b6a7a7-2d7f-4b2f-9f3a-1c2b3d4e5f60"
+          },
+          "careType": {
+            "type": "string",
+            "description": "ケア種別",
+            "enum": [
+              "VACCINATION",
+              "HEALTH_CHECK",
+              "GROOMING",
+              "DENTAL_CARE",
+              "MEDICATION",
+              "SURGERY",
+              "OTHER"
+            ],
+            "example": "HEALTH_CHECK"
+          },
+          "scheduledDate": {
+            "type": "string",
+            "description": "予定日 (ISO8601)",
+            "example": "2025-09-01"
+          },
+          "description": {
+            "type": "string",
+            "description": "ケア名/詳細",
+            "example": "健康診断 (年1回)"
+          }
+        },
+        "required": [
+          "catId",
+          "careType",
+          "scheduledDate"
+        ]
+      },
+      "CompleteCareDto": {
+        "type": "object",
+        "properties": {
+          "completedDate": {
+            "type": "string",
+            "description": "完了日 (YYYY-MM-DD)",
+            "example": "2025-08-10"
+          },
+          "nextScheduledDate": {
+            "type": "string",
+            "description": "次回予定日 (YYYY-MM-DD)",
+            "example": "2026-08-10"
+          },
+          "notes": {
+            "type": "string",
+            "description": "メモ",
+            "example": "体調良好。次回はワクチンA。"
+          }
+        }
+      },
+      "CreateTagDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "タグ名",
+            "example": "Indoor"
+          },
+          "color": {
+            "type": "string",
+            "description": "カラーコード",
+            "example": "#3B82F6"
+          },
+          "description": {
+            "type": "string",
+            "description": "説明",
+            "example": "室内飼いタグ"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "AssignTagDto": {
+        "type": "object",
+        "properties": {
+          "tagId": {
+            "type": "string",
+            "description": "タグID",
+            "example": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+          }
+        },
+        "required": [
+          "tagId"
+        ]
+      }
+    }
+  }
+}

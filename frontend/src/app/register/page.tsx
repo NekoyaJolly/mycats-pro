@@ -4,8 +4,8 @@
 
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Container,
   Paper,
@@ -22,7 +22,9 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { IconAlertCircle, IconCheck } from '@tabler/icons-react';
-import { apiClient } from '@/lib/api/client';
+import { apiClient, type ApiRequestBody } from '@/lib/api/client';
+
+type RegisterRequestBody = ApiRequestBody<'/auth/register', 'post'>;
 
 interface RegisterFormValues {
   email: string;
@@ -30,20 +32,21 @@ interface RegisterFormValues {
   confirmPassword: string;
 }
 
-interface RegisterResponse {
-  success: boolean;
-  message: string;
-  data?: {
-    id: string;
-    email: string;
-  };
-}
-
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  const returnTo = searchParams?.get('returnTo') ?? null;
+  const targetPath = useMemo(() => {
+    if (!returnTo || !returnTo.startsWith('/') || returnTo.startsWith('//')) {
+      return '/';
+    }
+    const disallowed = ['/login', '/register'];
+    return disallowed.includes(returnTo) ? '/' : returnTo;
+  }, [returnTo]);
 
   // フォーム設定
   const form = useForm<RegisterFormValues>({
@@ -77,23 +80,32 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      const response = await apiClient.post<RegisterResponse>('/auth/register', {
+      const payload: RegisterRequestBody = {
         email: values.email,
         password: values.password,
+      };
+
+      const response = await apiClient.post('/auth/register', {
+        body: payload,
+        retryOnUnauthorized: false,
       });
 
       if (response.success) {
         setSuccess(true);
         // 3秒後にログインページへリダイレクト
         setTimeout(() => {
-          router.push('/login');
+          if (returnTo && targetPath !== '/') {
+            router.push(`/login?returnTo=${encodeURIComponent(targetPath)}`);
+          } else {
+            router.push('/login');
+          }
         }, 3000);
       } else {
         setError(response.message || '登録に失敗しました');
       }
     } catch (err) {
       console.error('Registration error:', err);
-      setError('登録中にエラーが発生しました。もう一度お試しください。');
+  setError(err instanceof Error ? err.message : '登録中にエラーが発生しました。もう一度お試しください。');
     } finally {
       setIsSubmitting(false);
     }
@@ -211,7 +223,13 @@ export default function RegisterPage() {
                       <Anchor
                         component="button"
                         type="button"
-                        onClick={() => router.push('/login')}
+                        onClick={() => {
+                          if (returnTo && targetPath !== '/') {
+                            router.push(`/login?returnTo=${encodeURIComponent(targetPath)}`);
+                          } else {
+                            router.push('/login');
+                          }
+                        }}
                         fw={500}
                         style={{ color: 'var(--accent)' }}
                       >

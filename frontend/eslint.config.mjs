@@ -161,7 +161,8 @@ const eslintConfig = [
       "**/*page_new.tsx",
       "**/*_old.ts",
       "*.config.js",
-      "*.config.mjs"
+      "*.config.mjs",
+      "src/lib/api/generated/**"
     ]
   }
 ];

@@ -1,5 +1,8 @@
 /**
  * API utility functions and configuration
+ *
+ * @deprecated 新規コードでは `src/lib/api/client.ts` の `apiClient` と React Query フックを利用してください。
+ * このモジュールはレガシー互換用途のみに残されており、段階的に削除予定です。
  */
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004/api/v1';

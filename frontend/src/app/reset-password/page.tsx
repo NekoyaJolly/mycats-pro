@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Container, Paper, Title, Text, PasswordInput, Button, Alert, Group, Anchor } from '@mantine/core';
 import { IconLock, IconCheck, IconAlertCircle } from '@tabler/icons-react';
 import Link from 'next/link';
+import { usePasswordResetActions, usePasswordResetSelectors } from '@/lib/auth/password-reset-store';
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -12,65 +13,52 @@ function ResetPasswordForm() {
   const [token, setToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const { resetStatus, resetError } = usePasswordResetSelectors();
+  const { resetPassword, resetResetState, resetRequestState } = usePasswordResetActions();
+  const [localError, setLocalError] = useState<string | null>(null);
+  const loading = resetStatus === 'loading';
+  const success = resetStatus === 'success';
 
   useEffect(() => {
     const tokenParam = searchParams.get('token');
     if (tokenParam) {
       setToken(tokenParam);
     } else {
-      setError('リセットトークンが見つかりません');
+      resetResetState();
+      setLocalError('リセットトークンが見つかりません');
     }
-  }, [searchParams]);
+    return () => {
+      resetResetState();
+      resetRequestState();
+    };
+  }, [searchParams, resetRequestState, resetResetState]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setLocalError(null);
 
     if (newPassword !== confirmPassword) {
-      setError('パスワードが一致しません');
+      setLocalError('パスワードが一致しません');
       return;
     }
 
     if (newPassword.length < 8) {
-      setError('パスワードは8文字以上である必要があります');
+      setLocalError('パスワードは8文字以上である必要があります');
       return;
     }
 
-    setLoading(true);
-
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004/api/v1'}/auth/reset-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token, newPassword }),
-      });
+      await resetPassword({ token, newPassword });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'リセットに失敗しました');
-      }
-
-      setSuccess(true);
-      
-      // 3秒後にログインページへリダイレクト
       setTimeout(() => {
         router.push('/login');
       }, 3000);
-
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'エラーが発生しました');
-    } finally {
-      setLoading(false);
+      setLocalError(err instanceof Error ? err.message : 'エラーが発生しました');
     }
   };
 
-  if (!token && !error) {
+  if (!token && !localError && !resetError) {
     return (
       <Container size="xs" style={{ marginTop: '5rem' }}>
         <Paper shadow="md" p="xl" radius="md">
@@ -108,9 +96,9 @@ function ResetPasswordForm() {
           新しいパスワードを入力してください
         </Text>
 
-        {error && (
+        {(localError || resetError) && (
           <Alert icon={<IconAlertCircle size={16} />} title="エラー" color="red" mb="lg">
-            {error}
+            {localError || resetError}
           </Alert>
         )}
 
