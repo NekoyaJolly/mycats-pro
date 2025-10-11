@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -22,7 +23,6 @@ import {
   BreedingNgRuleListResponse,
   BreedingNgRuleResponse,
 } from "./types/breeding.types";
-import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class BreedingService {

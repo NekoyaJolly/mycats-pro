@@ -4,7 +4,12 @@
 
 import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
-import { apiClient, type ApiPathParams, type ApiQueryParams, type ApiRequestBody } from '../client';
+import {
+  apiClient,
+  type ApiPathParams,
+  type ApiQueryParams,
+  type ApiRequestBody,
+} from '../client';
 import { createDomainQueryKeys } from './query-key-factory';
 
 export type CareType =
@@ -16,19 +21,26 @@ export type CareType =
   | 'SURGERY'
   | 'OTHER';
 
+export type CareScheduleStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+
+export interface CareScheduleCat {
+  id: string;
+  name: string;
+}
+
 export interface CareSchedule {
   id: string;
+  name: string;
   title: string;
-  description?: string | null;
+  description: string | null;
   scheduleDate: string;
   scheduleType: 'CARE' | string;
-  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-  catId?: string | null;
+  status: CareScheduleStatus;
+  careType: CareType | null;
   assignedTo: string;
   createdAt: string;
   updatedAt: string;
-  cat?: { id: string; name: string } | null;
+  cat: CareScheduleCat | null;
 }
 
 export interface CareScheduleMeta {
@@ -38,18 +50,24 @@ export interface CareScheduleMeta {
   totalPages: number;
 }
 
-export type GetCareSchedulesParams = ApiQueryParams<'/care/schedules', 'get'>;
-
 export interface CareScheduleListResponse {
   success: boolean;
-  data?: CareSchedule[];
-  meta?: CareScheduleMeta;
-  message?: string;
-  error?: string;
+  data: CareSchedule[];
+  meta: CareScheduleMeta;
 }
 
+export interface CareScheduleResponse {
+  success: boolean;
+  data: CareSchedule;
+}
+
+export type GetCareSchedulesParams = ApiQueryParams<'/care/schedules', 'get'>;
 export type CreateCareScheduleRequest = ApiRequestBody<'/care/schedules', 'post'>;
 export type CompleteCareScheduleRequest = ApiRequestBody<'/care/schedules/{id}/complete', 'patch'>;
+
+type CreateCareSchedulePayload = CreateCareScheduleRequest & {
+  name: string;
+};
 
 const careScheduleKeys = createDomainQueryKeys<string, GetCareSchedulesParams>('care-schedules');
 
@@ -73,10 +91,10 @@ export function useAddCareSchedule() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: CreateCareScheduleRequest) =>
+    mutationFn: (payload: CreateCareSchedulePayload) =>
       apiClient.post('/care/schedules', {
-        body: payload,
-      }),
+        body: payload as CreateCareScheduleRequest,
+      }) as Promise<CareScheduleResponse>,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: careScheduleKeys.lists() });
       notifications.show({
@@ -95,16 +113,22 @@ export function useAddCareSchedule() {
   });
 }
 
-export function useCompleteCareSchedule(id: string) {
+export function useCompleteCareSchedule() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: CompleteCareScheduleRequest) =>
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: CompleteCareScheduleRequest;
+    }) =>
       apiClient.patch('/care/schedules/{id}/complete', {
         pathParams: { id } as ApiPathParams<'/care/schedules/{id}/complete', 'patch'>,
         body: payload,
       }),
-    onSuccess: (_response) => {
+    onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: careScheduleKeys.lists() });
       notifications.show({
         title: 'ケア予定を完了しました',

@@ -22,9 +22,14 @@ import { GetUser } from "../auth/get-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
 import { CareService } from "./care.service";
-import { CareQueryDto } from "./dto/care-query.dto";
-import { CompleteCareDto } from "./dto/complete-care.dto";
-import { CreateCareScheduleDto } from "./dto/create-care-schedule.dto";
+import {
+  CareCompleteResponseDto,
+  CareQueryDto,
+  CareScheduleListResponseDto,
+  CareScheduleResponseDto,
+  CompleteCareDto,
+  CreateCareScheduleDto,
+} from "./dto";
 
 @ApiTags("Care")
 @Controller("care")
@@ -33,7 +38,7 @@ export class CareController {
 
   @Get("schedules")
   @ApiOperation({ summary: "ケアスケジュール一覧の取得" })
-  @ApiResponse({ status: HttpStatus.OK })
+  @ApiResponse({ status: HttpStatus.OK, type: CareScheduleListResponseDto })
   findSchedules(@Query() query: CareQueryDto) {
     return this.careService.findSchedules(query);
   }
@@ -42,7 +47,7 @@ export class CareController {
   @UseGuards(JwtAuthGuard)
   @Post("schedules")
   @ApiOperation({ summary: "ケアスケジュールの追加" })
-  @ApiResponse({ status: HttpStatus.CREATED })
+  @ApiResponse({ status: HttpStatus.CREATED, type: CareScheduleResponseDto })
   addSchedule(
     @Body() dto: CreateCareScheduleDto,
     @GetUser() user?: RequestUser,
@@ -55,7 +60,7 @@ export class CareController {
   @Patch("schedules/:id/complete")
   @Put("schedules/:id/complete")
   @ApiOperation({ summary: "ケア完了処理（PATCH/PUT対応）" })
-  @ApiResponse({ status: HttpStatus.OK })
+  @ApiResponse({ status: HttpStatus.OK, type: CareCompleteResponseDto })
   @ApiParam({ name: "id" })
   complete(
     @Param("id") id: string,
