@@ -519,7 +519,7 @@ export class CareService {
         catId,
         scheduleId: dto.scheduleId ?? defaults.scheduleId,
         recordedBy: recorderId,
-        visitDate: new Date(dto.visitDate ?? dto.followUpDate ?? new Date().toISOString()),
+        visitDate: new Date(dto.visitDate ?? dto.followUpDate ?? new Date()),
         visitType: dto.visitType ?? null,
         clinicName: dto.clinicName,
         veterinarianName: dto.veterinarianName,
