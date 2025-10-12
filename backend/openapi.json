@@ -1788,7 +1788,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareScheduleListResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1811,7 +1818,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareScheduleResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1850,7 +1864,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareCompleteResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1867,7 +1888,29 @@
       "get": {
         "operationId": "TagsController_findAll",
         "summary": "タグ一覧の取得",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "includeInactive",
+            "required": false,
+            "in": "query",
+            "description": "非アクティブなタグを含めるか",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "description": "対象スコープ",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": ""
@@ -1906,7 +1949,74 @@
         ]
       }
     },
+    "/api/v1/tags/reorder": {
+      "patch": {
+        "operationId": "TagsController_reorder",
+        "summary": "タグの並び替え",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderTagsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Tags"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/tags/{id}": {
+      "patch": {
+        "operationId": "TagsController_update",
+        "summary": "タグの更新",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Tags"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
       "delete": {
         "operationId": "TagsController_remove",
         "summary": "タグの削除",
@@ -1998,6 +2108,167 @@
         ],
         "responses": {
           "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Tags"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tags/categories": {
+      "get": {
+        "operationId": "TagCategoriesController_findAll",
+        "summary": "タグカテゴリ一覧の取得",
+        "parameters": [
+          {
+            "name": "includeInactive",
+            "required": false,
+            "in": "query",
+            "description": "非アクティブカテゴリを含める",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "description": "対象スコープ",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Tags"
+        ]
+      },
+      "post": {
+        "operationId": "TagCategoriesController_create",
+        "summary": "タグカテゴリの作成",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTagCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Tags"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tags/categories/reorder": {
+      "patch": {
+        "operationId": "TagCategoriesController_reorder",
+        "summary": "タグカテゴリの並び替え",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderTagCategoriesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Tags"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tags/categories/{id}": {
+      "patch": {
+        "operationId": "TagCategoriesController_update",
+        "summary": "タグカテゴリの更新",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTagCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Tags"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "TagCategoriesController_remove",
+        "summary": "タグカテゴリの削除",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
             "description": ""
           }
         },
@@ -2487,6 +2758,421 @@
         "type": "object",
         "properties": {}
       },
+      "CareScheduleCatDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "e7b6a7a7-2d7f-4b2f-9f3a-1c2b3d4e5f60"
+          },
+          "name": {
+            "type": "string",
+            "example": "レオ"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "CareScheduleReminderDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "f1e2d3c4-b5a6-7890-1234-56789abcdef0"
+          },
+          "timingType": {
+            "type": "string",
+            "enum": [
+              "ABSOLUTE",
+              "RELATIVE"
+            ],
+            "example": "ABSOLUTE"
+          },
+          "remindAt": {
+            "type": "string",
+            "example": "2025-08-01T09:00:00.000Z"
+          },
+          "offsetValue": {
+            "type": "number",
+            "example": 2
+          },
+          "offsetUnit": {
+            "type": "string",
+            "enum": [
+              "MINUTE",
+              "HOUR",
+              "DAY",
+              "WEEK",
+              "MONTH"
+            ],
+            "example": "DAY"
+          },
+          "relativeTo": {
+            "type": "string",
+            "enum": [
+              "START_DATE",
+              "END_DATE",
+              "CUSTOM_DATE"
+            ],
+            "example": "START_DATE"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "IN_APP",
+              "EMAIL",
+              "SMS",
+              "PUSH"
+            ],
+            "example": "IN_APP"
+          },
+          "repeatFrequency": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "DAILY",
+              "WEEKLY",
+              "MONTHLY",
+              "YEARLY",
+              "CUSTOM"
+            ],
+            "example": "NONE"
+          },
+          "repeatInterval": {
+            "type": "number",
+            "example": 1
+          },
+          "repeatCount": {
+            "type": "number",
+            "example": 5
+          },
+          "repeatUntil": {
+            "type": "string",
+            "example": "2025-12-31T00:00:00.000Z"
+          },
+          "notes": {
+            "type": "string",
+            "example": "前日9時に通知"
+          },
+          "isActive": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "id",
+          "timingType",
+          "channel",
+          "isActive"
+        ]
+      },
+      "CareScheduleTagDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+          },
+          "slug": {
+            "type": "string",
+            "example": "vaccination"
+          },
+          "label": {
+            "type": "string",
+            "example": "ワクチン"
+          },
+          "level": {
+            "type": "number",
+            "example": 1
+          },
+          "parentId": {
+            "type": "string",
+            "example": "parent-tag-id"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "label",
+          "level"
+        ]
+      },
+      "CareScheduleItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "a6f7e52f-4a3b-4a76-9870-1234567890ab"
+          },
+          "name": {
+            "type": "string",
+            "example": "年次健康診断"
+          },
+          "title": {
+            "type": "string",
+            "example": "年次健康診断"
+          },
+          "description": {
+            "type": "string",
+            "example": "毎年の定期健診"
+          },
+          "scheduleDate": {
+            "type": "string",
+            "example": "2025-09-01T00:00:00.000Z"
+          },
+          "endDate": {
+            "type": "string",
+            "example": "2025-09-01T01:00:00.000Z"
+          },
+          "timezone": {
+            "type": "string",
+            "example": "Asia/Tokyo"
+          },
+          "scheduleType": {
+            "type": "string",
+            "enum": [
+              "BREEDING",
+              "CARE",
+              "APPOINTMENT",
+              "REMINDER",
+              "MAINTENANCE"
+            ],
+            "example": "CARE"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ],
+            "example": "PENDING"
+          },
+          "careType": {
+            "type": "string",
+            "enum": [
+              "VACCINATION",
+              "HEALTH_CHECK",
+              "GROOMING",
+              "DENTAL_CARE",
+              "MEDICATION",
+              "SURGERY",
+              "OTHER"
+            ],
+            "example": "HEALTH_CHECK",
+            "nullable": true
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "URGENT"
+            ],
+            "example": "MEDIUM"
+          },
+          "recurrenceRule": {
+            "type": "string",
+            "example": "FREQ=YEARLY;INTERVAL=1"
+          },
+          "assignedTo": {
+            "type": "string",
+            "example": "f3a2c1d7-1234-5678-90ab-cdef12345678"
+          },
+          "cat": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CareScheduleCatDto"
+              }
+            ]
+          },
+          "reminders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CareScheduleReminderDto"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CareScheduleTagDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2025-08-01T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "example": "2025-08-15T12:34:56.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "title",
+          "description",
+          "scheduleDate",
+          "scheduleType",
+          "status",
+          "careType",
+          "priority",
+          "assignedTo",
+          "cat",
+          "reminders",
+          "tags",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CareScheduleMetaDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "example": 20
+          },
+          "totalPages": {
+            "type": "number",
+            "example": 3
+          }
+        },
+        "required": [
+          "total",
+          "page",
+          "limit",
+          "totalPages"
+        ]
+      },
+      "CareScheduleListResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CareScheduleItemDto"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/CareScheduleMetaDto"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "meta"
+        ]
+      },
+      "ScheduleReminderDto": {
+        "type": "object",
+        "properties": {
+          "timingType": {
+            "type": "string",
+            "enum": [
+              "ABSOLUTE",
+              "RELATIVE"
+            ]
+          },
+          "remindAt": {
+            "type": "string",
+            "description": "指定日時 (ISO8601)",
+            "example": "2025-08-01T09:00:00.000Z"
+          },
+          "offsetValue": {
+            "type": "number",
+            "description": "相対リマインドの値",
+            "example": 2
+          },
+          "offsetUnit": {
+            "type": "string",
+            "enum": [
+              "MINUTE",
+              "HOUR",
+              "DAY",
+              "WEEK",
+              "MONTH"
+            ],
+            "example": "DAY"
+          },
+          "relativeTo": {
+            "type": "string",
+            "enum": [
+              "START_DATE",
+              "END_DATE",
+              "CUSTOM_DATE"
+            ],
+            "example": "START_DATE"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "IN_APP",
+              "EMAIL",
+              "SMS",
+              "PUSH"
+            ],
+            "example": "IN_APP"
+          },
+          "repeatFrequency": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "DAILY",
+              "WEEKLY",
+              "MONTHLY",
+              "YEARLY",
+              "CUSTOM"
+            ],
+            "example": "NONE"
+          },
+          "repeatInterval": {
+            "type": "number",
+            "description": "繰り返し間隔",
+            "example": 1
+          },
+          "repeatCount": {
+            "type": "number",
+            "description": "繰り返し回数",
+            "example": 5
+          },
+          "repeatUntil": {
+            "type": "string",
+            "description": "繰り返し終了日時",
+            "example": "2025-12-31T00:00:00.000Z"
+          },
+          "notes": {
+            "type": "string",
+            "description": "備考",
+            "example": "前日9時に通知"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "有効フラグ",
+            "example": true
+          }
+        },
+        "required": [
+          "timingType",
+          "channel"
+        ]
+      },
       "CreateCareScheduleDto": {
         "type": "object",
         "properties": {
@@ -2494,6 +3180,11 @@
             "type": "string",
             "description": "猫ID",
             "example": "e7b6a7a7-2d7f-4b2f-9f3a-1c2b3d4e5f60"
+          },
+          "name": {
+            "type": "string",
+            "description": "ケア名",
+            "example": "年次健康診断"
           },
           "careType": {
             "type": "string",
@@ -2514,17 +3205,77 @@
             "description": "予定日 (ISO8601)",
             "example": "2025-09-01"
           },
+          "endDate": {
+            "type": "string",
+            "description": "終了日時 (ISO8601)",
+            "example": "2025-09-01T10:00:00.000Z"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "タイムゾーン",
+            "example": "Asia/Tokyo"
+          },
           "description": {
             "type": "string",
             "description": "ケア名/詳細",
             "example": "健康診断 (年1回)"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "URGENT"
+            ],
+            "example": "MEDIUM"
+          },
+          "recurrenceRule": {
+            "type": "string",
+            "description": "RRULE形式などの繰り返しルール",
+            "example": "FREQ=YEARLY;INTERVAL=1"
+          },
+          "reminders": {
+            "description": "リマインダー設定",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduleReminderDto"
+            }
+          },
+          "careTagIds": {
+            "description": "関連ケアタグID (最大3階層)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
           "catId",
+          "name",
           "careType",
           "scheduledDate"
         ]
+      },
+      "CareScheduleResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/CareScheduleItemDto"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "CompleteCareMedicalRecordDto": {
+        "type": "object",
+        "properties": {}
       },
       "CompleteCareDto": {
         "type": "object",
@@ -2543,8 +3294,32 @@
             "type": "string",
             "description": "メモ",
             "example": "体調良好。次回はワクチンA。"
+          },
+          "medicalRecord": {
+            "$ref": "#/components/schemas/CompleteCareMedicalRecordDto"
           }
         }
+      },
+      "CareCompleteResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "example": {
+              "scheduleId": "a6f7e52f-4a3b-4a76-9870-1234567890ab",
+              "recordId": "bcdef123-4567-890a-bcde-f1234567890a",
+              "medicalRecordId": "f1234567-89ab-cdef-0123-456789abcdef"
+            }
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
       },
       "CreateTagDto": {
         "type": "object",
@@ -2553,6 +3328,11 @@
             "type": "string",
             "description": "タグ名",
             "example": "Indoor"
+          },
+          "categoryId": {
+            "type": "string",
+            "description": "カテゴリID",
+            "example": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
           },
           "color": {
             "type": "string",
@@ -2563,11 +3343,123 @@
             "type": "string",
             "description": "説明",
             "example": "室内飼いタグ"
+          },
+          "allowsManual": {
+            "type": "boolean",
+            "description": "手動操作で利用可能か",
+            "example": true
+          },
+          "allowsAutomation": {
+            "type": "boolean",
+            "description": "自動ルールで利用可能か",
+            "example": true
+          },
+          "displayOrder": {
+            "type": "number",
+            "description": "表示順",
+            "example": 10
+          },
+          "metadata": {
+            "type": "object",
+            "description": "任意のメタデータ"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "アクティブかどうか",
+            "example": true
           }
         },
         "required": [
-          "name"
+          "name",
+          "categoryId"
         ]
+      },
+      "TagOrderItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "タグID",
+            "format": "uuid"
+          },
+          "displayOrder": {
+            "type": "number",
+            "description": "表示順",
+            "example": 12
+          },
+          "categoryId": {
+            "type": "string",
+            "description": "所属カテゴリID",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "displayOrder"
+        ]
+      },
+      "ReorderTagsDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TagOrderItemDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "UpdateTagDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "タグ名",
+            "example": "Indoor"
+          },
+          "categoryId": {
+            "type": "string",
+            "description": "カテゴリID",
+            "example": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+          },
+          "color": {
+            "type": "string",
+            "description": "カラーコード",
+            "example": "#3B82F6"
+          },
+          "description": {
+            "type": "string",
+            "description": "説明",
+            "example": "室内飼いタグ"
+          },
+          "allowsManual": {
+            "type": "boolean",
+            "description": "手動操作で利用可能か",
+            "example": true
+          },
+          "allowsAutomation": {
+            "type": "boolean",
+            "description": "自動ルールで利用可能か",
+            "example": true
+          },
+          "displayOrder": {
+            "type": "number",
+            "description": "表示順",
+            "example": 10
+          },
+          "metadata": {
+            "type": "object",
+            "description": "任意のメタデータ"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "アクティブかどうか",
+            "example": true
+          }
+        }
       },
       "AssignTagDto": {
         "type": "object",
@@ -2581,6 +3473,122 @@
         "required": [
           "tagId"
         ]
+      },
+      "CreateTagCategoryDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "ユニークキー (未指定時は名前から生成)",
+            "example": "cats_status"
+          },
+          "name": {
+            "type": "string",
+            "description": "カテゴリ名",
+            "example": "猫ステータス"
+          },
+          "description": {
+            "type": "string",
+            "description": "カテゴリの説明"
+          },
+          "color": {
+            "type": "string",
+            "description": "カテゴリの代表カラー",
+            "example": "#6366F1"
+          },
+          "displayOrder": {
+            "type": "number",
+            "description": "表示順"
+          },
+          "scopes": {
+            "description": "利用するスコープ一覧",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "アクティブかどうか",
+            "example": true
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "TagCategoryOrderItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "カテゴリID",
+            "format": "uuid"
+          },
+          "displayOrder": {
+            "type": "number",
+            "description": "表示順",
+            "example": 10
+          }
+        },
+        "required": [
+          "id",
+          "displayOrder"
+        ]
+      },
+      "ReorderTagCategoriesDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TagCategoryOrderItemDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "UpdateTagCategoryDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "ユニークキー (未指定時は名前から生成)",
+            "example": "cats_status"
+          },
+          "name": {
+            "type": "string",
+            "description": "カテゴリ名",
+            "example": "猫ステータス"
+          },
+          "description": {
+            "type": "string",
+            "description": "カテゴリの説明"
+          },
+          "color": {
+            "type": "string",
+            "description": "カテゴリの代表カラー",
+            "example": "#6366F1"
+          },
+          "displayOrder": {
+            "type": "number",
+            "description": "表示順"
+          },
+          "scopes": {
+            "description": "利用するスコープ一覧",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "アクティブかどうか",
+            "example": true
+          }
+        }
       }
     }
   }

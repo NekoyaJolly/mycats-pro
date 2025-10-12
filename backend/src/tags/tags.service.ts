@@ -1,47 +1,123 @@
 import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 
 import { PrismaService } from "../prisma/prisma.service";
 
-import { CreateTagDto } from "./dto/create-tag.dto";
+import { CreateTagDto, UpdateTagDto } from "./dto";
+import { TagCategoriesService } from "./tag-categories.service";
 
 @Injectable()
 export class TagsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tagCategoriesService: TagCategoriesService,
+  ) {}
 
-  async findAll() {
-    const data = await this.prisma.tag.findMany({
-      include: {
-        cats: {
-          select: { catId: true },
-        },
-      },
-      orderBy: { createdAt: "desc" },
+  async findAll(options: { scopes?: string[]; includeInactive?: boolean } = {}) {
+    const categories = await this.tagCategoriesService.findMany({
+      scopes: options.scopes,
+      includeTags: true,
+      includeInactive: options.includeInactive,
     });
+
     return {
       success: true,
-      data: data.map((t) => ({
-        id: t.id,
-        name: t.name,
-        color: t.color,
-        description: t.description ?? undefined,
-        usage_count: t.cats.length,
+      data: categories.map((category) => ({
+        id: category.id,
+        key: category.key,
+        name: category.name,
+        description: category.description ?? undefined,
+        color: category.color ?? undefined,
+        displayOrder: category.displayOrder,
+        scopes: category.scopes,
+        isActive: category.isActive,
+        tags: (category.tags ?? []).map((tag) => ({
+          id: tag.id,
+          categoryId: tag.categoryId,
+          name: tag.name,
+          color: tag.color,
+          description: tag.description ?? undefined,
+          displayOrder: tag.displayOrder,
+          allowsManual: tag.allowsManual,
+          allowsAutomation: tag.allowsAutomation,
+          metadata: tag.metadata ?? undefined,
+          isActive: tag.isActive,
+          usageCount: tag.cats.length,
+        })),
       })),
     };
   }
 
   async create(dto: CreateTagDto) {
+    const displayOrder = dto.displayOrder ?? (await this.getNextDisplayOrder(dto.categoryId));
     const data = await this.prisma.tag.create({
       data: {
+        category: { connect: { id: dto.categoryId } },
         name: dto.name,
         color: dto.color ?? undefined,
         description: dto.description ?? undefined,
+        displayOrder,
+        ...(dto.allowsManual !== undefined ? { allowsManual: dto.allowsManual } : {}),
+        ...(dto.allowsAutomation !== undefined
+          ? { allowsAutomation: dto.allowsAutomation }
+          : {}),
+        metadata: this.toJson(dto.metadata),
+        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
       },
+      include: this.defaultTagInclude(),
     });
+
+    return { success: true, data };
+  }
+
+  async update(id: string, dto: UpdateTagDto) {
+    const updateData: Prisma.TagUpdateInput = {
+      ...(dto.name !== undefined ? { name: dto.name } : {}),
+      ...(dto.color !== undefined ? { color: dto.color } : {}),
+      ...(dto.description !== undefined ? { description: dto.description } : {}),
+      ...(dto.displayOrder !== undefined ? { displayOrder: dto.displayOrder } : {}),
+      ...(dto.metadata !== undefined
+        ? { metadata: this.toJson(dto.metadata) ?? Prisma.JsonNull }
+        : {}),
+      ...(dto.categoryId ? { category: { connect: { id: dto.categoryId } } } : {}),
+      ...(dto.allowsManual !== undefined ? { allowsManual: dto.allowsManual } : {}),
+      ...(dto.allowsAutomation !== undefined
+        ? { allowsAutomation: dto.allowsAutomation }
+        : {}),
+      ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+    };
+
+    const data = await this.prisma.tag.update({
+      where: { id },
+      data: updateData,
+      include: this.defaultTagInclude(),
+    });
+
     return { success: true, data };
   }
 
   async remove(id: string) {
     await this.prisma.tag.delete({ where: { id } });
+    return { success: true };
+  }
+
+  async reorder(items: Array<{ id: string; displayOrder: number; categoryId?: string }>) {
+    if (!items.length) {
+      return { success: true };
+    }
+
+    await this.prisma.$transaction(
+      items.map(({ id, displayOrder, categoryId }) =>
+        this.prisma.tag.update({
+          where: { id },
+          data: {
+            displayOrder,
+            ...(categoryId ? { category: { connect: { id: categoryId } } } : {}),
+          },
+        }),
+      ),
+    );
+
     return { success: true };
   }
 
@@ -59,5 +135,29 @@ export class TagsService {
       where: { catId_tagId: { catId, tagId } },
     });
     return { success: true };
+  }
+
+  private defaultTagInclude(): Prisma.TagInclude {
+    return {
+      cats: {
+        select: { catId: true },
+      },
+    };
+  }
+
+  private toJson(value?: Record<string, unknown> | null): Prisma.InputJsonValue | undefined {
+    if (value === null || value === undefined) {
+      return undefined;
+    }
+
+    return value as Prisma.InputJsonValue;
+  }
+
+  private async getNextDisplayOrder(categoryId: string): Promise<number> {
+    const result = await this.prisma.tag.aggregate({
+      _max: { displayOrder: true },
+      where: { categoryId },
+    });
+    return (result._max.displayOrder ?? -1) + 1;
   }
 }

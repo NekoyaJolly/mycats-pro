@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "@mantine/core/styles.css";
+import { Suspense } from "react";
 import { Providers } from "./providers";
 import { AppLayout } from "@/components/AppLayout";
 
@@ -42,7 +43,9 @@ export default function RootLayout({
     <html lang="ja">
       <body className="font-sans antialiased">
         <Providers>
-          <AppLayout>{children}</AppLayout>
+          <Suspense fallback={null}>
+            <AppLayout>{children}</AppLayout>
+          </Suspense>
         </Providers>
       </body>
     </html>

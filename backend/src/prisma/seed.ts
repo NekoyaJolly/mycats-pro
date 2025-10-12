@@ -91,11 +91,51 @@ async function main() {
     },
   });
 
-  // 3) A sample tag
+  // 3) Sample tag category & tag
+  const category = await prisma.tagCategory.upsert({
+    where: { key: "cat_status" },
+    update: {
+      name: "猫ステータス",
+      description: "猫の状態を判別するサンプルカテゴリ",
+      color: "#6366F1",
+      displayOrder: 1,
+      scopes: ["cats"],
+      isActive: true,
+    },
+    create: {
+      key: "cat_status",
+      name: "猫ステータス",
+      description: "猫の状態を判別するサンプルカテゴリ",
+      color: "#6366F1",
+      displayOrder: 1,
+      scopes: ["cats"],
+      isActive: true,
+    },
+  });
+
   const tag = await prisma.tag.upsert({
-    where: { name: "indoor" },
-    update: { color: "#10B981" },
-    create: { name: "indoor", color: "#10B981" },
+    where: {
+      categoryId_name: {
+        categoryId: category.id,
+        name: "indoor",
+      },
+    },
+    update: {
+      color: "#10B981",
+      allowsManual: true,
+      allowsAutomation: true,
+      metadata: { description: "室内飼い猫" },
+      isActive: true,
+    },
+    create: {
+      name: "indoor",
+      color: "#10B981",
+      allowsManual: true,
+      allowsAutomation: true,
+      metadata: { description: "室内飼い猫" },
+      isActive: true,
+      category: { connect: { id: category.id } },
+    },
   });
 
   console.log("Seed complete ✅");
@@ -110,7 +150,8 @@ async function main() {
     registrationId: femaleCat.registrationId,
     name: femaleCat.name,
   });
-  console.log("Tag:", { id: tag.id, name: tag.name });
+  console.log("Tag Category:", { id: category.id, key: category.key, name: category.name });
+  console.log("Tag:", { id: tag.id, name: tag.name, categoryId: tag.categoryId });
 }
 
 main()

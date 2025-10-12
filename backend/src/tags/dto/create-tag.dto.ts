@@ -1,11 +1,24 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsHexColor, IsOptional, IsString, MinLength } from "class-validator";
+import {
+  IsBoolean,
+  IsHexColor,
+  IsNumber,
+  IsObject,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MinLength,
+} from "class-validator";
 
 export class CreateTagDto {
   @ApiProperty({ description: "タグ名", example: "Indoor" })
   @IsString()
   @MinLength(1)
   name: string;
+
+  @ApiProperty({ description: "カテゴリID", example: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" })
+  @IsUUID()
+  categoryId: string;
 
   @ApiPropertyOptional({ description: "カラーコード", example: "#3B82F6" })
   @IsOptional()
@@ -16,4 +29,29 @@ export class CreateTagDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiPropertyOptional({ description: "手動操作で利用可能か", example: true })
+  @IsOptional()
+  @IsBoolean()
+  allowsManual?: boolean;
+
+  @ApiPropertyOptional({ description: "自動ルールで利用可能か", example: true })
+  @IsOptional()
+  @IsBoolean()
+  allowsAutomation?: boolean;
+
+  @ApiPropertyOptional({ description: "表示順", example: 10 })
+  @IsOptional()
+  @IsNumber()
+  displayOrder?: number;
+
+  @ApiPropertyOptional({ description: "任意のメタデータ", type: Object })
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, unknown>;
+
+  @ApiPropertyOptional({ description: "アクティブかどうか", example: true })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

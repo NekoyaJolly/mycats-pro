@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, type CSSProperties } from 'react';
 import {
   MultiSelect,
   Badge,
@@ -12,83 +12,73 @@ import {
   Button,
   Modal,
   SimpleGrid,
+  Tooltip,
+  Loader,
+  Center,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconPlus } from '@tabler/icons-react';
 
-// タグ関連の型定義
-interface Tag {
-  id: string;
-  name: string;
-  categoryId: string;
-  color: string;
-  description?: string;
-  usageCount: number;
-}
-
-interface TagCategory {
-  id: string;
-  name: string;
-  description: string;
-  color: string;
-  tags: Tag[];
-}
+import {
+  useGetTagCategories,
+  type TagCategoryFilters,
+  type TagCategoryView,
+  type TagView,
+} from '@/lib/api/hooks/use-tags';
 
 interface TagSelectorProps {
   selectedTags: string[];
   onChange: (tagIds: string[]) => void;
   placeholder?: string;
   label?: string;
-  categories?: TagCategory[];
   disabled?: boolean;
+  filters?: TagCategoryFilters;
+  categories?: TagCategoryView[];
 }
 
-// デフォルトのタグカテゴリ（実際の実装では外部から取得）
-const defaultCategories: TagCategory[] = [
-  {
-    id: '1',
-    name: '体型・サイズ',
-    description: '猫の体型や大きさに関するタグ',
-    color: '#3498db',
-    tags: [
-      { id: 't1', name: '大型', categoryId: '1', color: '#3498db', usageCount: 12 },
-      { id: 't2', name: '中型', categoryId: '1', color: '#3498db', usageCount: 8 },
-      { id: 't3', name: '小型', categoryId: '1', color: '#3498db', usageCount: 5 },
-    ]
-  },
-  {
-    id: '2',
-    name: '性格・特徴',
-    description: '猫の性格や行動特徴に関するタグ',
-    color: '#e67e22',
-    tags: [
-      { id: 't4', name: '人懐っこい', categoryId: '2', color: '#e67e22', usageCount: 15 },
-      { id: 't5', name: '内気', categoryId: '2', color: '#e67e22', usageCount: 7 },
-      { id: 't6', name: '活発', categoryId: '2', color: '#e67e22', usageCount: 10 },
-    ]
-  },
-  {
-    id: '3',
-    name: '健康状態',
-    description: '健康や医療に関するタグ',
-    color: '#e74c3c',
-    tags: [
-      { id: 't7', name: '要注意', categoryId: '3', color: '#e74c3c', usageCount: 3 },
-      { id: 't8', name: '健康', categoryId: '3', color: '#2ecc71', usageCount: 20 },
-    ]
-  },
-];
+function getBadgeColors(tag: TagView): CSSProperties {
+  if (tag.color) {
+    return {
+      backgroundColor: `${tag.color}20`,
+    };
+  }
 
-export default function TagSelector({ 
-  selectedTags, 
-  onChange, 
-  placeholder = "タグを選択", 
-  label = "タグ",
-  categories = defaultCategories,
+  return {
+    color: 'var(--mantine-color-white)',
+    backgroundColor: 'var(--mantine-primary-color-filled)',
+  };
+}
+
+function useResolvedCategories(categories?: TagCategoryView[], filters?: TagCategoryFilters) {
+  const shouldFetch = !categories;
+  const { data, isLoading } = useGetTagCategories(filters, {
+    enabled: shouldFetch,
+  });
+
+  const resolved = useMemo(() => {
+    if (categories) {
+      return categories;
+    }
+    return data?.data ?? [];
+  }, [categories, data]);
+
+  return {
+    categories: resolved,
+    isLoading: shouldFetch ? isLoading : false,
+  };
+}
+
+export default function TagSelector({
+  selectedTags,
+  onChange,
+  placeholder = 'タグを選択',
+  label = 'タグ',
   disabled = false,
+  filters,
+  categories: categoriesProp,
 }: TagSelectorProps) {
   const [opened, { open, close }] = useDisclosure(false);
-  const [allTags, setAllTags] = useState<Tag[]>([]);
+  const { categories, isLoading } = useResolvedCategories(categoriesProp, filters);
 
   useEffect(() => {
     if (disabled && opened) {
@@ -96,88 +86,52 @@ export default function TagSelector({
     }
   }, [disabled, opened, close]);
 
-  useEffect(() => {
-    // 全カテゴリからタグを抽出
-    const tags = categories.flatMap(category => category.tags);
-    setAllTags(tags);
-  }, [categories]);
+  const allTags = useMemo(() => categories.flatMap((category) => category.tags || []), [categories]);
+  const tagMap = useMemo(() => new Map(allTags.map((tag) => [tag.id, tag])), [allTags]);
 
-  // MultiSelect用のデータ形式に変換
-  const tagOptions = allTags.map(tag => ({
-    value: tag.id,
-    label: tag.name,
-    color: tag.color,
-  }));
+  const tagOptions = useMemo(
+    () =>
+      allTags.map((tag) => ({
+        value: tag.id,
+        label: tag.name,
+        color: tag.color,
+      })),
+    [allTags],
+  );
 
-  // 選択されたタグの詳細情報を取得
-  const getSelectedTagDetails = () => {
-    return selectedTags.map(tagId => allTags.find(tag => tag.id === tagId)).filter(Boolean) as Tag[];
+  const selectedTagDetails = useMemo(
+    () => selectedTags.map((tagId) => tagMap.get(tagId)).filter(Boolean) as TagView[],
+    [selectedTags, tagMap],
+  );
+
+  const handleToggleTag = (tagId: string) => {
+    if (selectedTags.includes(tagId)) {
+      onChange(selectedTags.filter((id) => id !== tagId));
+      return;
+    }
+
+    onChange([...selectedTags, tagId]);
   };
 
-  // カテゴリ別タグ選択モーダル
-  const CategoryTagSelector = () => (
-    <Modal opened={opened} onClose={close} title="タグ選択" size="lg">
-      <Stack gap="md">
-        {categories.map((category) => (
-          <Card key={category.id} padding="md" withBorder>
-            <Stack gap="sm">
-              <Group gap="xs">
-                <Box w={12} h={12} bg={category.color} style={{ borderRadius: 2 }} />
-                <Text fw={500} c={category.color}>{category.name}</Text>
-              </Group>
-              
-              <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing="xs">
-                {category.tags.map((tag) => {
-                  const isSelected = selectedTags.includes(tag.id);
-                  return (
-                    <Badge
-                      key={tag.id}
-                      size="md"
-                      variant={isSelected ? "filled" : "light"}
-                      style={{ 
-                        cursor: 'pointer',
-                        backgroundColor: isSelected ? tag.color : `${tag.color}15`,
-                        color: isSelected ? '#fff' : tag.color,
-                      }}
-                      onClick={() => {
-                        if (isSelected) {
-                          onChange(selectedTags.filter(id => id !== tag.id));
-                        } else {
-                          onChange([...selectedTags, tag.id]);
-                        }
-                      }}
-                    >
-                      {tag.name}
-                    </Badge>
-                  );
-                })}
-              </SimpleGrid>
-            </Stack>
-          </Card>
-        ))}
-        
-        <Group justify="flex-end">
-          <Button onClick={close}>完了</Button>
-        </Group>
-      </Stack>
-    </Modal>
-  );
+  const isDisabled = disabled || (isLoading && !categoriesProp);
 
   return (
     <Box>
       <Group justify="space-between" mb="xs">
-        <Text size="sm" fw={500}>{label}</Text>
-        <Button 
-          size="xs" 
-          variant="light" 
+        <Text size="sm" fw={500}>
+          {label}
+        </Text>
+        <Button
+          size="xs"
+          variant="light"
           leftSection={<IconPlus size={12} />}
           onClick={open}
-          disabled={disabled}
+          disabled={isDisabled}
         >
           カテゴリ別選択
         </Button>
       </Group>
-      
+
       <MultiSelect
         placeholder={placeholder}
         data={tagOptions}
@@ -185,74 +139,165 @@ export default function TagSelector({
         onChange={onChange}
         searchable
         clearable
-        disabled={disabled}
+        disabled={isDisabled}
+        nothingFoundMessage={isLoading ? '読み込み中...' : '利用可能なタグがありません'}
         renderOption={({ option }) => {
-          const tag = allTags.find(t => t.id === option.value);
+          const tag = tagMap.get(option.value);
+
           return (
             <Group gap="xs">
-              <Box w={8} h={8} bg={tag?.color || '#gray'} style={{ borderRadius: '50%' }} />
+              <Box w={8} h={8} bg={tag?.color || 'var(--mantine-primary-color-filled)'} style={{ borderRadius: '50%' }} />
               <Text>{option.label}</Text>
             </Group>
           );
         }}
       />
-      
-      {/* 選択されたタグの表示 */}
-      {selectedTags.length > 0 && (
+
+      {isLoading && (
+        <Center mt="xs">
+          <Loader size="sm" />
+        </Center>
+      )}
+
+      {selectedTagDetails.length > 0 && (
         <Group gap="xs" mt="xs">
-          {getSelectedTagDetails().map((tag) => (
-            <Badge
-              key={tag.id}
-              size="sm"
-              variant="light"
-              style={{ 
-                backgroundColor: `${tag.color}15`, 
-                color: tag.color 
-              }}
-            >
+          {selectedTagDetails.map((tag) => (
+            <Badge key={tag.id} size="sm" variant="light" radius="md" style={getBadgeColors(tag)}>
               {tag.name}
             </Badge>
           ))}
         </Group>
       )}
-      
-      <CategoryTagSelector />
+
+      <Modal opened={opened} onClose={close} title="タグ選択" size="lg" keepMounted={false}>
+        {isLoading && (
+          <Center py="xl">
+            <Loader />
+          </Center>
+        )}
+
+        {!isLoading && categories.length === 0 && (
+          <Center py="xl">
+            <Text c="dimmed">利用可能なカテゴリがありません。</Text>
+          </Center>
+        )}
+
+        {!isLoading && categories.length > 0 && (
+          <Stack gap="md">
+            {categories.map((category) => (
+              <Card key={category.id} padding="md" withBorder>
+                <Stack gap="sm">
+                  <Group gap="xs">
+                    <Box w={12} h={12} bg={category.color || 'var(--mantine-primary-color-filled)'} style={{ borderRadius: 2 }} />
+                    <Text fw={500} c={category.color}>
+                      {category.name}
+                    </Text>
+                  </Group>
+
+                  {category.description && (
+                    <Text size="xs" c="dimmed">
+                      {category.description}
+                    </Text>
+                  )}
+
+                  <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing="xs">
+                    {(category.tags ?? []).map((tag) => {
+                      const isSelected = selectedTags.includes(tag.id);
+
+                      return (
+                        <Tooltip
+                          key={tag.id}
+                          label={
+                            tag.description
+                              ? tag.description
+                              : `使用回数: ${tag.usageCount.toLocaleString()}回`
+                          }
+                          withArrow
+                          withinPortal
+                        >
+                          <Badge
+                            size="md"
+                            radius="md"
+                            variant="light"
+                            style={{
+                              cursor: 'pointer',
+                              backgroundColor: isSelected
+                                ? tag.color ?? 'var(--mantine-primary-color-filled)'
+                                : tag.color
+                                  ? `${tag.color}15`
+                                  : 'var(--mantine-color-gray-1)',
+                              color: isSelected
+                                ? tag.color
+                                  ? 'var(--mantine-color-white)'
+                                  : 'var(--mantine-color-dark-6)'
+                                : tag.color ?? 'var(--mantine-color-dark-6)',
+                              border: isSelected && tag.color
+                                ? `1px solid ${tag.color}`
+                                : undefined,
+                            }}
+                            onClick={() => handleToggleTag(tag.id)}
+                          >
+                            {tag.name}
+                          </Badge>
+                        </Tooltip>
+                      );
+                    })}
+                  </SimpleGrid>
+                </Stack>
+              </Card>
+            ))}
+
+            <Group justify="flex-end">
+              <Button onClick={close}>完了</Button>
+            </Group>
+          </Stack>
+        )}
+      </Modal>
     </Box>
   );
 }
 
-// タグ表示専用コンポーネント
 interface TagDisplayProps {
   tagIds: string[];
-  categories?: TagCategory[];
+  categories?: TagCategoryView[];
+  filters?: TagCategoryFilters;
   size?: 'xs' | 'sm' | 'md' | 'lg';
 }
 
-export function TagDisplay({ tagIds, categories = defaultCategories, size = 'sm' }: TagDisplayProps) {
-  const allTags = categories.flatMap(category => category.tags);
-  const tags = tagIds.map(tagId => allTags.find(tag => tag.id === tagId)).filter(Boolean) as Tag[];
+export function TagDisplay({ tagIds, categories: categoriesProp, filters, size = 'sm' }: TagDisplayProps) {
+  const { categories, isLoading } = useResolvedCategories(categoriesProp, filters);
 
-  if (tags.length === 0) return null;
+  const tagMap = useMemo(() => {
+    const map = new Map<string, TagView>();
+    categories.forEach((category) => {
+      (category.tags ?? []).forEach((tag) => {
+        map.set(tag.id, tag);
+      });
+    });
+    return map;
+  }, [categories]);
+
+  const tags = useMemo(() => tagIds.map((tagId) => tagMap.get(tagId)).filter(Boolean) as TagView[], [tagIds, tagMap]);
+
+  if (isLoading) {
+    return (
+      <Center>
+        <Loader size="sm" />
+      </Center>
+    );
+  }
+
+  if (tags.length === 0) {
+    return null;
+  }
 
   return (
     <Group gap="xs">
       {tags.map((tag) => (
-        <Badge
-          key={tag.id}
-          size={size}
-          variant="light"
-          style={{ 
-            backgroundColor: `${tag.color}15`, 
-            color: tag.color 
-          }}
-        >
+        <Badge key={tag.id} size={size} variant="light" radius="md" style={getBadgeColors(tag)}>
           {tag.name}
         </Badge>
       ))}
     </Group>
   );
 }
-
-// タグカテゴリをエクスポート（他のコンポーネントで使用）
-export { defaultCategories };
-export type { Tag, TagCategory };

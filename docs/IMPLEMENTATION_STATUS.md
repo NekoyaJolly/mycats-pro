@@ -50,7 +50,7 @@ mycats/
 
 ## データベース設計
 
-### テーブル一覧（11テーブル + Enums）
+### テーブル一覧（14テーブル + Enums）
 
 | No. | テーブル名 | 物理名 | 説明 | 主要リレーション |
 |-----|-----------|--------|------|-----------------|
@@ -62,9 +62,12 @@ mycats/
 | 6 | 交配記録 | `breeding_records` | 交配・繁殖履歴 | cats (male/female), users |
 | 7 | ケア記録 | `care_records` | 医療・ケア履歴 | cats, users |
 | 8 | スケジュール | `schedules` | 予定・タスク管理 | cats, users |
-| 9 | タグマスタ | `tags` | 分類用タグ定義 | cat_tags |
+| 9 | タグマスタ | `tags` | 分類用タグ定義 | cat_tags, tag_assignment_history |
 | 10 | 血統情報 | `pedigrees` | 血統書・家系図データ | cats, breeds, coat_colors, 自己参照（6世代） |
 | 11 | 猫タグ関連 | `cat_tags` | 猫とタグの多対多関連 | cats, tags |
+| 12 | タグ自動化ルール | `tag_automation_rules` | 自動タグ付けルール定義 | tag_automation_runs, tag_assignment_history |
+| 13 | タグ自動化実行ログ | `tag_automation_runs` | ルール実行の状態追跡 | tag_automation_rules, tag_assignment_history |
+| 14 | タグ付与履歴 | `tag_assignment_history` | 猫タグ付与/解除の履歴 | cats, tags, tag_automation_rules, tag_automation_runs |
 
 ### 主要リレーション設計
 
@@ -120,6 +123,11 @@ pedigrees (自己参照 × 6リレーション)
 | ScheduleType | BREEDING, CARE, APPOINTMENT, REMINDER, MAINTENANCE | スケジュール種類 |
 | ScheduleStatus | PENDING, IN_PROGRESS, COMPLETED, CANCELLED | スケジュール状態 |
 | Priority | LOW, MEDIUM, HIGH, URGENT | 優先度 |
+| TagAssignmentAction | ASSIGNED, UNASSIGNED | タグ付与/解除操作 |
+| TagAssignmentSource | MANUAL, AUTOMATION, SYSTEM | タグ操作の発生源 |
+| TagAutomationTriggerType | EVENT, SCHEDULE, MANUAL | ルール発火のトリガー分類 |
+| TagAutomationEventType | BREEDING_PLANNED, BREEDING_CONFIRMED, PREGNANCY_CONFIRMED, KITTEN_REGISTERED, AGE_THRESHOLD, CUSTOM | ルールが処理するイベント種別 |
+| TagAutomationRunStatus | PENDING, COMPLETED, FAILED | ルール実行のステータス |
 
 ---
 

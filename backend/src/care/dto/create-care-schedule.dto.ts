@@ -36,23 +36,23 @@ class ScheduleReminderDto {
     description: "指定日時 (ISO8601)",
     example: "2025-08-01T09:00:00.000Z",
   })
-  @ValidateIf((o) => o.timingType === ReminderTimingType.ABSOLUTE)
+  @ValidateIf((o: ScheduleReminderDto) => o.timingType === ReminderTimingType.ABSOLUTE)
   @IsDateString()
   remindAt?: string;
 
   @ApiPropertyOptional({ description: "相対リマインドの値", example: 2 })
-  @ValidateIf((o) => o.timingType === ReminderTimingType.RELATIVE)
+  @ValidateIf((o: ScheduleReminderDto) => o.timingType === ReminderTimingType.RELATIVE)
   @IsInt()
   @Min(0)
   offsetValue?: number;
 
   @ApiPropertyOptional({ enum: ReminderOffsetUnit, example: ReminderOffsetUnit.DAY })
-  @ValidateIf((o) => o.timingType === ReminderTimingType.RELATIVE)
+  @ValidateIf((o: ScheduleReminderDto) => o.timingType === ReminderTimingType.RELATIVE)
   @IsEnum(ReminderOffsetUnit)
   offsetUnit?: ReminderOffsetUnit;
 
   @ApiPropertyOptional({ enum: ReminderRelativeTo, example: ReminderRelativeTo.START_DATE })
-  @ValidateIf((o) => o.timingType === ReminderTimingType.RELATIVE)
+  @ValidateIf((o: ScheduleReminderDto) => o.timingType === ReminderTimingType.RELATIVE)
   @IsEnum(ReminderRelativeTo)
   relativeTo?: ReminderRelativeTo;
 
@@ -69,7 +69,7 @@ class ScheduleReminderDto {
   repeatFrequency?: ReminderRepeatFrequency;
 
   @ApiPropertyOptional({ description: "繰り返し間隔", example: 1 })
-  @ValidateIf((o) =>
+  @ValidateIf((o: ScheduleReminderDto) =>
     o.repeatFrequency && o.repeatFrequency !== ReminderRepeatFrequency.NONE,
   )
   @IsInt()
@@ -77,7 +77,7 @@ class ScheduleReminderDto {
   repeatInterval?: number;
 
   @ApiPropertyOptional({ description: "繰り返し回数", example: 5 })
-  @ValidateIf((o) =>
+  @ValidateIf((o: ScheduleReminderDto) =>
     o.repeatFrequency && o.repeatFrequency !== ReminderRepeatFrequency.NONE,
   )
   @IsInt()
@@ -85,7 +85,7 @@ class ScheduleReminderDto {
   repeatCount?: number;
 
   @ApiPropertyOptional({ description: "繰り返し終了日時", example: "2025-12-31T00:00:00.000Z" })
-  @ValidateIf((o) =>
+  @ValidateIf((o: ScheduleReminderDto) =>
     o.repeatFrequency && o.repeatFrequency !== ReminderRepeatFrequency.NONE,
   )
   @IsDateString()

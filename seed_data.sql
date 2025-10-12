@@ -15,14 +15,21 @@ VALUES
   ('cat-4', 'REG004', 'Max', 'Scottish Fold', 'Orange', 'Tabby', 'MALE', '2020-11-05', 4.5, 'user-2', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT ("registrationId") DO NOTHING;
 
+-- Insert sample tag categories
+INSERT INTO "tag_categories" ("id", "key", "name", "description", "color", "display_order", "scopes", "is_active", "created_at", "updated_at")
+VALUES
+  ('tag-cat-1', 'cats_status', '猫ステータス', '繁殖・子育てステータス管理用カテゴリ', '#6366F1', 10, ARRAY['cats', 'breeding'], true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('tag-cat-2', 'general_traits', '一般属性', '猫の特徴や分類のための汎用カテゴリ', '#0EA5E9', 20, ARRAY['cats'], true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT ("key") DO NOTHING;
+
 -- Insert sample tags
-INSERT INTO "tags" ("id", "name", "color", "description", "createdAt", "updatedAt")
+INSERT INTO "tags" ("id", "category_id", "name", "color", "description", "created_at", "updated_at")
 VALUES 
-  ('tag-1', 'Breeding Program', '#10B981', 'Cats in active breeding program', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('tag-2', 'Show Quality', '#F59E0B', 'Cats suitable for cat shows', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('tag-3', 'Medical Attention', '#EF4444', 'Cats requiring special medical care', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('tag-4', 'Retired', '#6B7280', 'Retired breeding cats', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT ("name") DO NOTHING;
+  ('tag-1', 'tag-cat-1', 'Breeding Program', '#10B981', 'Cats in active breeding program', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('tag-2', 'tag-cat-2', 'Show Quality', '#F59E0B', 'Cats suitable for cat shows', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('tag-3', 'tag-cat-2', 'Medical Attention', '#EF4444', 'Cats requiring special medical care', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('tag-4', 'tag-cat-1', 'Retired', '#6B7280', 'Retired breeding cats', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT ("category_id", "name") DO NOTHING;
 
 -- Insert sample breeding records
 INSERT INTO "breeding_records" ("id", "maleId", "femaleId", "breedingDate", "expectedDueDate", "status", "recordedBy", "createdAt", "updatedAt")

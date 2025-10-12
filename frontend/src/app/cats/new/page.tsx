@@ -1,6 +1,4 @@
 'use client';
-
-import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Box,
@@ -23,8 +21,7 @@ import { IconArrowLeft, IconDeviceFloppy } from '@tabler/icons-react';
 import { z } from 'zod';
 import { PageTitle } from '@/components/PageTitle';
 import { useCreateCat, type CreateCatRequest } from '@/lib/api/hooks/use-cats';
-import { useGetTags } from '@/lib/api/hooks/use-tags';
-import TagSelector, { type TagCategory } from '@/components/TagSelector';
+import TagSelector from '@/components/TagSelector';
 
 const optionalString = z
   .string()
@@ -54,33 +51,6 @@ type CatFormValues = z.infer<typeof catFormSchema>;
 export default function CatRegistrationPage() {
   const router = useRouter();
   const createCat = useCreateCat();
-  const { data: tagsResponse, isLoading: isLoadingTags } = useGetTags();
-
-  const tagCategories = useMemo<TagCategory[] | undefined>(() => {
-    if (!tagsResponse?.data) {
-      return undefined;
-    }
-
-    const fallbackColor = '#228be6';
-
-    return [
-      {
-        id: 'all',
-        name: '全タグ',
-        description: '登録済みのタグから選択できます',
-        color: fallbackColor,
-        tags: tagsResponse.data.map((tag) => ({
-          id: tag.id,
-          name: tag.name,
-          categoryId: 'all',
-          color: tag.color || fallbackColor,
-          description: tag.description,
-          usageCount: tag.usage_count ?? 0,
-        })),
-      },
-    ];
-  }, [tagsResponse]);
-
   const {
     control,
     handleSubmit,
@@ -315,8 +285,7 @@ export default function CatRegistrationPage() {
                       onChange={field.onChange}
                       label="タグ"
                       placeholder="猫の特徴タグを選択"
-                      categories={tagCategories ?? []}
-                      disabled={isLoadingTags}
+                      disabled={isSubmitting}
                     />
                   )}
                 />
@@ -339,12 +308,6 @@ export default function CatRegistrationPage() {
               </Stack>
             </form>
           </Card>
-
-          {isLoadingTags && (
-            <Alert color="blue" title="タグを取得しています" variant="light">
-              タグ情報を読み込み中です。
-            </Alert>
-          )}
         </Stack>
       </Container>
     </Box>

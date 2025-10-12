@@ -5,6 +5,7 @@ import {
   CallHandler,
   Logger,
 } from '@nestjs/common';
+import type { Request, Response } from 'express';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 
@@ -19,16 +20,17 @@ export class PerformanceMonitoringInterceptor implements NestInterceptor {
   private readonly VERY_SLOW_REQUEST_THRESHOLD_MS = 3000; // 3秒以上を非常に遅いと判定
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
-    const request = context.switchToHttp().getRequest();
+    const httpContext = context.switchToHttp();
+    const request = httpContext.getRequest<Request>();
+    const response = httpContext.getResponse<Response>();
     const { method, url, ip } = request;
-    const userAgent = request.get('user-agent') || '';
+    const userAgent = request.get('user-agent') ?? '';
     const startTime = Date.now();
 
     return next.handle().pipe(
       tap({
         next: () => {
           const responseTime = Date.now() - startTime;
-          const response = context.switchToHttp().getResponse();
           const { statusCode } = response;
 
           // 基本的なリクエストログ
@@ -60,18 +62,20 @@ export class PerformanceMonitoringInterceptor implements NestInterceptor {
             this.logger.debug(logData);
           }
         },
-        error: (error) => {
+        error: (error: unknown) => {
           const responseTime = Date.now() - startTime;
-          
-          // エラーログ
+          const errorDetails = error instanceof Error
+            ? { message: error.message, stack: error.stack }
+            : { message: String(error), stack: undefined };
+
           this.logger.error({
             message: 'Request failed with error',
             method,
             url,
             responseTime: `${responseTime}ms`,
             ip,
-            error: error.message,
-            stack: error.stack,
+            error: errorDetails.message,
+            stack: errorDetails.stack,
             timestamp: new Date().toISOString(),
           });
         },

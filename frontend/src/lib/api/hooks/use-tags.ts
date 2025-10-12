@@ -1,46 +1,191 @@
-/**
- * タグ管理APIフック
- */
-
 import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
-import { apiClient, type ApiPathParams, type ApiRequestBody } from '../client';
+
+import {
+  apiClient,
+  type ApiPathParams,
+  type ApiQueryParams,
+  type ApiRequestBody,
+  type ApiResponse,
+} from '../client';
 import { createDomainQueryKeys } from './query-key-factory';
 import { catKeys } from './use-cats';
 
-export interface TagSummary {
+export interface TagView {
   id: string;
+  categoryId: string;
   name: string;
   color: string;
   description?: string;
-  usage_count: number;
-  createdAt?: string;
-  updatedAt?: string;
+  displayOrder: number;
+  allowsManual: boolean;
+  allowsAutomation: boolean;
+  metadata?: Record<string, unknown> | null;
+  isActive: boolean;
+  usageCount: number;
 }
 
+export interface TagCategoryView {
+  id: string;
+  key: string;
+  name: string;
+  description?: string;
+  color?: string;
+  displayOrder: number;
+  scopes: string[];
+  isActive: boolean;
+  tags: TagView[];
+}
+
+export type TagCategoriesResponse = ApiResponse<TagCategoryView[]>;
+
+export interface TagCategoryFilters {
+  scope?: string[];
+  includeInactive?: boolean;
+}
+
+export type CreateTagCategoryRequest = ApiRequestBody<'/tags/categories', 'post'>;
+export type UpdateTagCategoryRequest = ApiRequestBody<'/tags/categories/{id}', 'patch'>;
+export type ReorderTagCategoriesRequest = ApiRequestBody<'/tags/categories/reorder', 'patch'>;
+
 export type CreateTagRequest = ApiRequestBody<'/tags', 'post'>;
+export type UpdateTagRequest = ApiRequestBody<'/tags/{id}', 'patch'>;
+export type ReorderTagsRequest = ApiRequestBody<'/tags/reorder', 'patch'>;
 
 type AssignTagRequest = ApiRequestBody<'/tags/cats/{id}/tags', 'post'>;
 
-type TagListResponse = {
-  success: boolean;
-  data?: TagSummary[];
-  message?: string;
-  error?: string;
-};
+const tagCategoryKeys = createDomainQueryKeys<string, TagCategoryFilters>('tagCategories');
 
-const tagKeys = createDomainQueryKeys<string>('tags');
+export { tagCategoryKeys };
 
-export { tagKeys };
+type TagCategoryQueryParams = ApiQueryParams<'/tags', 'get'>;
 
-export function useGetTags(
-  options?: Omit<UseQueryOptions<TagListResponse>, 'queryKey' | 'queryFn'>,
+function buildTagCategoryQuery(filters?: TagCategoryFilters): TagCategoryQueryParams | undefined {
+  if (!filters) {
+    return undefined;
+  }
+
+  const query: Record<string, unknown> = {};
+
+  if (filters.scope && filters.scope.length > 0) {
+    query.scope = filters.scope;
+  }
+
+  if (filters.includeInactive) {
+    query.includeInactive = true;
+  }
+
+  return Object.keys(query).length > 0 ? (query as TagCategoryQueryParams) : undefined;
+}
+
+function showErrorNotification(title: string, error: unknown) {
+  notifications.show({
+    title,
+    message: error instanceof Error ? error.message : '時間をおいて再度お試しください。',
+    color: 'red',
+  });
+}
+
+export function useGetTagCategories(
+  filters?: TagCategoryFilters,
+  options?: Omit<UseQueryOptions<TagCategoriesResponse>, 'queryKey' | 'queryFn'>,
 ) {
   return useQuery({
-    queryKey: tagKeys.lists(),
-    queryFn: () => apiClient.get('/tags') as Promise<TagListResponse>,
+    queryKey: tagCategoryKeys.list(filters),
+    queryFn: () =>
+      apiClient.get('/tags', {
+        query: buildTagCategoryQuery(filters),
+      }) as Promise<TagCategoriesResponse>,
     staleTime: 1000 * 60,
     ...options,
+  });
+}
+
+export function useCreateTagCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateTagCategoryRequest) =>
+      apiClient.post('/tags/categories', {
+        body: payload,
+        retryOnUnauthorized: false,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: tagCategoryKeys.lists() });
+      notifications.show({
+        title: 'カテゴリを作成しました',
+        message: '新しいカテゴリが利用可能になりました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: unknown) => {
+      showErrorNotification('カテゴリの作成に失敗しました', error);
+    },
+  });
+}
+
+export function useUpdateTagCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateTagCategoryRequest }) =>
+      apiClient.patch('/tags/categories/{id}', {
+        pathParams: { id } as ApiPathParams<'/tags/categories/{id}', 'patch'>,
+        body: payload,
+        retryOnUnauthorized: false,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: tagCategoryKeys.lists() });
+      notifications.show({
+        title: 'カテゴリを更新しました',
+        message: 'カテゴリ情報を保存しました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: unknown) => {
+      showErrorNotification('カテゴリの更新に失敗しました', error);
+    },
+  });
+}
+
+export function useDeleteTagCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient.delete('/tags/categories/{id}', {
+        pathParams: { id } as ApiPathParams<'/tags/categories/{id}', 'delete'>,
+        retryOnUnauthorized: false,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: tagCategoryKeys.lists() });
+      notifications.show({
+        title: 'カテゴリを削除しました',
+        message: 'カテゴリを削除しました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: unknown) => {
+      showErrorNotification('カテゴリの削除に失敗しました', error);
+    },
+  });
+}
+
+export function useReorderTagCategories() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: ReorderTagCategoriesRequest) =>
+      apiClient.patch('/tags/categories/reorder', {
+        body: payload,
+        retryOnUnauthorized: false,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: tagCategoryKeys.lists() });
+    },
+    onError: (error: unknown) => {
+      showErrorNotification('カテゴリの並び替えに失敗しました', error);
+    },
   });
 }
 
@@ -54,19 +199,39 @@ export function useCreateTag() {
         retryOnUnauthorized: false,
       }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: tagKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: tagCategoryKeys.lists() });
       notifications.show({
         title: 'タグを作成しました',
         message: '新しいタグが利用可能になりました。',
         color: 'teal',
       });
     },
-    onError: (error: Error) => {
+    onError: (error: unknown) => {
+      showErrorNotification('タグの作成に失敗しました', error);
+    },
+  });
+}
+
+export function useUpdateTag() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateTagRequest }) =>
+      apiClient.patch('/tags/{id}', {
+        pathParams: { id } as ApiPathParams<'/tags/{id}', 'patch'>,
+        body: payload,
+        retryOnUnauthorized: false,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: tagCategoryKeys.lists() });
       notifications.show({
-        title: 'タグの作成に失敗しました',
-        message: error.message ?? '時間をおいて再度お試しください。',
-        color: 'red',
+        title: 'タグを更新しました',
+        message: 'タグ情報を保存しました。',
+        color: 'teal',
       });
+    },
+    onError: (error: unknown) => {
+      showErrorNotification('タグの更新に失敗しました', error);
     },
   });
 }
@@ -81,19 +246,33 @@ export function useDeleteTag() {
         retryOnUnauthorized: false,
       }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: tagKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: tagCategoryKeys.lists() });
       notifications.show({
         title: 'タグを削除しました',
         message: 'タグを削除しました。',
         color: 'teal',
       });
     },
-    onError: (error: Error) => {
-      notifications.show({
-        title: 'タグの削除に失敗しました',
-        message: error.message ?? '時間をおいて再度お試しください。',
-        color: 'red',
-      });
+    onError: (error: unknown) => {
+      showErrorNotification('タグの削除に失敗しました', error);
+    },
+  });
+}
+
+export function useReorderTags() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: ReorderTagsRequest) =>
+      apiClient.patch('/tags/reorder', {
+        body: payload,
+        retryOnUnauthorized: false,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: tagCategoryKeys.lists() });
+    },
+    onError: (error: unknown) => {
+      showErrorNotification('タグの並び替えに失敗しました', error);
     },
   });
 }
@@ -110,18 +289,15 @@ export function useAssignTagToCat(catId: string) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: catKeys.detail(catId) });
       void queryClient.invalidateQueries({ queryKey: catKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: tagCategoryKeys.lists() });
       notifications.show({
         title: 'タグを付与しました',
         message: '猫のタグ情報を更新しました。',
         color: 'teal',
       });
     },
-    onError: (error: Error) => {
-      notifications.show({
-        title: 'タグ付与に失敗しました',
-        message: error.message ?? '時間をおいて再度お試しください。',
-        color: 'red',
-      });
+    onError: (error: unknown) => {
+      showErrorNotification('タグ付与に失敗しました', error);
     },
   });
 }
@@ -137,18 +313,15 @@ export function useUnassignTagFromCat(catId: string) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: catKeys.detail(catId) });
       void queryClient.invalidateQueries({ queryKey: catKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: tagCategoryKeys.lists() });
       notifications.show({
         title: 'タグを削除しました',
         message: '猫からタグを解除しました。',
         color: 'teal',
       });
     },
-    onError: (error: Error) => {
-      notifications.show({
-        title: 'タグ解除に失敗しました',
-        message: error.message ?? '時間をおいて再度お試しください。',
-        color: 'red',
-      });
+    onError: (error: unknown) => {
+      showErrorNotification('タグ解除に失敗しました', error);
     },
   });
 }

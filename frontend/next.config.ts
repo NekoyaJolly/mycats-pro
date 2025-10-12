@@ -34,7 +34,6 @@ const nextConfig: NextConfig = {
     optimizePackageImports: [
       '@mantine/core',
       '@mantine/hooks',
-      '@mantine/notifications',
       '@tabler/icons-react',
     ],
   },

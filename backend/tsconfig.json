@@ -3,6 +3,8 @@
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,
+    "incremental": true,
+    "tsBuildInfoFile": "../../.tmp/backend.tsbuildinfo",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
@@ -10,7 +12,6 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
-    "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": false,
     "noImplicitAny": false,
@@ -30,6 +31,11 @@
     "src/scripts/import-*.ts",
     "src/scripts/check-*.ts",
     "src/scripts/build-*.ts",
-    "src/scripts/rename-*.ts"
-  ]
+    "src/scripts/rename-*.ts",
+    "**/*.bak.ts"
+  ],
+  "watchOptions": {
+    "watchFile": "useFsEvents",
+    "watchDirectory": "useFsEvents"
+  }
 }

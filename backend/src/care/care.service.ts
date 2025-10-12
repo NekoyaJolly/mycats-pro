@@ -25,11 +25,7 @@ import type {
   CareScheduleResponse,
 } from "./dto/care-schedule-response.dto";
 import type { ScheduleReminderInput } from "./dto/create-care-schedule.dto";
-import type {
-  MedicalRecordAttachmentInput,
-  MedicalRecordMedicationInput,
-  MedicalRecordSymptomInput,
-} from "./dto/create-medical-record.dto";
+import type { MedicalRecordAttachmentInput } from "./dto/create-medical-record.dto";
 import type {
   MedicalRecordData,
   MedicalRecordListResponse,
@@ -57,10 +53,6 @@ const medicalRecordInclude = {
 
 type ScheduleWithRelations = Prisma.ScheduleGetPayload<{
   include: typeof scheduleListInclude;
-}>;
-
-type ScheduleMinimalWithTags = Prisma.ScheduleGetPayload<{
-  include: typeof scheduleMinimalInclude;
 }>;
 
 type MedicalRecordWithRelations = Prisma.MedicalRecordGetPayload<{

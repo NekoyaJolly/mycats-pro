@@ -22,6 +22,32 @@ import { TagsModule } from "./tags/tags.module";
 import { UploadModule } from "./upload/upload.module";
 import { UsersModule } from "./users/users.module";
 
+type LogLevel = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
+
+const ALLOWED_LEVELS: readonly LogLevel[] = ['fatal', 'error', 'warn', 'info', 'debug', 'trace'];
+
+const sanitizeBindings = (input: unknown): { pid?: number; host?: string } => {
+  if (!input || typeof input !== "object") {
+    return {};
+  }
+
+  const record = input as Record<string, unknown>;
+  const pid = typeof record.pid === "number" ? record.pid : undefined;
+  const hostname = typeof record.hostname === "string" ? record.hostname : undefined;
+
+  return {
+    ...(pid !== undefined ? { pid } : {}),
+    ...(hostname ? { host: hostname } : {}),
+  };
+};
+
+const sanitizeLevel = (value: unknown): LogLevel => {
+  if (typeof value === "string" && (ALLOWED_LEVELS as readonly string[]).includes(value)) {
+    return value as LogLevel;
+  }
+  return 'info';
+};
+
 @Module({
   imports: [
     LoggerModule.forRoot({
@@ -33,8 +59,8 @@ import { UsersModule } from "./users/users.module";
         },
         redact: ['req.headers.authorization', 'req.headers.cookie'],
         formatters: {
-          bindings: (b) => ({ pid: b.pid, host: b.hostname }),
-          level: (l) => ({ level: l }),
+          bindings: (value) => sanitizeBindings(value),
+          level: (label) => ({ level: sanitizeLevel(label) }),
         },
       },
     }),

@@ -32,35 +32,35 @@ export class CreateBreedingNgRuleDto {
   active?: boolean;
 
   @ApiPropertyOptional({ description: "オス側のタグ条件", type: [String] })
-  @ValidateIf((dto) => dto.type === BreedingNgRuleType.TAG_COMBINATION)
+  @ValidateIf((dto: CreateBreedingNgRuleDto) => dto.type === BreedingNgRuleType.TAG_COMBINATION)
   @IsArray()
   @ArrayNotEmpty()
   @IsString({ each: true })
   maleConditions?: string[];
 
   @ApiPropertyOptional({ description: "メス側のタグ条件", type: [String] })
-  @ValidateIf((dto) => dto.type === BreedingNgRuleType.TAG_COMBINATION)
+  @ValidateIf((dto: CreateBreedingNgRuleDto) => dto.type === BreedingNgRuleType.TAG_COMBINATION)
   @IsArray()
   @ArrayNotEmpty()
   @IsString({ each: true })
   femaleConditions?: string[];
 
   @ApiPropertyOptional({ description: "禁止するオス猫の名前", type: [String] })
-  @ValidateIf((dto) => dto.type === BreedingNgRuleType.INDIVIDUAL_PROHIBITION)
+  @ValidateIf((dto: CreateBreedingNgRuleDto) => dto.type === BreedingNgRuleType.INDIVIDUAL_PROHIBITION)
   @IsArray()
   @ArrayNotEmpty()
   @IsString({ each: true })
   maleNames?: string[];
 
   @ApiPropertyOptional({ description: "禁止するメス猫の名前", type: [String] })
-  @ValidateIf((dto) => dto.type === BreedingNgRuleType.INDIVIDUAL_PROHIBITION)
+  @ValidateIf((dto: CreateBreedingNgRuleDto) => dto.type === BreedingNgRuleType.INDIVIDUAL_PROHIBITION)
   @IsArray()
   @ArrayNotEmpty()
   @IsString({ each: true })
   femaleNames?: string[];
 
   @ApiPropertyOptional({ description: "世代制限 (親等)", minimum: 1 })
-  @ValidateIf((dto) => dto.type === BreedingNgRuleType.GENERATION_LIMIT)
+  @ValidateIf((dto: CreateBreedingNgRuleDto) => dto.type === BreedingNgRuleType.GENERATION_LIMIT)
   @IsOptional()
   @IsInt()
   @Min(1)

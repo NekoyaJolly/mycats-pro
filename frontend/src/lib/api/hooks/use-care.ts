@@ -9,6 +9,7 @@ import {
   type ApiPathParams,
   type ApiQueryParams,
   type ApiRequestBody,
+  type ApiSuccessData,
 } from '../client';
 import { createDomainQueryKeys } from './query-key-factory';
 
@@ -50,22 +51,13 @@ export interface CareScheduleMeta {
   totalPages: number;
 }
 
-export interface CareScheduleListResponse {
-  success: boolean;
-  data: CareSchedule[];
-  meta: CareScheduleMeta;
-}
+export type CareScheduleListResponse = ApiSuccessData<'/care/schedules', 'get'>;
 
-export interface CareScheduleResponse {
-  success: boolean;
-  data: CareSchedule;
-}
+export type CareScheduleResponse = ApiSuccessData<'/care/schedules', 'post'>;
 
 export type GetCareSchedulesParams = ApiQueryParams<'/care/schedules', 'get'>;
 export type CreateCareScheduleRequest = ApiRequestBody<'/care/schedules', 'post'>;
 export type CompleteCareScheduleRequest = ApiRequestBody<'/care/schedules/{id}/complete', 'patch'>;
-
-// Removed redundant CreateCareSchedulePayload type; use CreateCareScheduleRequest directly.
 
 const careScheduleKeys = createDomainQueryKeys<string, GetCareSchedulesParams>('care-schedules');
 
@@ -77,10 +69,17 @@ export function useGetCareSchedules(
 ) {
   return useQuery({
     queryKey: careScheduleKeys.list(params),
-    queryFn: () =>
-      apiClient.get('/care/schedules', {
+    queryFn: async () => {
+      const response = await apiClient.get('/care/schedules', {
         query: params,
-      }) as Promise<CareScheduleListResponse>,
+      });
+
+      if (!response.data) {
+        throw new Error('ケアスケジュールのレスポンスが不正です');
+      }
+
+      return response.data as CareScheduleListResponse;
+    },
     ...options,
   });
 }
@@ -89,10 +88,17 @@ export function useAddCareSchedule() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: CreateCareSchedulePayload) =>
-      apiClient.post('/care/schedules', {
-        body: payload as CreateCareScheduleRequest,
-      }) as Promise<CareScheduleResponse>,
+    mutationFn: async (payload: CreateCareScheduleRequest) => {
+      const response = await apiClient.post('/care/schedules', {
+        body: payload,
+      });
+
+      if (!response.data) {
+        throw new Error('ケアスケジュールの登録に失敗しました。レスポンスが不正です。');
+      }
+
+      return response.data as CareScheduleResponse;
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: careScheduleKeys.lists() });
       notifications.show({

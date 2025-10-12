@@ -30,6 +30,7 @@ import {
   IconCalendar,
 } from '@tabler/icons-react';
 import TagSelector, { TagDisplay } from '../../components/TagSelector';
+import { type TagCategoryView } from '@/lib/api/hooks/use-tags';
 
 // サンプルデータ型定義
 interface Kitten {
@@ -50,6 +51,149 @@ interface MotherCat {
   deliveryDate: string;
   monthsOld: number;
 }
+
+const sampleTagCategories: TagCategoryView[] = [
+  {
+    id: '1',
+    key: 'body-size',
+    name: '体型・サイズ',
+    description: '猫の体型や大きさに関するタグ',
+    color: '#3498db',
+    displayOrder: 1,
+    scopes: ['cat'],
+    isActive: true,
+    tags: [
+      {
+        id: 't1',
+        categoryId: '1',
+        name: '大型',
+        color: '#3498db',
+        displayOrder: 1,
+        allowsManual: true,
+        allowsAutomation: false,
+        description: '大きめの体格',
+        metadata: null,
+        isActive: true,
+        usageCount: 12,
+      },
+      {
+        id: 't2',
+        categoryId: '1',
+        name: '中型',
+        color: '#3498db',
+        displayOrder: 2,
+        allowsManual: true,
+        allowsAutomation: false,
+        description: '標準的な体格',
+        metadata: null,
+        isActive: true,
+        usageCount: 8,
+      },
+      {
+        id: 't3',
+        categoryId: '1',
+        name: '小型',
+        color: '#3498db',
+        displayOrder: 3,
+        allowsManual: true,
+        allowsAutomation: false,
+        description: '小柄な体格',
+        metadata: null,
+        isActive: true,
+        usageCount: 5,
+      },
+    ],
+  },
+  {
+    id: '2',
+    key: 'personality',
+    name: '性格・特徴',
+    description: '猫の性格や行動特徴に関するタグ',
+    color: '#e67e22',
+    displayOrder: 2,
+    scopes: ['cat'],
+    isActive: true,
+    tags: [
+      {
+        id: 't4',
+        categoryId: '2',
+        name: '人懐っこい',
+        color: '#e67e22',
+        displayOrder: 1,
+        allowsManual: true,
+        allowsAutomation: false,
+        description: '人に良く慣れる性格',
+        metadata: null,
+        isActive: true,
+        usageCount: 15,
+      },
+      {
+        id: 't5',
+        categoryId: '2',
+        name: '内気',
+        color: '#e67e22',
+        displayOrder: 2,
+        allowsManual: true,
+        allowsAutomation: false,
+        description: '慎重でおとなしい',
+        metadata: null,
+        isActive: true,
+        usageCount: 7,
+      },
+      {
+        id: 't6',
+        categoryId: '2',
+        name: '活発',
+        color: '#e67e22',
+        displayOrder: 3,
+        allowsManual: true,
+        allowsAutomation: false,
+        description: '走り回るほど元気',
+        metadata: null,
+        isActive: true,
+        usageCount: 10,
+      },
+    ],
+  },
+  {
+    id: '3',
+    key: 'health',
+    name: '健康状態',
+    description: '健康や医療に関するタグ',
+    color: '#e74c3c',
+    displayOrder: 3,
+    scopes: ['cat'],
+    isActive: true,
+    tags: [
+      {
+        id: 't7',
+        categoryId: '3',
+        name: '要注意',
+        color: '#e74c3c',
+        displayOrder: 1,
+        allowsManual: true,
+        allowsAutomation: false,
+        description: '体調管理が必要',
+        metadata: null,
+        isActive: true,
+        usageCount: 3,
+      },
+      {
+        id: 't8',
+        categoryId: '3',
+        name: '健康',
+        color: '#2ecc71',
+        displayOrder: 2,
+        allowsManual: true,
+        allowsAutomation: false,
+        description: '健康状態良好',
+        metadata: null,
+        isActive: true,
+        usageCount: 20,
+      },
+    ],
+  },
+];
 
 // サンプルデータ
 const sampleMotherCats: MotherCat[] = [
@@ -218,6 +362,7 @@ export default function KittensPage() {
           onChange={setFilterTags}
           label="タグでフィルタ"
           placeholder="表示する子猫のタグを選択"
+          categories={sampleTagCategories}
         />
       </Card>
 
@@ -238,7 +383,7 @@ export default function KittensPage() {
             <Card padding="sm" bg="blue.0" radius="sm" mb="md">
               <Group gap="xs">
                 <Text size="sm" fw={500}>フィルタ適用中:</Text>
-                <TagDisplay tagIds={filterTags} size="xs" />
+                <TagDisplay tagIds={filterTags} size="xs" categories={sampleTagCategories} />
                 <Button 
                   variant="subtle" 
                   size="xs" 
@@ -315,7 +460,7 @@ export default function KittensPage() {
                               <Text size="xs" c="dimmed">備考: {kitten.notes}</Text>
                             )}
                             {kitten.tags && kitten.tags.length > 0 && (
-                              <TagDisplay tagIds={kitten.tags} size="xs" />
+                              <TagDisplay tagIds={kitten.tags} size="xs" categories={sampleTagCategories} />
                             )}
                           </Stack>
                         </Card>
@@ -578,6 +723,7 @@ export default function KittensPage() {
             onChange={setSelectedTags}
             label="タグ"
             placeholder="子猫に適用するタグを選択"
+            categories={sampleTagCategories}
           />
           {selectedMother && (maleCount > 0 || femaleCount > 0) && (
             <Card padding="sm" bg="blue.0" radius="sm">

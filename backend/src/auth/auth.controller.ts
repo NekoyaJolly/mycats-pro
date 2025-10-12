@@ -13,6 +13,7 @@ import {
   Req,
   Ip,
   Res,
+  UnauthorizedException,
 } from "@nestjs/common";
 import {
   ApiBearerAuth,
@@ -30,7 +31,6 @@ import { AuthService } from "./auth.service";
 import type { RequestUser } from "./auth.types";
 import { ChangePasswordDto } from "./dto/change-password.dto";
 import { LoginDto } from "./dto/login.dto";
-import { PasswordResetDto } from "./dto/password-reset.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { RequestPasswordResetDto } from "./dto/request-password-reset.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
@@ -74,10 +74,10 @@ export class AuthController {
       userAgent = (ua as string[]).join(",");
     }
     const result = await this.auth.login(dto.email, dto.password, ip, userAgent);
-    if (result?.success) {
+    if (result.success) {
       this.rateLimiter.reset(registerRateKey);
     }
-    const userRaw = result.data.user as { id: string; email: string; role: string; firstName: string; lastName: string };
+    const userRaw = result.data.user;
     const requestUser: RequestUser = {
       userId: userRaw.id,
       email: userRaw.email,
@@ -85,10 +85,9 @@ export class AuthController {
       firstName: userRaw.firstName,
       lastName: userRaw.lastName,
     };
-    // 型安全にAuthServiceのprismaプロパティを直接利用
-    const refreshed = await this.auth["prisma"].user.findUnique({ where: { id: userRaw.id }, select: { refreshToken: true } });
-    if (refreshed?.refreshToken) {
-      this.setRefreshCookie(res, refreshed.refreshToken);
+    const storedRefreshToken = await this.auth.getStoredRefreshToken(userRaw.id);
+    if (storedRefreshToken) {
+      this.setRefreshCookie(res, storedRefreshToken);
     }
     return { success: result.success, data: { access_token: result.data.access_token, user: requestUser } };
   }
@@ -103,8 +102,8 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-  const clientIp = ip || req.ip || 'unknown';
-  const rateKey = this.buildRegisterRateKey(dto.email, clientIp);
+    const clientIp = ip || req.ip || 'unknown';
+    const rateKey = this.buildRegisterRateKey(dto.email, clientIp);
     const rate = this.rateLimiter.consume(rateKey, 5, 60_000);
     if (!rate.allowed) {
       this.applyRateLimitHeaders(res, 5, rate.remaining, rate.retryAfter, true);
@@ -113,7 +112,7 @@ export class AuthController {
     this.applyRateLimitHeaders(res, 5, rate.remaining, rate.retryAfter, false);
 
     const result = await this.auth.register(dto.email, dto.password);
-    if (result?.data?.refresh_token) {
+    if (result.data.refresh_token) {
       this.setRefreshCookie(res, result.data.refresh_token);
     }
     return result;
@@ -167,10 +166,14 @@ export class AuthController {
   @ApiResponse({ status: HttpStatus.OK })
   async refresh(@Body() dto: RefreshTokenDto, @Res({ passthrough: true }) res: Response): Promise<{ success: boolean; data: { access_token: string; user: RequestUser } }> {
     // DTO 互換モード: body に入っていれば利用、無ければ Cookie 参照（将来的には完全Cookie化）
-    const cookieToken = (res.req as Request).cookies?.[REFRESH_COOKIE_NAME];
-    const token = dto?.refreshToken || cookieToken;
+    const cookieToken = this.getCookieValue(res, REFRESH_COOKIE_NAME);
+    const token = dto?.refreshToken ?? cookieToken;
+    if (!token) {
+      throw new UnauthorizedException('Missing refresh token');
+    }
+
     const result = await this.auth.refreshUsingToken(token);
-    const user = result.user as { id: string; email: string; role: string; firstName: string; lastName: string };
+    const user = result.user;
     const requestUser: RequestUser = {
       userId: user.id,
       email: user.email,
@@ -189,8 +192,23 @@ export class AuthController {
   @ApiResponse({ status: HttpStatus.OK })
   logout(@GetUser() user: RequestUser | undefined, @Res({ passthrough: true }) res: Response) {
     // Cookie 無効化
-  res.cookie(REFRESH_COOKIE_NAME, '', { httpOnly: true, secure: isSecureEnv(), sameSite: REFRESH_COOKIE_SAMESITE, path: '/', maxAge: 0 });
+    res.cookie(REFRESH_COOKIE_NAME, '', { httpOnly: true, secure: isSecureEnv(), sameSite: REFRESH_COOKIE_SAMESITE, path: '/', maxAge: 0 });
     return this.auth.logout(user.userId);
+  }
+
+  private getCookieValue(res: Response, key: string): string | undefined {
+    const reqLike = res.req as unknown;
+    if (!reqLike || typeof reqLike !== 'object') {
+      return undefined;
+    }
+
+    const cookies = (reqLike as { cookies?: unknown }).cookies;
+    if (!cookies || typeof cookies !== 'object') {
+      return undefined;
+    }
+
+    const value = (cookies as Record<string, unknown>)[key];
+    return typeof value === 'string' ? value : undefined;
   }
 
   private setRefreshCookie(res: Response, token: string) {

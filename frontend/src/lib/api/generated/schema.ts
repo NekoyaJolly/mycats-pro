@@ -568,6 +568,23 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tags/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** タグの並び替え */
+        patch: operations["TagsController_reorder"];
+        trace?: never;
+    };
     "/api/v1/tags/{id}": {
         parameters: {
             query?: never;
@@ -582,7 +599,8 @@ export type paths = {
         delete: operations["TagsController_remove"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** タグの更新 */
+        patch: operations["TagsController_update"];
         trace?: never;
     };
     "/api/v1/tags/cats/{id}/tags": {
@@ -617,6 +635,59 @@ export type paths = {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tags/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** タグカテゴリ一覧の取得 */
+        get: operations["TagCategoriesController_findAll"];
+        put?: never;
+        /** タグカテゴリの作成 */
+        post: operations["TagCategoriesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tags/categories/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** タグカテゴリの並び替え */
+        patch: operations["TagCategoriesController_reorder"];
+        trace?: never;
+    };
+    "/api/v1/tags/categories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** タグカテゴリの削除 */
+        delete: operations["TagCategoriesController_remove"];
+        options?: never;
+        head?: never;
+        /** タグカテゴリの更新 */
+        patch: operations["TagCategoriesController_update"];
         trace?: never;
     };
     "/api/v1/health": {
@@ -869,12 +940,200 @@ export type components = {
             generationLimit?: number;
         };
         UpdateBreedingNgRuleDto: Record<string, never>;
+        CareScheduleCatDto: {
+            /** @example e7b6a7a7-2d7f-4b2f-9f3a-1c2b3d4e5f60 */
+            id: string;
+            /** @example レオ */
+            name: string;
+        };
+        CareScheduleReminderDto: {
+            /** @example f1e2d3c4-b5a6-7890-1234-56789abcdef0 */
+            id: string;
+            /**
+             * @example ABSOLUTE
+             * @enum {string}
+             */
+            timingType: "ABSOLUTE" | "RELATIVE";
+            /** @example 2025-08-01T09:00:00.000Z */
+            remindAt?: string;
+            /** @example 2 */
+            offsetValue?: number;
+            /**
+             * @example DAY
+             * @enum {string}
+             */
+            offsetUnit?: "MINUTE" | "HOUR" | "DAY" | "WEEK" | "MONTH";
+            /**
+             * @example START_DATE
+             * @enum {string}
+             */
+            relativeTo?: "START_DATE" | "END_DATE" | "CUSTOM_DATE";
+            /**
+             * @example IN_APP
+             * @enum {string}
+             */
+            channel: "IN_APP" | "EMAIL" | "SMS" | "PUSH";
+            /**
+             * @example NONE
+             * @enum {string}
+             */
+            repeatFrequency?: "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY" | "CUSTOM";
+            /** @example 1 */
+            repeatInterval?: number;
+            /** @example 5 */
+            repeatCount?: number;
+            /** @example 2025-12-31T00:00:00.000Z */
+            repeatUntil?: string;
+            /** @example 前日9時に通知 */
+            notes?: string;
+            /** @example true */
+            isActive: boolean;
+        };
+        CareScheduleTagDto: {
+            /** @example a1b2c3d4-5678-90ab-cdef-1234567890ab */
+            id: string;
+            /** @example vaccination */
+            slug: string;
+            /** @example ワクチン */
+            label: string;
+            /** @example 1 */
+            level: number;
+            /** @example parent-tag-id */
+            parentId?: string;
+        };
+        CareScheduleItemDto: {
+            /** @example a6f7e52f-4a3b-4a76-9870-1234567890ab */
+            id: string;
+            /** @example 年次健康診断 */
+            name: string;
+            /** @example 年次健康診断 */
+            title: string;
+            /** @example 毎年の定期健診 */
+            description: string;
+            /** @example 2025-09-01T00:00:00.000Z */
+            scheduleDate: string;
+            /** @example 2025-09-01T01:00:00.000Z */
+            endDate?: string;
+            /** @example Asia/Tokyo */
+            timezone?: string;
+            /**
+             * @example CARE
+             * @enum {string}
+             */
+            scheduleType: "BREEDING" | "CARE" | "APPOINTMENT" | "REMINDER" | "MAINTENANCE";
+            /**
+             * @example PENDING
+             * @enum {string}
+             */
+            status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+            /**
+             * @example HEALTH_CHECK
+             * @enum {string|null}
+             */
+            careType: "VACCINATION" | "HEALTH_CHECK" | "GROOMING" | "DENTAL_CARE" | "MEDICATION" | "SURGERY" | "OTHER" | null;
+            /**
+             * @example MEDIUM
+             * @enum {string}
+             */
+            priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+            /** @example FREQ=YEARLY;INTERVAL=1 */
+            recurrenceRule?: string;
+            /** @example f3a2c1d7-1234-5678-90ab-cdef12345678 */
+            assignedTo: string;
+            cat: components["schemas"]["CareScheduleCatDto"] | null;
+            reminders: components["schemas"]["CareScheduleReminderDto"][];
+            tags: components["schemas"]["CareScheduleTagDto"][];
+            /** @example 2025-08-01T00:00:00.000Z */
+            createdAt: string;
+            /** @example 2025-08-15T12:34:56.000Z */
+            updatedAt: string;
+        };
+        CareScheduleMetaDto: {
+            /** @example 42 */
+            total: number;
+            /** @example 1 */
+            page: number;
+            /** @example 20 */
+            limit: number;
+            /** @example 3 */
+            totalPages: number;
+        };
+        CareScheduleListResponseDto: {
+            /** @example true */
+            success: boolean;
+            data: components["schemas"]["CareScheduleItemDto"][];
+            meta: components["schemas"]["CareScheduleMetaDto"];
+        };
+        ScheduleReminderDto: {
+            /** @enum {string} */
+            timingType: "ABSOLUTE" | "RELATIVE";
+            /**
+             * @description 指定日時 (ISO8601)
+             * @example 2025-08-01T09:00:00.000Z
+             */
+            remindAt?: string;
+            /**
+             * @description 相対リマインドの値
+             * @example 2
+             */
+            offsetValue?: number;
+            /**
+             * @example DAY
+             * @enum {string}
+             */
+            offsetUnit?: "MINUTE" | "HOUR" | "DAY" | "WEEK" | "MONTH";
+            /**
+             * @example START_DATE
+             * @enum {string}
+             */
+            relativeTo?: "START_DATE" | "END_DATE" | "CUSTOM_DATE";
+            /**
+             * @example IN_APP
+             * @enum {string}
+             */
+            channel: "IN_APP" | "EMAIL" | "SMS" | "PUSH";
+            /**
+             * @example NONE
+             * @enum {string}
+             */
+            repeatFrequency?: "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY" | "CUSTOM";
+            /**
+             * @description 繰り返し間隔
+             * @example 1
+             */
+            repeatInterval?: number;
+            /**
+             * @description 繰り返し回数
+             * @example 5
+             */
+            repeatCount?: number;
+            /**
+             * @description 繰り返し終了日時
+             * @example 2025-12-31T00:00:00.000Z
+             */
+            repeatUntil?: string;
+            /**
+             * @description 備考
+             * @example 前日9時に通知
+             */
+            notes?: string;
+            /**
+             * @description 有効フラグ
+             * @example true
+             */
+            isActive?: boolean;
+        };
         CreateCareScheduleDto: {
             /**
              * @description 猫ID
              * @example e7b6a7a7-2d7f-4b2f-9f3a-1c2b3d4e5f60
              */
             catId: string;
+            /**
+             * @description ケア名
+             * @example 年次健康診断
+             */
+            name: string;
             /**
              * @description ケア種別
              * @example HEALTH_CHECK
@@ -887,11 +1146,41 @@ export type components = {
              */
             scheduledDate: string;
             /**
+             * @description 終了日時 (ISO8601)
+             * @example 2025-09-01T10:00:00.000Z
+             */
+            endDate?: string;
+            /**
+             * @description タイムゾーン
+             * @example Asia/Tokyo
+             */
+            timezone?: string;
+            /**
              * @description ケア名/詳細
              * @example 健康診断 (年1回)
              */
             description?: string;
+            /**
+             * @example MEDIUM
+             * @enum {string}
+             */
+            priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+            /**
+             * @description RRULE形式などの繰り返しルール
+             * @example FREQ=YEARLY;INTERVAL=1
+             */
+            recurrenceRule?: string;
+            /** @description リマインダー設定 */
+            reminders?: components["schemas"]["ScheduleReminderDto"][];
+            /** @description 関連ケアタグID (最大3階層) */
+            careTagIds?: string[];
         };
+        CareScheduleResponseDto: {
+            /** @example true */
+            success: boolean;
+            data: components["schemas"]["CareScheduleItemDto"];
+        };
+        CompleteCareMedicalRecordDto: Record<string, never>;
         CompleteCareDto: {
             /**
              * @description 完了日 (YYYY-MM-DD)
@@ -908,6 +1197,17 @@ export type components = {
              * @example 体調良好。次回はワクチンA。
              */
             notes?: string;
+            medicalRecord?: components["schemas"]["CompleteCareMedicalRecordDto"];
+        };
+        CareCompleteResponseDto: {
+            /** @example true */
+            success: boolean;
+            /** @example {
+             *       "scheduleId": "a6f7e52f-4a3b-4a76-9870-1234567890ab",
+             *       "recordId": "bcdef123-4567-890a-bcde-f1234567890a",
+             *       "medicalRecordId": "f1234567-89ab-cdef-0123-456789abcdef"
+             *     } */
+            data: Record<string, never>;
         };
         CreateTagDto: {
             /**
@@ -915,6 +1215,11 @@ export type components = {
              * @example Indoor
              */
             name: string;
+            /**
+             * @description カテゴリID
+             * @example aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+             */
+            categoryId: string;
             /**
              * @description カラーコード
              * @example #3B82F6
@@ -925,6 +1230,92 @@ export type components = {
              * @example 室内飼いタグ
              */
             description?: string;
+            /**
+             * @description 手動操作で利用可能か
+             * @example true
+             */
+            allowsManual?: boolean;
+            /**
+             * @description 自動ルールで利用可能か
+             * @example true
+             */
+            allowsAutomation?: boolean;
+            /**
+             * @description 表示順
+             * @example 10
+             */
+            displayOrder?: number;
+            /** @description 任意のメタデータ */
+            metadata?: Record<string, never>;
+            /**
+             * @description アクティブかどうか
+             * @example true
+             */
+            isActive?: boolean;
+        };
+        TagOrderItemDto: {
+            /**
+             * Format: uuid
+             * @description タグID
+             */
+            id: string;
+            /**
+             * @description 表示順
+             * @example 12
+             */
+            displayOrder: number;
+            /**
+             * Format: uuid
+             * @description 所属カテゴリID
+             */
+            categoryId?: string;
+        };
+        ReorderTagsDto: {
+            items: components["schemas"]["TagOrderItemDto"][];
+        };
+        UpdateTagDto: {
+            /**
+             * @description タグ名
+             * @example Indoor
+             */
+            name?: string;
+            /**
+             * @description カテゴリID
+             * @example aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+             */
+            categoryId?: string;
+            /**
+             * @description カラーコード
+             * @example #3B82F6
+             */
+            color?: string;
+            /**
+             * @description 説明
+             * @example 室内飼いタグ
+             */
+            description?: string;
+            /**
+             * @description 手動操作で利用可能か
+             * @example true
+             */
+            allowsManual?: boolean;
+            /**
+             * @description 自動ルールで利用可能か
+             * @example true
+             */
+            allowsAutomation?: boolean;
+            /**
+             * @description 表示順
+             * @example 10
+             */
+            displayOrder?: number;
+            /** @description 任意のメタデータ */
+            metadata?: Record<string, never>;
+            /**
+             * @description アクティブかどうか
+             * @example true
+             */
+            isActive?: boolean;
         };
         AssignTagDto: {
             /**
@@ -932,6 +1323,77 @@ export type components = {
              * @example aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
              */
             tagId: string;
+        };
+        CreateTagCategoryDto: {
+            /**
+             * @description ユニークキー (未指定時は名前から生成)
+             * @example cats_status
+             */
+            key?: string;
+            /**
+             * @description カテゴリ名
+             * @example 猫ステータス
+             */
+            name: string;
+            /** @description カテゴリの説明 */
+            description?: string;
+            /**
+             * @description カテゴリの代表カラー
+             * @example #6366F1
+             */
+            color?: string;
+            /** @description 表示順 */
+            displayOrder?: number;
+            /** @description 利用するスコープ一覧 */
+            scopes?: string[];
+            /**
+             * @description アクティブかどうか
+             * @example true
+             */
+            isActive?: boolean;
+        };
+        TagCategoryOrderItemDto: {
+            /**
+             * Format: uuid
+             * @description カテゴリID
+             */
+            id: string;
+            /**
+             * @description 表示順
+             * @example 10
+             */
+            displayOrder: number;
+        };
+        ReorderTagCategoriesDto: {
+            items: components["schemas"]["TagCategoryOrderItemDto"][];
+        };
+        UpdateTagCategoryDto: {
+            /**
+             * @description ユニークキー (未指定時は名前から生成)
+             * @example cats_status
+             */
+            key?: string;
+            /**
+             * @description カテゴリ名
+             * @example 猫ステータス
+             */
+            name?: string;
+            /** @description カテゴリの説明 */
+            description?: string;
+            /**
+             * @description カテゴリの代表カラー
+             * @example #6366F1
+             */
+            color?: string;
+            /** @description 表示順 */
+            displayOrder?: number;
+            /** @description 利用するスコープ一覧 */
+            scopes?: string[];
+            /**
+             * @description アクティブかどうか
+             * @example true
+             */
+            isActive?: boolean;
         };
     };
     responses: never;
@@ -2234,7 +2696,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CareScheduleListResponseDto"];
+                };
             };
         };
     };
@@ -2255,7 +2719,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CareScheduleResponseDto"];
+                };
             };
         };
     };
@@ -2278,13 +2744,20 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CareCompleteResponseDto"];
+                };
             };
         };
     };
     TagsController_findAll: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description 非アクティブなタグを含めるか */
+                includeInactive?: boolean;
+                /** @description 対象スコープ */
+                scope?: string[];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2320,6 +2793,27 @@ export interface operations {
             };
         };
     };
+    TagsController_reorder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderTagsDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     TagsController_remove: {
         parameters: {
             query?: never;
@@ -2330,6 +2824,29 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TagsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTagDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -2374,6 +2891,112 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TagCategoriesController_findAll: {
+        parameters: {
+            query?: {
+                /** @description 非アクティブカテゴリを含める */
+                includeInactive?: boolean;
+                /** @description 対象スコープ */
+                scope?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TagCategoriesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTagCategoryDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TagCategoriesController_reorder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderTagCategoriesDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TagCategoriesController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TagCategoriesController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTagCategoryDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {

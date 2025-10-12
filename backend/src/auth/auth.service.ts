@@ -18,6 +18,50 @@ import { PrismaService } from "../prisma/prisma.service";
 import { LoginAttemptService, LoginAttemptData } from "./login-attempt.service";
 import { PasswordService } from "./password.service";
 
+type ValidatedUser = {
+  id: string;
+  email: string;
+  role: UserRole;
+  firstName: string | null;
+  lastName: string | null;
+  passwordHash: string | null;
+  failedLoginAttempts: number;
+  lockedUntil: Date | null;
+};
+
+export interface AuthUserView {
+  id: string;
+  email: string;
+  role: UserRole;
+  firstName: string | null;
+  lastName: string | null;
+}
+
+export interface LoginResult {
+  success: true;
+  data: {
+    access_token: string;
+    user: AuthUserView;
+  };
+}
+
+export interface RegisterResult {
+  success: true;
+  data: {
+    id: string;
+    email: string;
+    access_token: string;
+    refresh_token: string;
+    user: AuthUserView;
+  };
+}
+
+export interface RefreshTokenResult {
+  access_token: string;
+  refresh_token: string;
+  user: AuthUserView;
+}
+
 
 @Injectable()
 export class AuthService {
@@ -30,19 +74,20 @@ export class AuthService {
     private readonly loginAttemptService: LoginAttemptService,
   ) {}
 
-  async validateUser(email: string, password: string) {
-    const user = (await this.prisma.user.findUnique({
+  async validateUser(email: string, password: string): Promise<ValidatedUser | null> {
+    const user = await this.prisma.user.findUnique({
       where: { email: email.trim().toLowerCase() },
-    })) as unknown as {
-      id: string;
-      email: string;
-      role: UserRole;
-      firstName: string | null;
-      lastName: string | null;
-      passwordHash: string | null;
-      failedLoginAttempts: number;
-      lockedUntil: Date | null;
-    } | null;
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        firstName: true,
+        lastName: true,
+        passwordHash: true,
+        failedLoginAttempts: true,
+        lockedUntil: true,
+      },
+    });
 
     if (!user || !user.passwordHash) return null;
 
@@ -75,7 +120,7 @@ export class AuthService {
     password: string,
     ipAddress?: string,
     userAgent?: string,
-  ) {
+  ): Promise<LoginResult> {
     email = email.trim().toLowerCase();
     // アカウントロック状態をチェック
     const isLocked = await this.loginAttemptService.isAccountLocked(email);
@@ -122,9 +167,13 @@ export class AuthService {
       throw new UnauthorizedException("認証情報が正しくありません");
     }
 
-  // generateTokens にフルユーザー型が必要なため再取得
-  const fullUser = await this.prisma.user.findUnique({ where: { id: user.id } });
-  const tokens = await this.generateTokens(fullUser as User);
+    // generateTokens にフルユーザー型が必要なため再取得
+    const fullUser = await this.prisma.user.findUnique({ where: { id: user.id } });
+    if (!fullUser) {
+      this.logger.error(`User ${user.id} disappeared during login flow`);
+      throw new UnauthorizedException("ユーザーが見つかりません");
+    }
+    const tokens = await this.generateTokens(fullUser);
 
     // ログイン成功ログ
     this.logger.log({
@@ -155,7 +204,7 @@ export class AuthService {
     userId: string,
     password: string,
     isHashed: boolean = false,
-  ) {
+  ): Promise<{ success: true }> {
     let hash: string;
 
     if (isHashed) {
@@ -183,7 +232,7 @@ export class AuthService {
     return { success: true };
   }
 
-  async register(email: string, password: string) {
+  async register(email: string, password: string): Promise<RegisterResult> {
     // email の正規化（前後スペース除去＋小文字化）
     email = email.trim().toLowerCase();
     // unique 制約に従い findUnique を使用
@@ -244,7 +293,11 @@ export class AuthService {
     };
   }
 
-  async requestPasswordReset(email: string) {
+  async requestPasswordReset(email: string): Promise<{
+    success: true;
+    message: string;
+    token?: string;
+  }> {
     // email の正規化
     email = email.trim().toLowerCase();
     const user = await this.prisma.user.findUnique({ where: { email } });
@@ -299,7 +352,7 @@ export class AuthService {
     };
   }
 
-  async resetPassword(token: string, newPassword: string) {
+  async resetPassword(token: string, newPassword: string): Promise<{ success: true; message: string }> {
     const candidates = await this.prisma.user.findMany({
       where: {
         resetPasswordToken: { not: null },
@@ -369,7 +422,7 @@ export class AuthService {
     userId: string,
     currentPassword: string,
     newPassword: string,
-  ) {
+  ): Promise<{ success: true; message: string }> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user || !user.passwordHash) {
       throw new BadRequestException("ユーザーが見つかりません");
@@ -402,7 +455,7 @@ export class AuthService {
    * Cookie などで受け取った refreshToken を用いてアクセストークンを再発行
    * 成功時は refreshToken をローテーション（新しいものを返す）
    */
-  async refreshUsingToken(refreshToken: string) {
+  async refreshUsingToken(refreshToken: string): Promise<RefreshTokenResult> {
     if (!refreshToken) {
       this.logger.warn('Refresh attempt without token');
       throw new UnauthorizedException('Missing refresh token');
@@ -430,7 +483,11 @@ export class AuthService {
 
       // generateTokens のために完全ユーザーが必要 => id で再取得
       const fullUser = await this.prisma.user.findUnique({ where: { id: user.id } });
-      const tokens = await this.generateTokens(fullUser as User); // ローテーション
+      if (!fullUser) {
+        this.logger.warn(`User ${user.id} missing during refresh flow`);
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+      const tokens = await this.generateTokens(fullUser); // ローテーション
       return {
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token,
@@ -448,7 +505,7 @@ export class AuthService {
     }
   }
 
-  private async generateTokens(user: User) {
+  private async generateTokens(user: User): Promise<{ access_token: string; refresh_token: string }> {
     const accessPayload = {
       sub: user.id,
       email: user.email,
@@ -474,11 +531,19 @@ export class AuthService {
     return { access_token, refresh_token };
   }
 
-  async logout(userId: string) {
+  async logout(userId: string): Promise<{ success: true; message: string }> {
     await this.prisma.user.update({
       where: { id: userId },
       data: { refreshToken: null },
     });
     return { success: true, message: 'ログアウトしました' };
+  }
+
+  async getStoredRefreshToken(userId: string): Promise<string | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { refreshToken: true },
+    });
+    return user?.refreshToken ?? null;
   }
 }
