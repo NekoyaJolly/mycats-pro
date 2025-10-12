@@ -5,3 +5,5 @@ export * from "./create-tag-category.dto";
 export * from "./update-tag-category.dto";
 export * from "./reorder-tag-category.dto";
 export * from "./reorder-tag.dto";
+export * from "./create-tag-automation-rule.dto";
+export * from "./update-tag-automation-rule.dto";
