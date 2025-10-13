@@ -9,6 +9,18 @@ CREATE TYPE "CareType" AS ENUM ('VACCINATION', 'HEALTH_CHECK', 'GROOMING', 'DENT
 CREATE TYPE "ScheduleType" AS ENUM ('BREEDING', 'CARE', 'APPOINTMENT', 'REMINDER', 'MAINTENANCE');
 CREATE TYPE "ScheduleStatus" AS ENUM ('PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED');
 CREATE TYPE "Priority" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'URGENT');
+CREATE TYPE "TagAssignmentAction" AS ENUM ('ASSIGNED', 'UNASSIGNED');
+CREATE TYPE "TagAssignmentSource" AS ENUM ('MANUAL', 'AUTOMATION', 'SYSTEM');
+CREATE TYPE "TagAutomationTriggerType" AS ENUM ('EVENT', 'SCHEDULE', 'MANUAL');
+CREATE TYPE "TagAutomationEventType" AS ENUM (
+    'BREEDING_PLANNED',
+    'BREEDING_CONFIRMED',
+    'PREGNANCY_CONFIRMED',
+    'KITTEN_REGISTERED',
+    'AGE_THRESHOLD',
+    'CUSTOM'
+);
+CREATE TYPE "TagAutomationRunStatus" AS ENUM ('PENDING', 'COMPLETED', 'FAILED');
 
 -- Create users table
 CREATE TABLE IF NOT EXISTS "users" (
@@ -102,15 +114,91 @@ CREATE TABLE IF NOT EXISTS "schedules" (
     CONSTRAINT "schedules_assignedTo_fkey" FOREIGN KEY ("assignedTo") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
+-- Create tag_categories table
+CREATE TABLE IF NOT EXISTS "tag_categories" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "key" TEXT NOT NULL UNIQUE,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "color" TEXT DEFAULT '#3B82F6',
+    "display_order" INTEGER NOT NULL DEFAULT 0,
+    "scopes" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create tags table
 CREATE TABLE IF NOT EXISTS "tags" (
     "id" TEXT NOT NULL PRIMARY KEY,
-    "name" TEXT NOT NULL UNIQUE,
+    "category_id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
     "color" TEXT NOT NULL DEFAULT '#3B82F6',
     "description" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "display_order" INTEGER NOT NULL DEFAULT 0,
+    "allows_manual" BOOLEAN NOT NULL DEFAULT true,
+    "allows_automation" BOOLEAN NOT NULL DEFAULT true,
+    "metadata" JSONB,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "tags_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "tag_categories"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS "tag_categories_key_key" ON "tag_categories"("key");
+CREATE UNIQUE INDEX IF NOT EXISTS "tags_category_id_name_key" ON "tags"("category_id", "name");
+
+-- Create tag automation tables
+CREATE TABLE IF NOT EXISTS "tag_automation_rules" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "key" TEXT NOT NULL UNIQUE,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "trigger_type" "TagAutomationTriggerType" NOT NULL,
+    "event_type" "TagAutomationEventType" NOT NULL,
+    "scope" TEXT,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "priority" INTEGER NOT NULL DEFAULT 0,
+    "config" JSONB,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "tag_automation_runs" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "rule_id" TEXT NOT NULL,
+    "event_payload" JSONB,
+    "status" "TagAutomationRunStatus" NOT NULL DEFAULT 'PENDING',
+    "started_at" TIMESTAMP(3),
+    "completed_at" TIMESTAMP(3),
+    "error_message" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "tag_automation_runs_rule_id_fkey" FOREIGN KEY ("rule_id") REFERENCES "tag_automation_rules"("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS "tag_assignment_history" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "cat_id" TEXT NOT NULL,
+    "tag_id" TEXT NOT NULL,
+    "rule_id" TEXT,
+    "automation_run_id" TEXT,
+    "action" "TagAssignmentAction" NOT NULL DEFAULT 'ASSIGNED',
+    "source" "TagAssignmentSource" NOT NULL DEFAULT 'MANUAL',
+    "reason" TEXT,
+    "metadata" JSONB,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "tag_assignment_history_cat_id_fkey" FOREIGN KEY ("cat_id") REFERENCES "cats"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "tag_assignment_history_tag_id_fkey" FOREIGN KEY ("tag_id") REFERENCES "tags"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "tag_assignment_history_rule_id_fkey" FOREIGN KEY ("rule_id") REFERENCES "tag_automation_rules"("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "tag_assignment_history_automation_run_id_fkey" FOREIGN KEY ("automation_run_id") REFERENCES "tag_automation_runs"("id") ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS "tag_automation_runs_rule_id_idx" ON "tag_automation_runs"("rule_id");
+CREATE INDEX IF NOT EXISTS "tag_assignment_history_cat_id_idx" ON "tag_assignment_history"("cat_id");
+CREATE INDEX IF NOT EXISTS "tag_assignment_history_tag_id_idx" ON "tag_assignment_history"("tag_id");
+CREATE INDEX IF NOT EXISTS "tag_assignment_history_rule_id_idx" ON "tag_assignment_history"("rule_id");
+CREATE INDEX IF NOT EXISTS "tag_assignment_history_automation_run_id_idx" ON "tag_assignment_history"("automation_run_id");
 
 -- Create cat_tags table (many-to-many relationship)
 CREATE TABLE IF NOT EXISTS "cat_tags" (
