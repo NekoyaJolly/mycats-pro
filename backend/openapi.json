@@ -2282,6 +2282,132 @@
         ]
       }
     },
+    "/api/v1/tags/groups": {
+      "post": {
+        "operationId": "TagGroupsController_create",
+        "summary": "タググループの作成",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTagGroupDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Tags"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tags/groups/reorder": {
+      "patch": {
+        "operationId": "TagGroupsController_reorder",
+        "summary": "タググループの並び替え",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderTagGroupDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Tags"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tags/groups/{id}": {
+      "patch": {
+        "operationId": "TagGroupsController_update",
+        "summary": "タググループの更新",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTagGroupDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Tags"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "TagGroupsController_remove",
+        "summary": "タググループの削除",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Tags"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "HealthController_check",
@@ -3329,9 +3455,9 @@
             "description": "タグ名",
             "example": "Indoor"
           },
-          "categoryId": {
+          "groupId": {
             "type": "string",
-            "description": "カテゴリID",
+            "description": "タググループID",
             "example": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
           },
           "color": {
@@ -3371,7 +3497,7 @@
         },
         "required": [
           "name",
-          "categoryId"
+          "groupId"
         ]
       },
       "TagOrderItemDto": {
@@ -3387,9 +3513,9 @@
             "description": "表示順",
             "example": 12
           },
-          "categoryId": {
+          "groupId": {
             "type": "string",
-            "description": "所属カテゴリID",
+            "description": "所属タググループID",
             "format": "uuid"
           }
         },
@@ -3420,9 +3546,9 @@
             "description": "タグ名",
             "example": "Indoor"
           },
-          "categoryId": {
+          "groupId": {
             "type": "string",
-            "description": "カテゴリID",
+            "description": "タググループID",
             "example": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
           },
           "color": {
@@ -3582,6 +3708,106 @@
             "items": {
               "type": "string"
             }
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "アクティブかどうか",
+            "example": true
+          }
+        }
+      },
+      "CreateTagGroupDto": {
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "string",
+            "description": "所属カテゴリID",
+            "example": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+          },
+          "name": {
+            "type": "string",
+            "description": "グループ名",
+            "example": "屋内管理"
+          },
+          "description": {
+            "type": "string",
+            "description": "グループの説明"
+          },
+          "displayOrder": {
+            "type": "number",
+            "description": "表示順",
+            "example": 10
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "アクティブかどうか",
+            "example": true
+          }
+        },
+        "required": [
+          "categoryId",
+          "name"
+        ]
+      },
+      "TagGroupOrderItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "グループID",
+            "format": "uuid"
+          },
+          "displayOrder": {
+            "type": "number",
+            "description": "表示順",
+            "example": 10
+          },
+          "categoryId": {
+            "type": "string",
+            "description": "移動先カテゴリID",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "displayOrder"
+        ]
+      },
+      "ReorderTagGroupDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TagGroupOrderItemDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "UpdateTagGroupDto": {
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "string",
+            "description": "所属カテゴリID",
+            "example": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+          },
+          "name": {
+            "type": "string",
+            "description": "グループ名",
+            "example": "屋内管理"
+          },
+          "description": {
+            "type": "string",
+            "description": "グループの説明"
+          },
+          "displayOrder": {
+            "type": "number",
+            "description": "表示順",
+            "example": 10
           },
           "isActive": {
             "type": "boolean",

@@ -13,6 +13,7 @@ import { catKeys } from './use-cats';
 
 export interface TagView {
   id: string;
+  groupId: string;
   categoryId: string;
   name: string;
   color: string;
@@ -25,6 +26,16 @@ export interface TagView {
   usageCount: number;
 }
 
+export interface TagGroupView {
+  id: string;
+  categoryId: string;
+  name: string;
+  description?: string;
+  displayOrder: number;
+  isActive: boolean;
+  tags: TagView[];
+}
+
 export interface TagCategoryView {
   id: string;
   key: string;
@@ -34,6 +45,7 @@ export interface TagCategoryView {
   displayOrder: number;
   scopes: string[];
   isActive: boolean;
+  groups: TagGroupView[];
   tags: TagView[];
 }
 
@@ -51,6 +63,10 @@ export type ReorderTagCategoriesRequest = ApiRequestBody<'/tags/categories/reord
 export type CreateTagRequest = ApiRequestBody<'/tags', 'post'>;
 export type UpdateTagRequest = ApiRequestBody<'/tags/{id}', 'patch'>;
 export type ReorderTagsRequest = ApiRequestBody<'/tags/reorder', 'patch'>;
+
+export type CreateTagGroupRequest = ApiRequestBody<'/tags/groups', 'post'>;
+export type UpdateTagGroupRequest = ApiRequestBody<'/tags/groups/{id}', 'patch'>;
+export type ReorderTagGroupsRequest = ApiRequestBody<'/tags/groups/reorder', 'patch'>;
 
 type AssignTagRequest = ApiRequestBody<'/tags/cats/{id}/tags', 'post'>;
 
@@ -92,10 +108,26 @@ export function useGetTagCategories(
 ) {
   return useQuery({
     queryKey: tagCategoryKeys.list(filters),
-    queryFn: () =>
-      apiClient.get('/tags', {
+    queryFn: async () => {
+      const response = (await apiClient.get('/tags', {
         query: buildTagCategoryQuery(filters),
-      }) as Promise<TagCategoriesResponse>,
+      })) as TagCategoriesResponse;
+
+      if (!response.data) {
+        return response;
+      }
+
+      const data = response.data.map((category) => {
+        const groups = category.groups ?? [];
+        return {
+          ...category,
+          groups,
+          tags: groups.flatMap((group) => group.tags ?? []),
+        };
+      });
+
+      return { ...response, data } satisfies TagCategoriesResponse;
+    },
     staleTime: 1000 * 60,
     ...options,
   });
@@ -185,6 +217,94 @@ export function useReorderTagCategories() {
     },
     onError: (error: unknown) => {
       showErrorNotification('カテゴリの並び替えに失敗しました', error);
+    },
+  });
+}
+
+export function useCreateTagGroup() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateTagGroupRequest) =>
+      apiClient.post('/tags/groups', {
+        body: payload,
+        retryOnUnauthorized: false,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: tagCategoryKeys.lists() });
+      notifications.show({
+        title: 'グループを作成しました',
+        message: '新しいタググループが利用可能になりました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: unknown) => {
+      showErrorNotification('タググループの作成に失敗しました', error);
+    },
+  });
+}
+
+export function useUpdateTagGroup() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateTagGroupRequest }) =>
+      apiClient.patch('/tags/groups/{id}', {
+        pathParams: { id } as ApiPathParams<'/tags/groups/{id}', 'patch'>,
+        body: payload,
+        retryOnUnauthorized: false,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: tagCategoryKeys.lists() });
+      notifications.show({
+        title: 'グループを更新しました',
+        message: 'タググループ情報を保存しました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: unknown) => {
+      showErrorNotification('タググループの更新に失敗しました', error);
+    },
+  });
+}
+
+export function useDeleteTagGroup() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient.delete('/tags/groups/{id}', {
+        pathParams: { id } as ApiPathParams<'/tags/groups/{id}', 'delete'>,
+        retryOnUnauthorized: false,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: tagCategoryKeys.lists() });
+      notifications.show({
+        title: 'グループを削除しました',
+        message: 'タググループを削除しました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: unknown) => {
+      showErrorNotification('タググループの削除に失敗しました', error);
+    },
+  });
+}
+
+export function useReorderTagGroups() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: ReorderTagGroupsRequest) =>
+      apiClient.patch('/tags/groups/reorder', {
+        body: payload,
+        retryOnUnauthorized: false,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: tagCategoryKeys.lists() });
+    },
+    onError: (error: unknown) => {
+      showErrorNotification('タググループの並び替えに失敗しました', error);
     },
   });
 }

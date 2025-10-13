@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, Gender } from "@prisma/client";
+import { PrismaClient, UserRole } from "@prisma/client";
 import * as argon2 from "argon2";
 
 const prisma = new PrismaClient();
@@ -38,7 +38,7 @@ async function main() {
   } else {
     // 既存: 原則 passwordHash を変更しない / 役割や有効化のみ調整
     let needsUpdate = false;
-  const updateData: Partial<typeof existingAdmin> = {};
+    const updateData: Partial<typeof existingAdmin> = {};
     if (existingAdmin.role !== UserRole.ADMIN) {
       updateData.role = UserRole.ADMIN;
       needsUpdate = true;
@@ -73,7 +73,7 @@ async function main() {
     create: {
       registrationId: "REG-ALPHA",
       name: "Alpha",
-      gender: 'MALE',
+  gender: "MALE",
       birthDate: new Date("2023-01-01"),
       isActive: true,
     },
@@ -85,7 +85,7 @@ async function main() {
     create: {
       registrationId: "REG-BETA",
       name: "Beta",
-      gender: 'FEMALE',
+  gender: "FEMALE",
       birthDate: new Date("2023-02-01"),
       isActive: true,
     },
@@ -113,10 +113,31 @@ async function main() {
     },
   });
 
-  const tag = await prisma.tag.upsert({
+  const group = await prisma.tagGroup.upsert({
     where: {
       categoryId_name: {
         categoryId: category.id,
+        name: "default",
+      },
+    },
+    update: {
+      description: category.description,
+      displayOrder: category.displayOrder,
+      isActive: category.isActive,
+    },
+    create: {
+      name: "default",
+      description: category.description,
+      displayOrder: category.displayOrder,
+      isActive: category.isActive,
+      category: { connect: { id: category.id } },
+    },
+  });
+
+  const tag = await prisma.tag.upsert({
+    where: {
+      groupId_name: {
+        groupId: group.id,
         name: "indoor",
       },
     },
@@ -134,7 +155,7 @@ async function main() {
       allowsAutomation: true,
       metadata: { description: "室内飼い猫" },
       isActive: true,
-      category: { connect: { id: category.id } },
+      group: { connect: { id: group.id } },
     },
   });
 
@@ -151,7 +172,8 @@ async function main() {
     name: femaleCat.name,
   });
   console.log("Tag Category:", { id: category.id, key: category.key, name: category.name });
-  console.log("Tag:", { id: tag.id, name: tag.name, categoryId: tag.categoryId });
+  console.log("Tag Group:", { id: group.id, name: group.name, categoryId: group.categoryId });
+  console.log("Tag:", { id: tag.id, name: tag.name, groupId: tag.groupId });
 }
 
 main()

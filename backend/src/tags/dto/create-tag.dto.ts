@@ -16,9 +16,9 @@ export class CreateTagDto {
   @MinLength(1)
   name: string;
 
-  @ApiProperty({ description: "カテゴリID", example: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" })
+  @ApiProperty({ description: "タググループID", example: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" })
   @IsUUID()
-  categoryId: string;
+  groupId: string;
 
   @ApiPropertyOptional({ description: "カラーコード", example: "#3B82F6" })
   @IsOptional()

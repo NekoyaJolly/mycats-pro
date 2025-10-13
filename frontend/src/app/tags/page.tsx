@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActionIcon,
   Alert,
@@ -42,19 +42,26 @@ import { PageTitle } from '@/components/PageTitle';
 import {
   useCreateTag,
   useCreateTagCategory,
+  useCreateTagGroup,
   useDeleteTag,
   useDeleteTagCategory,
+  useDeleteTagGroup,
   useGetTagCategories,
   useReorderTagCategories,
+  useReorderTagGroups,
   useReorderTags,
   useUpdateTag,
   useUpdateTagCategory,
+  useUpdateTagGroup,
   type CreateTagCategoryRequest,
+  type CreateTagGroupRequest,
   type CreateTagRequest,
   type TagCategoryFilters,
   type TagCategoryView,
+  type TagGroupView,
   type TagView,
   type UpdateTagCategoryRequest,
+  type UpdateTagGroupRequest,
   type UpdateTagRequest,
 } from '@/lib/api/hooks/use-tags';
 
@@ -86,10 +93,18 @@ type CategoryFormValues = {
 type TagFormValues = {
   name: string;
   categoryId: string;
+  groupId: string;
   description: string;
   color: string;
   allowsManual: boolean;
   allowsAutomation: boolean;
+  isActive: boolean;
+};
+
+type GroupFormValues = {
+  categoryId: string;
+  name: string;
+  description: string;
   isActive: boolean;
 };
 
@@ -102,6 +117,17 @@ type AutomationMeta = {
 
 function sortCategories(categories: TagCategoryView[]): TagCategoryView[] {
   return [...categories].sort((a, b) => {
+    const orderA = a.displayOrder ?? Number.MAX_SAFE_INTEGER;
+    const orderB = b.displayOrder ?? Number.MAX_SAFE_INTEGER;
+    if (orderA === orderB) {
+      return a.name.localeCompare(b.name, 'ja');
+    }
+    return orderA - orderB;
+  });
+}
+
+function sortGroups(groups?: TagGroupView[] | null): TagGroupView[] {
+  return [...(groups ?? [])].sort((a, b) => {
     const orderA = a.displayOrder ?? Number.MAX_SAFE_INTEGER;
     const orderB = b.displayOrder ?? Number.MAX_SAFE_INTEGER;
     if (orderA === orderB) {
@@ -189,7 +215,7 @@ function buildCategoryPayload(values: CategoryFormValues): CreateTagCategoryRequ
 function buildTagPayload(values: TagFormValues): CreateTagRequest {
   const payload: CreateTagRequest = {
     name: values.name,
-    categoryId: values.categoryId,
+    groupId: values.groupId,
     ...(values.description ? { description: values.description } : {}),
     ...(values.color ? { color: values.color } : {}),
     allowsManual: values.allowsManual,
@@ -206,8 +232,10 @@ export default function TagsPage() {
   });
   const [scopeDraft, setScopeDraft] = useState('');
   const [editingCategory, setEditingCategory] = useState<TagCategoryView | null>(null);
-  const [editingTag, setEditingTag] = useState<{ category: TagCategoryView; tag: TagView } | null>(null);
+  const [editingGroup, setEditingGroup] = useState<{ category: TagCategoryView; group: TagGroupView } | null>(null);
+  const [editingTag, setEditingTag] = useState<{ category: TagCategoryView; group: TagGroupView; tag: TagView } | null>(null);
   const [categoryModalOpened, { open: openCategoryModal, close: closeCategoryModal }] = useDisclosure(false);
+  const [groupModalOpened, { open: openGroupModal, close: closeGroupModal }] = useDisclosure(false);
   const [tagModalOpened, { open: openTagModal, close: closeTagModal }] = useDisclosure(false);
 
   const queryFilters = useMemo<TagCategoryFilters | undefined>(() => {
@@ -225,7 +253,7 @@ export default function TagsPage() {
     placeholderData: (previousData) => previousData,
   });
 
-  const categories = data?.data ?? [];
+  const categories = useMemo(() => data?.data ?? [], [data]);
   const sortedCategories = useMemo(() => sortCategories(categories), [categories]);
   const availableScopes = useMemo(() => {
     const set = new Set<string>();
@@ -257,6 +285,7 @@ export default function TagsPage() {
     initialValues: {
       name: '',
       categoryId: '',
+      groupId: '',
       description: '',
       color: DEFAULT_TAG_COLOR,
       allowsManual: true,
@@ -266,6 +295,20 @@ export default function TagsPage() {
     validate: {
       name: (value) => (value.trim().length ? null : 'タグ名を入力してください'),
       categoryId: (value) => (value ? null : 'カテゴリを選択してください'),
+      groupId: (value) => (value ? null : 'タググループを選択してください'),
+    },
+  });
+
+  const groupForm = useForm<GroupFormValues>({
+    initialValues: {
+      categoryId: '',
+      name: '',
+      description: '',
+      isActive: true,
+    },
+    validate: {
+      categoryId: (value) => (value ? null : 'カテゴリを選択してください'),
+      name: (value) => (value.trim().length ? null : 'グループ名を入力してください'),
     },
   });
 
@@ -286,30 +329,76 @@ export default function TagsPage() {
     [availableScopes],
   );
 
+  const categoryOptions = useMemo(
+    () => sortedCategories.map((category) => ({ value: category.id, label: category.name })),
+    [sortedCategories],
+  );
+
+  const groupOptionsByCategory = useMemo(() => {
+    const map = new Map<string, { value: string; label: string }[]>();
+    sortedCategories.forEach((category) => {
+      map.set(
+        category.id,
+        sortGroups(category.groups).map((group) => ({ value: group.id, label: group.name })),
+      );
+    });
+    return map;
+  }, [sortedCategories]);
+
+  const tagGroupOptions = useMemo(() => {
+    if (!tagForm.values.categoryId) {
+      return [];
+    }
+    return groupOptionsByCategory.get(tagForm.values.categoryId) ?? [];
+  }, [groupOptionsByCategory, tagForm.values.categoryId]);
+
+  useEffect(() => {
+    if (!tagModalOpened) {
+      return;
+    }
+    if (!tagForm.values.categoryId) {
+      tagForm.setFieldValue('groupId', '');
+      return;
+    }
+
+    if (!tagForm.values.groupId && tagGroupOptions.length === 1) {
+      tagForm.setFieldValue('groupId', tagGroupOptions[0].value);
+    }
+  }, [tagModalOpened, tagForm, tagGroupOptions]);
+
   const createCategory = useCreateTagCategory();
   const updateCategory = useUpdateTagCategory();
   const deleteCategory = useDeleteTagCategory();
   const reorderCategoriesMutation = useReorderTagCategories();
+  const createGroup = useCreateTagGroup();
+  const updateGroup = useUpdateTagGroup();
+  const deleteGroup = useDeleteTagGroup();
+  const reorderGroupsMutation = useReorderTagGroups();
   const createTag = useCreateTag();
   const updateTag = useUpdateTag();
   const deleteTag = useDeleteTag();
   const reorderTagsMutation = useReorderTags();
 
   const isCategorySubmitting = createCategory.isPending || updateCategory.isPending;
+  const isGroupSubmitting = createGroup.isPending || updateGroup.isPending;
   const isTagSubmitting = createTag.isPending || updateTag.isPending;
   const isAnyMutationPending =
     isCategorySubmitting ||
+    isGroupSubmitting ||
     isTagSubmitting ||
     deleteCategory.isPending ||
+    deleteGroup.isPending ||
     deleteTag.isPending ||
     reorderCategoriesMutation.isPending ||
+    reorderGroupsMutation.isPending ||
     reorderTagsMutation.isPending;
 
   const flatTags = useMemo(() => {
-    return sortedCategories.flatMap((category) => {
-      const tags = sortTags(category.tags);
-      return tags.map((tag) => ({ category, tag }));
-    });
+    return sortedCategories.flatMap((category) =>
+      sortGroups(category.groups).flatMap((group) =>
+        sortTags(group.tags).map((tag) => ({ category, group, tag })),
+      ),
+    );
   }, [sortedCategories]);
 
   const handleOpenCreateCategory = () => {
@@ -340,11 +429,101 @@ export default function TagsPage() {
     openCategoryModal();
   };
 
-  const handleOpenCreateTag = (categoryId?: string) => {
+  const handleOpenCreateGroup = (categoryId?: string) => {
+    setEditingGroup(null);
+    groupForm.setValues({
+      categoryId: categoryId ?? '',
+      name: '',
+      description: '',
+      isActive: true,
+    });
+    openGroupModal();
+  };
+
+  const handleEditGroup = (category: TagCategoryView, group: TagGroupView) => {
+    setEditingGroup({ category, group });
+    groupForm.setValues({
+      categoryId: category.id,
+      name: group.name,
+      description: group.description ?? '',
+      isActive: group.isActive,
+    });
+    openGroupModal();
+  };
+
+  const handleSubmitGroup = groupForm.onSubmit(async (values) => {
+    const payload: CreateTagGroupRequest = {
+      categoryId: values.categoryId,
+      name: values.name,
+      ...(values.description ? { description: values.description } : {}),
+      isActive: values.isActive,
+    };
+
+    try {
+      if (editingGroup) {
+        await updateGroup.mutateAsync({
+          id: editingGroup.group.id,
+          payload: payload as UpdateTagGroupRequest,
+        });
+      } else {
+        await createGroup.mutateAsync(payload);
+      }
+      closeGroupModal();
+    } catch {
+      // noop
+    }
+  });
+
+  const handleDeleteGroupAction = async (id: string) => {
+    if (!window.confirm('このタググループと関連タグを削除しますか？')) {
+      return;
+    }
+    try {
+      await deleteGroup.mutateAsync(id);
+    } catch {
+      // noop
+    }
+  };
+
+  const handleGroupMove = async (categoryId: string, groupId: string, direction: 'up' | 'down') => {
+    const category = sortedCategories.find((item) => item.id === categoryId);
+    if (!category) {
+      return;
+    }
+
+    const orderedGroups = sortGroups(category.groups);
+    const currentIndex = orderedGroups.findIndex((group) => group.id === groupId);
+    if (currentIndex === -1) {
+      return;
+    }
+
+    const targetIndex = currentIndex + (direction === 'up' ? -1 : 1);
+    if (targetIndex < 0 || targetIndex >= orderedGroups.length) {
+      return;
+    }
+
+    const [moved] = orderedGroups.splice(currentIndex, 1);
+    orderedGroups.splice(targetIndex, 0, moved);
+
+    try {
+      await reorderGroupsMutation.mutateAsync({
+        items: orderedGroups.map((group, orderIndex) => ({
+          id: group.id,
+          displayOrder: orderIndex,
+          categoryId,
+        })),
+      });
+    } catch {
+      // noop
+    }
+  };
+
+  const handleOpenCreateTag = (categoryId?: string, groupId?: string) => {
     setEditingTag(null);
     tagForm.setValues({
       name: '',
       categoryId: categoryId ?? '',
+      groupId: groupId ?? '',
       description: '',
       color: DEFAULT_TAG_COLOR,
       allowsManual: true,
@@ -354,11 +533,12 @@ export default function TagsPage() {
     openTagModal();
   };
 
-  const handleEditTag = (category: TagCategoryView, tag: TagView) => {
-    setEditingTag({ category, tag });
+  const handleEditTag = (category: TagCategoryView, group: TagGroupView, tag: TagView) => {
+    setEditingTag({ category, group, tag });
     tagForm.setValues({
       name: tag.name,
-      categoryId: tag.categoryId,
+      categoryId: category.id,
+      groupId: group.id,
       description: tag.description ?? '',
       color: tag.color ?? DEFAULT_TAG_COLOR,
       allowsManual: tag.allowsManual,
@@ -438,12 +618,18 @@ export default function TagsPage() {
     }
   };
 
-  const handleTagMove = async (categoryId: string, tagId: string, direction: 'up' | 'down') => {
-    const category = sortedCategories.find((item) => item.id === categoryId);
+  const handleTagMove = async (groupId: string, tagId: string, direction: 'up' | 'down') => {
+    const category = sortedCategories.find((item) => item.groups.some((group) => group.id === groupId));
     if (!category) {
       return;
     }
-    const orderedTags = sortTags(category.tags);
+
+    const targetGroup = sortGroups(category.groups).find((group) => group.id === groupId);
+    if (!targetGroup) {
+      return;
+    }
+
+    const orderedTags = sortTags(targetGroup.tags);
     const currentIndex = orderedTags.findIndex((tag) => tag.id === tagId);
     if (currentIndex === -1) {
       return;
@@ -461,7 +647,7 @@ export default function TagsPage() {
         items: orderedTags.map((tag, orderIndex) => ({
           id: tag.id,
           displayOrder: orderIndex,
-          categoryId: tag.categoryId,
+          groupId,
         })),
       });
     } catch {
@@ -494,6 +680,15 @@ export default function TagsPage() {
               disabled={isAnyMutationPending}
             >
               カテゴリ追加
+            </Button>
+            <Button
+              leftSection={<IconPlus size={16} />}
+              variant="outline"
+              size="sm"
+              onClick={() => handleOpenCreateGroup()}
+              disabled={sortedCategories.length === 0 || isAnyMutationPending}
+            >
+              グループ追加
             </Button>
             <Button
               leftSection={<IconTag size={16} />}
@@ -556,7 +751,8 @@ export default function TagsPage() {
             ) : (
               <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
                 {sortedCategories.map((category, index) => {
-                  const tags = sortTags(category.tags);
+                  const groups = sortGroups(category.groups);
+                  const totalTags = groups.reduce((sum, group) => sum + group.tags.length, 0);
                   return (
                     <Card key={category.id} withBorder padding="lg" radius="md" shadow="sm">
                       <Stack gap="md">
@@ -586,7 +782,8 @@ export default function TagsPage() {
                               >
                                 表示色 {category.color ?? DEFAULT_CATEGORY_COLOR}
                               </Badge>
-                              <Badge variant="outline">タグ数 {tags.length}</Badge>
+                              <Badge variant="outline">グループ数 {groups.length}</Badge>
+                              <Badge variant="outline">タグ数 {totalTags}</Badge>
                               {category.scopes.length > 0 ? (
                                 category.scopes.map((scope) => (
                                   <Badge key={scope} variant="dot">
@@ -645,89 +842,181 @@ export default function TagsPage() {
 
                         <Stack gap="sm">
                           <Group justify="space-between" align="center">
-                            <Text fw={500}>タグ</Text>
+                            <Text fw={500}>タググループ</Text>
                             <Button
                               size="xs"
                               variant="light"
                               leftSection={<IconPlus size={12} />}
-                              onClick={() => handleOpenCreateTag(category.id)}
+                              onClick={() => handleOpenCreateGroup(category.id)}
                               disabled={isAnyMutationPending}
                             >
-                              タグ追加
+                              グループ追加
                             </Button>
                           </Group>
 
-                          {tags.length === 0 ? (
+                          {groups.length === 0 ? (
                             <Text size="sm" c="dimmed">
-                              このカテゴリにはまだタグがありません。
+                              このカテゴリにはまだタググループがありません。
                             </Text>
                           ) : (
-                            <Stack gap="xs">
-                              {tags.map((tag, tagIndex) => (
-                                <Card key={tag.id} withBorder radius="sm" padding="sm">
-                                  <Group justify="space-between" align="center">
-                                    <Stack gap={4} flex={1}>
-                                      <Group gap="xs" align="center">
-                                        <Badge color="gray" variant="light" size="sm">
-                                          {tagIndex + 1}
-                                        </Badge>
-                                        <Text fw={500} size="sm">
-                                          {tag.name}
-                                        </Text>
-                                        {!tag.isActive && (
-                                          <Badge size="xs" color="gray" variant="outline">
-                                            非アクティブ
-                                          </Badge>
-                                        )}
-                                        <Badge size="xs" variant="outline">
-                                          使用 {tag.usageCount.toLocaleString()}回
-                                        </Badge>
-                                        <AutomationIndicator tag={tag} />
+                            <Stack gap="sm">
+                              {groups.map((group, groupIndex) => {
+                                const tags = sortTags(group.tags);
+                                return (
+                                  <Card key={group.id} withBorder radius="sm" padding="md" shadow="xs">
+                                    <Stack gap="sm">
+                                      <Group justify="space-between" align="flex-start">
+                                        <Stack gap={4}>
+                                          <Group gap="xs" align="center">
+                                            <Badge color="gray" variant="light" size="sm">
+                                              {groupIndex + 1}
+                                            </Badge>
+                                            <Text fw={500}>{group.name}</Text>
+                                            {!group.isActive && (
+                                              <Badge size="xs" color="gray" variant="outline">
+                                                非アクティブ
+                                              </Badge>
+                                            )}
+                                            <Badge size="xs" variant="outline">
+                                              タグ {tags.length}
+                                            </Badge>
+                                          </Group>
+                                          {group.description && (
+                                            <Text size="xs" c="dimmed">
+                                              {group.description}
+                                            </Text>
+                                          )}
+                                        </Stack>
+                                        <Stack gap={6} align="flex-end">
+                                          <Group gap={4}>
+                                            <ActionIcon
+                                              variant="subtle"
+                                              aria-label="上へ移動"
+                                              onClick={() => void handleGroupMove(category.id, group.id, 'up')}
+                                              disabled={groupIndex === 0 || reorderGroupsMutation.isPending}
+                                            >
+                                              <IconArrowUp size={14} />
+                                            </ActionIcon>
+                                            <ActionIcon
+                                              variant="subtle"
+                                              aria-label="下へ移動"
+                                              onClick={() => void handleGroupMove(category.id, group.id, 'down')}
+                                              disabled={groupIndex === groups.length - 1 || reorderGroupsMutation.isPending}
+                                            >
+                                              <IconArrowDown size={14} />
+                                            </ActionIcon>
+                                          </Group>
+                                          <Group gap={6}>
+                                            <ActionIcon
+                                              variant="light"
+                                              aria-label="グループを編集"
+                                              onClick={() => handleEditGroup(category, group)}
+                                              disabled={isAnyMutationPending}
+                                            >
+                                              <IconPencil size={14} />
+                                            </ActionIcon>
+                                            <ActionIcon
+                                              variant="light"
+                                              color="red"
+                                              aria-label="グループを削除"
+                                              onClick={() => void handleDeleteGroupAction(group.id)}
+                                              disabled={deleteGroup.isPending}
+                                            >
+                                              <IconTrash size={14} />
+                                            </ActionIcon>
+                                          </Group>
+                                        </Stack>
                                       </Group>
-                                      {tag.description && (
-                                        <Text size="xs" c="dimmed">
-                                          {tag.description}
+
+                                      <Group justify="flex-end">
+                                        <Button
+                                          size="xs"
+                                          variant="light"
+                                          leftSection={<IconPlus size={12} />}
+                                          onClick={() => handleOpenCreateTag(category.id, group.id)}
+                                          disabled={isAnyMutationPending}
+                                        >
+                                          タグ追加
+                                        </Button>
+                                      </Group>
+
+                                      {tags.length === 0 ? (
+                                        <Text size="sm" c="dimmed">
+                                          このグループにはまだタグがありません。
                                         </Text>
+                                      ) : (
+                                        <Stack gap="xs">
+                                          {tags.map((tag, tagIndex) => (
+                                            <Card key={tag.id} withBorder radius="sm" padding="sm">
+                                              <Group justify="space-between" align="center">
+                                                <Stack gap={4} flex={1}>
+                                                  <Group gap="xs" align="center">
+                                                    <Badge color="gray" variant="light" size="sm">
+                                                      {tagIndex + 1}
+                                                    </Badge>
+                                                    <Text fw={500} size="sm">
+                                                      {tag.name}
+                                                    </Text>
+                                                    {!tag.isActive && (
+                                                      <Badge size="xs" color="gray" variant="outline">
+                                                        非アクティブ
+                                                      </Badge>
+                                                    )}
+                                                    <Badge size="xs" variant="outline">
+                                                      使用 {tag.usageCount.toLocaleString()}回
+                                                    </Badge>
+                                                    <AutomationIndicator tag={tag} />
+                                                  </Group>
+                                                  {tag.description && (
+                                                    <Text size="xs" c="dimmed">
+                                                      {tag.description}
+                                                    </Text>
+                                                  )}
+                                                </Stack>
+                                                <Group gap={4}>
+                                                  <ActionIcon
+                                                    variant="subtle"
+                                                    aria-label="上へ移動"
+                                                    onClick={() => void handleTagMove(group.id, tag.id, 'up')}
+                                                    disabled={tagIndex === 0 || reorderTagsMutation.isPending}
+                                                  >
+                                                    <IconArrowUp size={14} />
+                                                  </ActionIcon>
+                                                  <ActionIcon
+                                                    variant="subtle"
+                                                    aria-label="下へ移動"
+                                                    onClick={() => void handleTagMove(group.id, tag.id, 'down')}
+                                                    disabled={tagIndex === tags.length - 1 || reorderTagsMutation.isPending}
+                                                  >
+                                                    <IconArrowDown size={14} />
+                                                  </ActionIcon>
+                                                  <ActionIcon
+                                                    variant="light"
+                                                    aria-label="タグを編集"
+                                                    onClick={() => handleEditTag(category, group, tag)}
+                                                    disabled={isAnyMutationPending}
+                                                  >
+                                                    <IconPencil size={14} />
+                                                  </ActionIcon>
+                                                  <ActionIcon
+                                                    variant="light"
+                                                    color="red"
+                                                    aria-label="タグを削除"
+                                                    onClick={() => void handleDeleteTag(tag.id)}
+                                                    disabled={deleteTag.isPending}
+                                                  >
+                                                    <IconTrash size={14} />
+                                                  </ActionIcon>
+                                                </Group>
+                                              </Group>
+                                            </Card>
+                                          ))}
+                                        </Stack>
                                       )}
                                     </Stack>
-                                    <Group gap={4}>
-                                      <ActionIcon
-                                        variant="subtle"
-                                        aria-label="上へ移動"
-                                        onClick={() => void handleTagMove(category.id, tag.id, 'up')}
-                                        disabled={tagIndex === 0 || reorderTagsMutation.isPending}
-                                      >
-                                        <IconArrowUp size={14} />
-                                      </ActionIcon>
-                                      <ActionIcon
-                                        variant="subtle"
-                                        aria-label="下へ移動"
-                                        onClick={() => void handleTagMove(category.id, tag.id, 'down')}
-                                        disabled={tagIndex === tags.length - 1 || reorderTagsMutation.isPending}
-                                      >
-                                        <IconArrowDown size={14} />
-                                      </ActionIcon>
-                                      <ActionIcon
-                                        variant="light"
-                                        aria-label="タグを編集"
-                                        onClick={() => handleEditTag(category, tag)}
-                                        disabled={isAnyMutationPending}
-                                      >
-                                        <IconPencil size={14} />
-                                      </ActionIcon>
-                                      <ActionIcon
-                                        variant="light"
-                                        color="red"
-                                        aria-label="タグを削除"
-                                        onClick={() => void handleDeleteTag(tag.id)}
-                                        disabled={deleteTag.isPending}
-                                      >
-                                        <IconTrash size={14} />
-                                      </ActionIcon>
-                                    </Group>
-                                  </Group>
-                                </Card>
-                              ))}
+                                  </Card>
+                                );
+                              })}
                             </Stack>
                           )}
                         </Stack>
@@ -750,7 +1039,7 @@ export default function TagsPage() {
               </Center>
             ) : (
               <Stack gap="sm">
-                {flatTags.map(({ category, tag }) => (
+                {flatTags.map(({ category, group, tag }) => (
                   <Card key={tag.id} withBorder radius="md" padding="md">
                     <Group justify="space-between" align="flex-start">
                       <Stack gap={4}>
@@ -763,6 +1052,9 @@ export default function TagsPage() {
                             }}
                           >
                             {category.name}
+                          </Badge>
+                          <Badge variant="light" color="gray">
+                            {group.name}
                           </Badge>
                           <Text fw={500}>{tag.name}</Text>
                           {!tag.isActive && (
@@ -790,7 +1082,12 @@ export default function TagsPage() {
                         )}
                       </Stack>
                       <Group gap={6}>
-                        <Button size="xs" variant="light" onClick={() => handleEditTag(category, tag)} disabled={isAnyMutationPending}>
+                        <Button
+                          size="xs"
+                          variant="light"
+                          onClick={() => handleEditTag(category, group, tag)}
+                          disabled={isAnyMutationPending}
+                        >
                           編集
                         </Button>
                         <Button size="xs" color="red" variant="light" onClick={() => void handleDeleteTag(tag.id)} disabled={deleteTag.isPending}>
@@ -893,6 +1190,56 @@ export default function TagsPage() {
         </Modal>
 
         <Modal
+          opened={groupModalOpened}
+          onClose={() => {
+            closeGroupModal();
+            setEditingGroup(null);
+          }}
+          title={editingGroup ? 'タググループを編集' : 'タググループを追加'}
+          size="lg"
+          keepMounted={false}
+        >
+          <Box component="form" onSubmit={handleSubmitGroup}>
+            <Stack gap="md">
+              <Select
+                label="カテゴリ"
+                data={categoryOptions}
+                value={groupForm.values.categoryId}
+                onChange={(value) => groupForm.setFieldValue('categoryId', value ?? '')}
+                error={groupForm.errors.categoryId}
+                required
+              />
+              <TextInput
+                label="グループ名"
+                value={groupForm.values.name}
+                onChange={(event) => groupForm.setFieldValue('name', event.currentTarget.value)}
+                error={groupForm.errors.name}
+                required
+              />
+              <TextInput
+                label="説明"
+                placeholder="タググループの用途"
+                value={groupForm.values.description}
+                onChange={(event) => groupForm.setFieldValue('description', event.currentTarget.value)}
+              />
+              <Switch
+                label="アクティブ"
+                checked={groupForm.values.isActive}
+                onChange={(event) => groupForm.setFieldValue('isActive', event.currentTarget.checked)}
+              />
+              <Group justify="flex-end" gap="sm">
+                <Button variant="outline" onClick={closeGroupModal}>
+                  キャンセル
+                </Button>
+                <Button type="submit" loading={isGroupSubmitting}>
+                  {editingGroup ? '更新' : '作成'}
+                </Button>
+              </Group>
+            </Stack>
+          </Box>
+        </Modal>
+
+        <Modal
           opened={tagModalOpened}
           onClose={() => {
             closeTagModal();
@@ -906,11 +1253,24 @@ export default function TagsPage() {
             <Stack gap="md">
               <Select
                 label="カテゴリ"
-                data={sortedCategories.map((category) => ({ value: category.id, label: category.name }))}
+                data={categoryOptions}
                 value={tagForm.values.categoryId}
-                onChange={(value) => tagForm.setFieldValue('categoryId', value ?? '')}
+                onChange={(value) => {
+                  tagForm.setFieldValue('categoryId', value ?? '');
+                  tagForm.setFieldValue('groupId', '');
+                }}
                 error={tagForm.errors.categoryId}
                 required
+              />
+              <Select
+                label="タググループ"
+                placeholder={tagForm.values.categoryId ? 'グループを選択してください' : '先にカテゴリを選択してください'}
+                data={tagGroupOptions}
+                value={tagForm.values.groupId}
+                onChange={(value) => tagForm.setFieldValue('groupId', value ?? '')}
+                error={tagForm.errors.groupId}
+                required
+                disabled={!tagForm.values.categoryId || tagGroupOptions.length === 0}
               />
               <TextInput
                 label="タグ名"
@@ -936,34 +1296,6 @@ export default function TagsPage() {
                   label="手動付与を許可"
                   checked={tagForm.values.allowsManual}
                   onChange={(event) => tagForm.setFieldValue('allowsManual', event.currentTarget.checked)}
-                />
-                <Switch
-                  label="自動付与を許可"
-                  checked={tagForm.values.allowsAutomation}
-                  onChange={(event) => tagForm.setFieldValue('allowsAutomation', event.currentTarget.checked)}
-                />
-              </Group>
-              <Switch
-                label="アクティブ"
-                checked={tagForm.values.isActive}
-                onChange={(event) => tagForm.setFieldValue('isActive', event.currentTarget.checked)}
-              />
-              <Group justify="flex-end" gap="sm">
-                <Button variant="outline" onClick={closeTagModal}>
-                  キャンセル
-                </Button>
-                <Button type="submit" loading={isTagSubmitting}>
-                  {editingTag ? '更新' : '作成'}
-                </Button>
-              </Group>
-            </Stack>
-          </Box>
-        </Modal>
-      </Stack>
-    </Container>
-  );
-}
-cked)}
                 />
                 <Switch
                   label="自動付与を許可"

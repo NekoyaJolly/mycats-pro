@@ -409,7 +409,7 @@ model TagCategory {
   scopes       String[] @default([])
   isActive     Boolean  @default(true) @map("is_active")
 
-  tags Tag[]
+  groups TagGroup[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -417,9 +417,27 @@ model TagCategory {
   @@map("tag_categories")
 }
 
+model TagGroup {
+  id           String  @id @default(uuid())
+  categoryId   String  @map("category_id")
+  name         String
+  description  String?
+  displayOrder Int     @default(0) @map("display_order")
+  isActive     Boolean @default(true) @map("is_active")
+
+  category TagCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  tags     Tag[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([categoryId, name])
+  @@map("tag_groups")
+}
+
 model Tag {
   id               String  @id @default(uuid())
-  categoryId       String  @map("category_id")
+  groupId          String  @map("group_id")
   name             String
   color            String  @default("#3B82F6")
   description      String?
@@ -429,14 +447,15 @@ model Tag {
   metadata         Json?
   isActive         Boolean @default(true) @map("is_active")
 
-  category TagCategory            @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  cats     CatTag[]
-  history  TagAssignmentHistory[]
+  group   TagGroup              @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  cats    CatTag[]
+  history TagAssignmentHistory[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@unique([categoryId, name])
+  @@unique([groupId, name])
+  @@index([groupId])
   @@map("tags")
 }
 
