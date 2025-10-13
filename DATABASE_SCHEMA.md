@@ -10,21 +10,26 @@
 - **[詳細スキーマ仕様](./docs/DATABASE_PRODUCTION_SCHEMA.md)** - 本番環境の完全なテーブル・リレーション仕様
 - **[クイックリファレンス](./DATABASE_QUICK_REF.md)** - 開発者向け簡易リファレンス
 
-## 🗂️ 主要テーブル一覧（11テーブル）
+## 🗂️ 主要テーブル一覧（15テーブル）
 
-| No. | テーブル名   | 物理名             | 概要                 | 主要フィールド                                                |
-| --- | ------------ | ------------------ | -------------------- | ------------------------------------------------------------- |
-| 1   | ユーザー     | `users`            | システム利用者管理   | email, name, role, clerk_id                                   |
-| 2   | ログイン試行 | `login_attempts`   | セキュリティ監査ログ | user_id, email, success, ip_address                           |
-| 3   | 猫種マスタ   | `breeds`           | 猫の品種定義         | code, name, description                                       |
-| 4   | 毛色マスタ   | `coat_colors`      | 毛色分類定義         | code, name, description                                       |
-| 5   | 猫基本情報   | `cats`             | 猫の個体情報         | name, birth_date, gender, breed_id, owner_id                  |
-| 6   | 交配記録     | `breeding_records` | 交配・繁殖履歴       | male_id, female_id, breeding_date, status                     |
-| 7   | ケア記録     | `care_records`     | 医療・ケア履歴       | cat_id, care_type, care_date, description                     |
-| 8   | スケジュール | `schedules`        | 予定・タスク管理     | title, schedule_date, type, status, cat_id                    |
-| 9   | タグマスタ   | `tags`             | 分類用タグ定義       | name, color, description                                      |
-| 10  | 血統情報     | `pedigrees`        | 血統書・家系図       | pedigree_id, cat_name, father_pedigree_id, mother_pedigree_id |
-| 11  | 猫タグ関連   | `cat_tags`         | 猫とタグの多対多     | cat_id, tag_id                                                |
+| No. | テーブル名           | 物理名                   | 概要                       | 主要フィールド |
+| --- | -------------------- | ------------------------ | -------------------------- | -------------- |
+| 1   | ユーザー             | `users`                  | システム利用者管理         | email, name, role, clerk_id |
+| 2   | ログイン試行         | `login_attempts`         | セキュリティ監査ログ       | user_id, email, success, ip_address |
+| 3   | 猫種マスタ           | `breeds`                 | 猫の品種定義               | code, name, description |
+| 4   | 毛色マスタ           | `coat_colors`            | 毛色分類定義               | code, name, description |
+| 5   | 猫基本情報           | `cats`                   | 猫の個体情報               | name, birth_date, gender, breed_id |
+| 6   | 交配記録             | `breeding_records`       | 交配・繁殖履歴             | male_id, female_id, breeding_date, status |
+| 7   | ケア記録             | `care_records`           | 医療・ケア履歴             | cat_id, care_type, care_date, description |
+| 8   | スケジュール         | `schedules`              | 予定・タスク管理           | title, schedule_date, type, status, cat_id |
+| 9   | タグカテゴリ         | `tag_categories`         | タグの分類カテゴリ定義     | key, name, scopes, display_order |
+| 10  | タグマスタ           | `tags`                   | カテゴリ配下のタグ定義     | category_id, name, allows_manual, allows_automation |
+| 11  | タグ自動化ルール     | `tag_automation_rules`   | 自動付与ルール定義         | key, trigger_type, event_type, priority |
+| 12  | タグ自動化実行       | `tag_automation_runs`    | 自動付与実行履歴           | rule_id, status, started_at |
+| 13  | タグ付与履歴         | `tag_assignment_history` | タグ付与/剥奪の履歴管理     | cat_id, tag_id, action, source |
+| 14  | 猫タグ関連           | `cat_tags`               | 猫とタグの多対多           | cat_id, tag_id |
+| 15  | 血統情報             | `pedigrees`              | 血統書・家系図             | pedigree_id, cat_name, father_pedigree_id, mother_pedigree_id |
+
 
 ## 🔗 主要リレーション設計
 
@@ -93,6 +98,14 @@ pedigrees (1) ───────→ (∞) pedigrees           [血統関係�
 - **ScheduleStatus**: `PENDING`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`
 - **Priority**: `LOW`, `MEDIUM`, `HIGH`, `URGENT`
 
+### タグ関連
+
+- **TagAssignmentAction**: `ASSIGNED`, `UNASSIGNED`
+- **TagAssignmentSource**: `MANUAL`, `AUTOMATION`, `SYSTEM`
+- **TagAutomationTriggerType**: `EVENT`, `SCHEDULE`, `MANUAL`
+- **TagAutomationEventType**: `BREEDING_PLANNED`, `BREEDING_CONFIRMED`, `PREGNANCY_CONFIRMED`, `KITTEN_REGISTERED`, `AGE_THRESHOLD`, `CUSTOM`
+- **TagAutomationRunStatus**: `PENDING`, `COMPLETED`, `FAILED`
+
 ## 🔑 重要な制約とインデックス
 
 ### 一意制約（UNIQUE）
@@ -101,12 +114,14 @@ pedigrees (1) ───────→ (∞) pedigrees           [血統関係�
 - `breeds`: `code`, `name`
 - `coat_colors`: `code`, `name`
 - `cats`: `registration_id`, `microchip_id`
-- `tags`: `name`
+- `tag_categories`: `key`
+- `tags`: (`category_id`, `name`)
+- `tag_automation_rules`: `key`
 - `pedigrees`: `pedigree_id`
 
 ### 外部キー制約の削除動作
 
-- **CASCADE削除**: `login_attempts`, `care_records`, `cat_tags`
+- **CASCADE削除**: `login_attempts`, `care_records`, `cat_tags`, `tag_assignment_history`
 - **SET NULL**: `cats` (父母関係), `pedigrees` (血統関係), `schedules`
 - **RESTRICT**: `users`関連の重要なレコード
 
