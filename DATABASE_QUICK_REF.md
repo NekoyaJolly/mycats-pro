@@ -25,14 +25,14 @@ pnpm -w run db:deploy    # 本番マイグレーション
 NODE_ENV=production node backend/dist/main.js
 ```
 
-## 🗂️ テーブル構成（11テーブル）
+## 🗂️ テーブル構成（15テーブル）
 
 ### メインテーブル
 
 | テーブル           | 説明         | 主要検索条件                       |
 | ------------------ | ------------ | ---------------------------------- |
 | `users`            | ユーザー管理 | email, role                        |
-| `cats`             | 猫基本情報   | owner_id, breed_id, name           |
+| `cats`             | 猫基本情報   | breed_id, name                     |
 | `pedigrees`        | 血統情報     | pedigree_id, cat_name              |
 | `breeding_records` | 交配記録     | male_id, female_id, breeding_date  |
 | `care_records`     | ケア履歴     | cat_id, care_type, care_date       |
@@ -40,18 +40,23 @@ NODE_ENV=production node backend/dist/main.js
 
 ### マスタテーブル
 
-| テーブル      | 説明 | キーフィールド |
-| ------------- | ---- | -------------- |
-| `breeds`      | 猫種 | code, name     |
-| `coat_colors` | 毛色 | code, name     |
-| `tags`        | タグ | name, color    |
+| テーブル            | 説明             | キーフィールド               |
+| ------------------- | ---------------- | -------------------------- |
+| `breeds`            | 猫種             | code, name                 |
+| `coat_colors`       | 毛色             | code, name                 |
+| `tag_categories`    | タグカテゴリ     | key                        |
+| `tags`              | タグ             | category_id, name          |
+| `tag_automation_rules` | タグ自動化ルール | key                        |
 
 ### 関連テーブル
 
-| テーブル         | 説明         | 関連           |
-| ---------------- | ------------ | -------------- |
-| `login_attempts` | ログイン履歴 | user_id        |
-| `cat_tags`       | 猫タグ関連   | cat_id, tag_id |
+| テーブル                 | 説明                 | 関連                         |
+| ------------------------ | -------------------- | ---------------------------- |
+| `login_attempts`         | ログイン履歴         | user_id                      |
+| `cat_tags`               | 猫タグ関連           | cat_id, tag_id               |
+| `tag_automation_runs`    | タグ自動化実行履歴   | rule_id                      |
+| `tag_assignment_history` | タグ付与/剥奪履歴     | cat_id, tag_id, rule_id      |
+
 
 ## 🔍 よく使用するクエリパターン
 
@@ -179,6 +184,14 @@ WHERE t.name = ?;
 - `MEDIUM` - 中
 - `HIGH` - 高
 - `URGENT` - 緊急
+
+### タグ関連
+
+- **TagAssignmentAction**: `ASSIGNED` / `UNASSIGNED`
+- **TagAssignmentSource**: `MANUAL` / `AUTOMATION` / `SYSTEM`
+- **TagAutomationTriggerType**: `EVENT` / `SCHEDULE` / `MANUAL`
+- **TagAutomationEventType**: `BREEDING_PLANNED` / `BREEDING_CONFIRMED` / `PREGNANCY_CONFIRMED` / `KITTEN_REGISTERED` / `AGE_THRESHOLD` / `CUSTOM`
+- **TagAutomationRunStatus**: `PENDING` / `COMPLETED` / `FAILED`
 
 ## 🔧 メンテナンスコマンド
 
