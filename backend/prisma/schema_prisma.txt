@@ -1,4 +1,4 @@
-// Prisma Schema - Last Updated: 2025-10-12T20:09:45.317Z
+// Prisma Schema - Last Updated: 2025-10-13T14:14:34.394Z
 // Auto-generated from schema.prisma
 
 // This is your Prisma schema file,
@@ -152,14 +152,14 @@ model Cat {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  maleBreedingRecords   BreedingRecord[] @relation("MaleBreeding")
-  femaleBreedingRecords BreedingRecord[] @relation("FemaleBreeding")
+  maleBreedingRecords   BreedingRecord[]       @relation("MaleBreeding")
+  femaleBreedingRecords BreedingRecord[]       @relation("FemaleBreeding")
   careRecords           CareRecord[]
   schedules             Schedule[]
   tags                  CatTag[]
   medicalRecords        MedicalRecord[]
   tagHistory            TagAssignmentHistory[]
-  pedigreeId            String?          @map("pedigree_id") // PedigreeIDで紐付け（全頭ではない）
+  pedigreeId            String?                @map("pedigree_id") // PedigreeIDで紐付け（全頭ではない）
 
   @@index([breedId])
   @@index([fatherId])
@@ -421,19 +421,20 @@ model TagCategory {
 }
 
 model Tag {
-  id                String  @id @default(uuid())
-  categoryId        String  @map("category_id")
-  name              String
-  color             String  @default("#3B82F6")
-  description       String?
-  allowsManual      Boolean @default(true) @map("allows_manual")
-  allowsAutomation  Boolean @default(true) @map("allows_automation")
-  metadata          Json?
-  isActive          Boolean @default(true) @map("is_active")
+  id               String  @id @default(uuid())
+  categoryId       String  @map("category_id")
+  name             String
+  color            String  @default("#3B82F6")
+  description      String?
+  displayOrder     Int     @default(0) @map("display_order")
+  allowsManual     Boolean @default(true) @map("allows_manual")
+  allowsAutomation Boolean @default(true) @map("allows_automation")
+  metadata         Json?
+  isActive         Boolean @default(true) @map("is_active")
 
-  category TagCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  category TagCategory            @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   cats     CatTag[]
-  history TagAssignmentHistory[]
+  history  TagAssignmentHistory[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -575,13 +576,13 @@ model TagAutomationRule {
 }
 
 model TagAutomationRun {
-  id            String                 @id @default(uuid())
-  ruleId        String                 @map("rule_id")
-  eventPayload  Json?                  @map("event_payload")
-  status        TagAutomationRunStatus @default(PENDING) @map("status")
-  startedAt     DateTime?              @map("started_at")
-  completedAt   DateTime?              @map("completed_at")
-  errorMessage  String?                @map("error_message")
+  id           String                 @id @default(uuid())
+  ruleId       String                 @map("rule_id")
+  eventPayload Json?                  @map("event_payload")
+  status       TagAutomationRunStatus @default(PENDING) @map("status")
+  startedAt    DateTime?              @map("started_at")
+  completedAt  DateTime?              @map("completed_at")
+  errorMessage String?                @map("error_message")
 
   rule    TagAutomationRule      @relation(fields: [ruleId], references: [id], onDelete: Cascade)
   history TagAssignmentHistory[]

@@ -963,31 +963,3 @@ export default function TagsPage() {
     </Container>
   );
 }
-cked)}
-                />
-                <Switch
-                  label="自動付与を許可"
-                  checked={tagForm.values.allowsAutomation}
-                  onChange={(event) => tagForm.setFieldValue('allowsAutomation', event.currentTarget.checked)}
-                />
-              </Group>
-              <Switch
-                label="アクティブ"
-                checked={tagForm.values.isActive}
-                onChange={(event) => tagForm.setFieldValue('isActive', event.currentTarget.checked)}
-              />
-              <Group justify="flex-end" gap="sm">
-                <Button variant="outline" onClick={closeTagModal}>
-                  キャンセル
-                </Button>
-                <Button type="submit" loading={isTagSubmitting}>
-                  {editingTag ? '更新' : '作成'}
-                </Button>
-              </Group>
-            </Stack>
-          </Box>
-        </Modal>
-      </Stack>
-    </Container>
-  );
-}

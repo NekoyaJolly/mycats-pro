@@ -2,9 +2,9 @@ import { Module } from "@nestjs/common";
 
 import { PrismaModule } from "../prisma/prisma.module";
 
+import { TagAutomationService } from "./tag-automation.service";
 import { TagCategoriesController } from "./tag-categories.controller";
 import { TagCategoriesService } from "./tag-categories.service";
-import { TagAutomationService } from "./tag-automation.service";
 import { TagsController } from "./tags.controller";
 import { TagsService } from "./tags.service";
 

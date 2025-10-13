@@ -1,3 +1,4 @@
+import { TagAutomationEventType, TagAutomationTriggerType } from "@prisma/client";
 import {
   IsBoolean,
   IsEnum,
@@ -7,7 +8,6 @@ import {
   Max,
   Min,
 } from "class-validator";
-import { TagAutomationEventType, TagAutomationTriggerType } from "@prisma/client";
 
 export class CreateTagAutomationRuleDto {
   @IsOptional()
