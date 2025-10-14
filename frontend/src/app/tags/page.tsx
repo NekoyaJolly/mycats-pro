@@ -724,9 +724,10 @@ export default function TagsPage() {
               <Switch
                 label="非アクティブを含める"
                 checked={filters.includeInactive}
-                onChange={(event) =>
-                  setFilters((prev) => ({ ...prev, includeInactive: event.currentTarget.checked }))
-                }
+                onChange={(event) => {
+                  const checked = event.currentTarget?.checked ?? false;
+                  setFilters((prev) => ({ ...prev, includeInactive: checked }));
+                }}
               />
             </Group>
             {isFetching && <Loader size="sm" />}
