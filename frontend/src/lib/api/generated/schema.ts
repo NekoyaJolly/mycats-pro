@@ -690,6 +690,58 @@ export type paths = {
         patch: operations["TagCategoriesController_update"];
         trace?: never;
     };
+    "/api/v1/tags/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** タググループの作成 */
+        post: operations["TagGroupsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tags/groups/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** タググループの並び替え */
+        patch: operations["TagGroupsController_reorder"];
+        trace?: never;
+    };
+    "/api/v1/tags/groups/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** タググループの削除 */
+        delete: operations["TagGroupsController_remove"];
+        options?: never;
+        head?: never;
+        /** タググループの更新 */
+        patch: operations["TagGroupsController_update"];
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -1216,10 +1268,10 @@ export type components = {
              */
             name: string;
             /**
-             * @description カテゴリID
+             * @description タググループID
              * @example aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
              */
-            categoryId: string;
+            groupId: string;
             /**
              * @description カラーコード
              * @example #3B82F6
@@ -1266,9 +1318,9 @@ export type components = {
             displayOrder: number;
             /**
              * Format: uuid
-             * @description 所属カテゴリID
+             * @description 所属タググループID
              */
-            categoryId?: string;
+            groupId?: string;
         };
         ReorderTagsDto: {
             items: components["schemas"]["TagOrderItemDto"][];
@@ -1280,10 +1332,10 @@ export type components = {
              */
             name?: string;
             /**
-             * @description カテゴリID
+             * @description タググループID
              * @example aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
              */
-            categoryId?: string;
+            groupId?: string;
             /**
              * @description カラーコード
              * @example #3B82F6
@@ -1389,6 +1441,74 @@ export type components = {
             displayOrder?: number;
             /** @description 利用するスコープ一覧 */
             scopes?: string[];
+            /**
+             * @description アクティブかどうか
+             * @example true
+             */
+            isActive?: boolean;
+        };
+        CreateTagGroupDto: {
+            /**
+             * @description 所属カテゴリID
+             * @example aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+             */
+            categoryId: string;
+            /**
+             * @description グループ名
+             * @example 屋内管理
+             */
+            name: string;
+            /** @description グループの説明 */
+            description?: string;
+            /**
+             * @description 表示順
+             * @example 10
+             */
+            displayOrder?: number;
+            /**
+             * @description アクティブかどうか
+             * @example true
+             */
+            isActive?: boolean;
+        };
+        TagGroupOrderItemDto: {
+            /**
+             * Format: uuid
+             * @description グループID
+             */
+            id: string;
+            /**
+             * @description 表示順
+             * @example 10
+             */
+            displayOrder: number;
+            /**
+             * Format: uuid
+             * @description 移動先カテゴリID
+             */
+            categoryId?: string;
+        };
+        ReorderTagGroupDto: {
+            items: components["schemas"]["TagGroupOrderItemDto"][];
+        };
+        UpdateTagGroupDto: {
+            /**
+             * @description 所属カテゴリID
+             * @example aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+             */
+            categoryId?: string;
+            /**
+             * @description グループ名
+             * @example 屋内管理
+             */
+            name?: string;
+            /** @description グループの説明 */
+            description?: string;
+            /**
+             * @description 表示順
+             * @example 10
+             */
+            displayOrder?: number;
             /**
              * @description アクティブかどうか
              * @example true
@@ -2995,6 +3115,90 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UpdateTagCategoryDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TagGroupsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTagGroupDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TagGroupsController_reorder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderTagGroupDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TagGroupsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TagGroupsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTagGroupDto"];
             };
         };
         responses: {

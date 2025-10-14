@@ -8,16 +8,20 @@ import { UpdateTagCategoryDto } from "./dto/update-tag-category.dto";
 
 interface FindManyOptions {
   scopes?: string[];
-  includeTags?: boolean;
+  includeGroups?: boolean;
   includeInactive?: boolean;
 }
 
-type TagCategoryWithTags = Prisma.TagCategoryGetPayload<{
+type TagCategoryWithGroups = Prisma.TagCategoryGetPayload<{
   include: {
-    tags: {
+    groups: {
       include: {
-        cats: {
-          select: { catId: true };
+        tags: {
+          include: {
+            cats: {
+              select: { catId: true };
+            };
+          };
         };
       };
     };
@@ -28,10 +32,10 @@ type TagCategoryWithTags = Prisma.TagCategoryGetPayload<{
 export class TagCategoriesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findMany(options: FindManyOptions & { includeTags: true }): Promise<TagCategoryWithTags[]>;
+  async findMany(options: FindManyOptions & { includeGroups: true }): Promise<TagCategoryWithGroups[]>;
   async findMany(options?: FindManyOptions): Promise<TagCategory[]>;
   async findMany(options: FindManyOptions = {}) {
-    const { scopes, includeTags = false, includeInactive = false } = options;
+    const { scopes, includeGroups = false, includeInactive = false } = options;
 
     const whereClause: Prisma.TagCategoryWhereInput = {
       ...(includeInactive ? {} : { isActive: true }),
@@ -51,13 +55,22 @@ export class TagCategoriesService {
         { displayOrder: "asc" },
         { name: "asc" },
       ],
-      include: includeTags
+      include: includeGroups
         ? {
-            tags: {
+            groups: {
               where: includeInactive ? {} : { isActive: true },
               include: {
-                cats: {
-                  select: { catId: true },
+                tags: {
+                  where: includeInactive ? {} : { isActive: true },
+                  include: {
+                    cats: {
+                      select: { catId: true },
+                    },
+                  },
+                  orderBy: [
+                    { displayOrder: "asc" },
+                    { name: "asc" },
+                  ],
                 },
               },
               orderBy: [
@@ -69,8 +82,8 @@ export class TagCategoriesService {
         : undefined,
     };
 
-    if (includeTags) {
-      return this.prisma.tagCategory.findMany(args) as Promise<TagCategoryWithTags[]>;
+    if (includeGroups) {
+      return this.prisma.tagCategory.findMany(args) as Promise<TagCategoryWithGroups[]>;
     }
 
     return this.prisma.tagCategory.findMany(args);

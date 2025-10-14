@@ -11,10 +11,10 @@ class TagOrderItemDto {
   @IsInt()
   displayOrder!: number;
 
-  @ApiProperty({ description: "所属カテゴリID", format: "uuid", required: false })
+  @ApiProperty({ description: "所属タググループID", format: "uuid", required: false })
   @IsOptional()
   @IsUUID()
-  categoryId?: string;
+  groupId?: string;
 }
 
 export class ReorderTagsDto {

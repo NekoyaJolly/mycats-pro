@@ -16,7 +16,7 @@ export class TagsService {
   async findAll(options: { scopes?: string[]; includeInactive?: boolean } = {}) {
     const categories = await this.tagCategoriesService.findMany({
       scopes: options.scopes,
-      includeTags: true,
+      includeGroups: true,
       includeInactive: options.includeInactive,
     });
 
@@ -31,28 +31,36 @@ export class TagsService {
         displayOrder: category.displayOrder,
         scopes: category.scopes,
         isActive: category.isActive,
-        tags: (category.tags ?? []).map((tag) => ({
-          id: tag.id,
-          categoryId: tag.categoryId,
-          name: tag.name,
-          color: tag.color,
-          description: tag.description ?? undefined,
-          displayOrder: tag.displayOrder,
-          allowsManual: tag.allowsManual,
-          allowsAutomation: tag.allowsAutomation,
-          metadata: tag.metadata ?? undefined,
-          isActive: tag.isActive,
-          usageCount: tag.cats.length,
+        groups: (category.groups ?? []).map((group) => ({
+          id: group.id,
+          categoryId: group.categoryId,
+          name: group.name,
+          description: group.description ?? undefined,
+          displayOrder: group.displayOrder,
+          isActive: group.isActive,
+          tags: (group.tags ?? []).map((tag) => ({
+            id: tag.id,
+            groupId: tag.groupId,
+            name: tag.name,
+            color: tag.color,
+            description: tag.description ?? undefined,
+            displayOrder: tag.displayOrder,
+            allowsManual: tag.allowsManual,
+            allowsAutomation: tag.allowsAutomation,
+            metadata: tag.metadata ?? undefined,
+            isActive: tag.isActive,
+            usageCount: tag.cats.length,
+          })),
         })),
       })),
     };
   }
 
   async create(dto: CreateTagDto) {
-    const displayOrder = dto.displayOrder ?? (await this.getNextDisplayOrder(dto.categoryId));
+    const displayOrder = dto.displayOrder ?? (await this.getNextDisplayOrder(dto.groupId));
     const data = await this.prisma.tag.create({
       data: {
-        category: { connect: { id: dto.categoryId } },
+        group: { connect: { id: dto.groupId } },
         name: dto.name,
         color: dto.color ?? undefined,
         description: dto.description ?? undefined,
@@ -79,7 +87,7 @@ export class TagsService {
       ...(dto.metadata !== undefined
         ? { metadata: this.toJson(dto.metadata) ?? Prisma.JsonNull }
         : {}),
-      ...(dto.categoryId ? { category: { connect: { id: dto.categoryId } } } : {}),
+      ...(dto.groupId ? { group: { connect: { id: dto.groupId } } } : {}),
       ...(dto.allowsManual !== undefined ? { allowsManual: dto.allowsManual } : {}),
       ...(dto.allowsAutomation !== undefined
         ? { allowsAutomation: dto.allowsAutomation }
@@ -101,18 +109,18 @@ export class TagsService {
     return { success: true };
   }
 
-  async reorder(items: Array<{ id: string; displayOrder: number; categoryId?: string }>) {
+  async reorder(items: Array<{ id: string; displayOrder: number; groupId?: string }>) {
     if (!items.length) {
       return { success: true };
     }
 
     await this.prisma.$transaction(
-      items.map(({ id, displayOrder, categoryId }) =>
+      items.map(({ id, displayOrder, groupId }) =>
         this.prisma.tag.update({
           where: { id },
           data: {
             displayOrder,
-            ...(categoryId ? { category: { connect: { id: categoryId } } } : {}),
+            ...(groupId ? { group: { connect: { id: groupId } } } : {}),
           },
         }),
       ),
@@ -153,10 +161,10 @@ export class TagsService {
     return value as Prisma.InputJsonValue;
   }
 
-  private async getNextDisplayOrder(categoryId: string): Promise<number> {
+  private async getNextDisplayOrder(groupId: string): Promise<number> {
     const result = await this.prisma.tag.aggregate({
       _max: { displayOrder: true },
-      where: { categoryId },
+      where: { groupId },
     });
     return (result._max.displayOrder ?? -1) + 1;
   }
