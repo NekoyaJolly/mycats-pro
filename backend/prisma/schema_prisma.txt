@@ -1,4 +1,4 @@
-// Prisma Schema - Last Updated: 2025-10-14T01:33:49.954Z
+// Prisma Schema - Last Updated: 2025-10-15T02:20:18.794Z
 // Auto-generated from schema.prisma
 
 // This is your Prisma schema file,
@@ -408,6 +408,7 @@ model TagCategory {
   name         String
   description  String?
   color        String?  @default("#3B82F6")
+  textColor    String?  @default("#111827") @map("text_color")
   displayOrder Int      @default(0) @map("display_order")
   scopes       String[] @default([])
   isActive     Boolean  @default(true) @map("is_active")
@@ -425,6 +426,8 @@ model TagGroup {
   categoryId   String  @map("category_id")
   name         String
   description  String?
+  color        String?  @default("#3B82F6")
+  textColor    String?  @default("#111827") @map("text_color")
   displayOrder Int     @default(0) @map("display_order")
   isActive     Boolean @default(true) @map("is_active")
 
@@ -443,6 +446,7 @@ model Tag {
   groupId          String  @map("group_id")
   name             String
   color            String  @default("#3B82F6")
+  textColor        String  @default("#FFFFFF") @map("text_color")
   description      String?
   displayOrder     Int     @default(0) @map("display_order")
   allowsManual     Boolean @default(true) @map("allows_manual")

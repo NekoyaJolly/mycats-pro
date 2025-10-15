@@ -25,6 +25,11 @@ export class CreateTagDto {
   @IsHexColor()
   color?: string;
 
+  @ApiPropertyOptional({ description: "テキストカラーコード", example: "#FFFFFF" })
+  @IsOptional()
+  @IsHexColor()
+  textColor?: string;
+
   @ApiPropertyOptional({ description: "説明", example: "室内飼いタグ" })
   @IsOptional()
   @IsString()

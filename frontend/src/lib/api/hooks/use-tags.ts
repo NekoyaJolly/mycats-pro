@@ -17,6 +17,7 @@ export interface TagView {
   categoryId: string;
   name: string;
   color: string;
+  textColor?: string;
   description?: string;
   displayOrder: number;
   allowsManual: boolean;
@@ -31,6 +32,8 @@ export interface TagGroupView {
   categoryId: string;
   name: string;
   description?: string;
+  color?: string;
+  textColor?: string;
   displayOrder: number;
   isActive: boolean;
   tags: TagView[];
@@ -42,6 +45,7 @@ export interface TagCategoryView {
   name: string;
   description?: string;
   color?: string;
+  textColor?: string;
   displayOrder: number;
   scopes: string[];
   isActive: boolean;

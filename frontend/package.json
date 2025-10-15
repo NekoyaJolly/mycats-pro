@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
-  "build": "next build",
+    "build": "next build",
     "analyze": "ANALYZE=true next build",
     "start": "next start -p 3000",
     "lint": "eslint --max-warnings 20 .",
@@ -15,23 +15,26 @@
     "generate:api-types": "node scripts/generate-api-types.mjs"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@hookform/resolvers": "^3.9.0",
     "@mantine/core": "^8.2.2",
     "@mantine/dates": "^8.2.2",
     "@mantine/form": "^8.2.2",
     "@mantine/hooks": "^8.2.2",
-  "@mantine/notifications": "^8.2.2",
-  "@hookform/resolvers": "^3.9.0",
+    "@mantine/notifications": "^8.2.2",
     "@sentry/nextjs": "^8.26.0",
     "@tabler/icons-react": "^3.34.1",
-  "@tanstack/react-query": "^5.90.2",
-  "react-hook-form": "^7.53.0",
+    "@tanstack/react-query": "^5.90.2",
     "dayjs": "^1.11.13",
     "next": "15.5.3",
     "openapi-typescript": "^7.9.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "zustand": "^5.0.8",
-    "zod": "^3.23.8"
+    "react-hook-form": "^7.53.0",
+    "zod": "^3.23.8",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
