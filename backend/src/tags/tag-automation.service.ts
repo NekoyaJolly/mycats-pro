@@ -317,10 +317,10 @@ export class TagAutomationService {
 
     operations.push(historyCreate);
 
-  const results = await this.prisma.$transaction(operations);
-  const history = results[results.length - 1] as Awaited<typeof historyCreate>;
+    const results = await this.prisma.$transaction(operations);
+    const history = results[results.length - 1] as Awaited<typeof historyCreate>;
 
-  return { success: true, data: history };
+    return { success: true, data: history };
   }
 
   async getHistoryForCat(catId: string, options: { take?: number; tagId?: string } = {}) {

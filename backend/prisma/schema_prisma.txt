@@ -421,6 +421,7 @@ model TagCategory {
   @@map("tag_categories")
 }
 
+feature/cats-status-automation
 model TagGroup {
   id           String  @id @default(uuid())
   categoryId   String  @map("category_id")
@@ -433,6 +434,22 @@ model TagGroup {
 
   category TagCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   tags     Tag[]
+}
+model Tag {
+  id               String  @id @default(uuid())
+  categoryId       String  @map("category_id")
+  name             String
+  color            String  @default("#3B82F6")
+  description      String?
+  displayOrder     Int     @default(0) @map("display_order")
+  allowsManual     Boolean @default(true) @map("allows_manual")
+  allowsAutomation Boolean @default(true) @map("allows_automation")
+  metadata         Json?
+  isActive         Boolean @default(true) @map("is_active")
+
+  category TagCategory            @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  cats     CatTag[]
+  history  TagAssignmentHistory[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -464,6 +481,71 @@ model Tag {
   @@unique([groupId, name])
   @@index([groupId])
   @@map("tags")
+}
+
+model TagAutomationRule {
+  id          String                   @id @default(uuid())
+  key         String                   @unique
+  name        String
+  description String?
+  triggerType TagAutomationTriggerType @map("trigger_type")
+  eventType   TagAutomationEventType   @map("event_type")
+  scope       String?                  @map("scope")
+  isActive    Boolean                  @default(true) @map("is_active")
+  priority    Int                      @default(0)
+  config      Json?                    @map("config")
+
+  runs    TagAutomationRun[]
+  history TagAssignmentHistory[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("tag_automation_rules")
+}
+
+model TagAutomationRun {
+  id           String                 @id @default(uuid())
+  ruleId       String                 @map("rule_id")
+  eventPayload Json?                  @map("event_payload")
+  status       TagAutomationRunStatus @default(PENDING) @map("status")
+  startedAt    DateTime?              @map("started_at")
+  completedAt  DateTime?              @map("completed_at")
+  errorMessage String?                @map("error_message")
+
+  rule    TagAutomationRule      @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  history TagAssignmentHistory[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([ruleId])
+  @@map("tag_automation_runs")
+}
+
+model TagAssignmentHistory {
+  id              String              @id @default(uuid())
+  catId           String              @map("cat_id")
+  tagId           String              @map("tag_id")
+  ruleId          String?             @map("rule_id")
+  automationRunId String?             @map("automation_run_id")
+  action          TagAssignmentAction @default(ASSIGNED)
+  source          TagAssignmentSource @default(MANUAL)
+  reason          String?
+  metadata        Json?
+
+  cat           Cat                @relation(fields: [catId], references: [id], onDelete: Cascade)
+  tag           Tag                @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  rule          TagAutomationRule? @relation(fields: [ruleId], references: [id])
+  automationRun TagAutomationRun?  @relation(fields: [automationRunId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([catId])
+  @@index([tagId])
+  @@index([ruleId])
+  @@index([automationRunId])
+  @@map("tag_assignment_history")
 }
 
 model Pedigree {

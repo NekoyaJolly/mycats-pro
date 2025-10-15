@@ -113,7 +113,6 @@ type CategoryFormValues = {
 
 type TagFormValues = {
   name: string;
-  categoryId: string;
   groupId: string;
   description: string;
   color: string;

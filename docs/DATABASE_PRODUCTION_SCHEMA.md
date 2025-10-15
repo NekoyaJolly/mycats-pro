@@ -15,21 +15,26 @@
 
 ## 📊 データベース全体構成
 
-### テーブル一覧（11テーブル）
+### テーブル一覧（15テーブル）
 
-| No. | テーブル名   | 物理名             | 概要                   |
-| --- | ------------ | ------------------ | ---------------------- |
-| 1   | ユーザー     | `users`            | システム利用者の管理   |
-| 2   | ログイン試行 | `login_attempts`   | セキュリティ監査ログ   |
-| 3   | 猫種マスタ   | `breeds`           | 猫の品種マスタデータ   |
-| 4   | 毛色マスタ   | `coat_colors`      | 毛色の分類マスタデータ |
-| 5   | 猫基本情報   | `cats`             | 猫の個体情報           |
-| 6   | 交配記録     | `breeding_records` | 交配・繁殖履歴         |
-| 7   | ケア記録     | `care_records`     | 医療・ケア履歴         |
-| 8   | スケジュール | `schedules`        | 予定・タスク管理       |
-| 9   | タグマスタ   | `tags`             | 分類用タグ定義         |
-| 10  | 血統情報     | `pedigrees`        | 血統書・家系図データ   |
-| 11  | 猫タグ関連   | `cat_tags`         | 猫とタグの多対多関連   |
+| No. | テーブル名           | 物理名                   | 概要                       |
+| --- | -------------------- | ------------------------ | -------------------------- |
+| 1   | ユーザー             | `users`                  | システム利用者の管理       |
+| 2   | ログイン試行         | `login_attempts`         | セキュリティ監査ログ       |
+| 3   | 猫種マスタ           | `breeds`                 | 猫の品種マスタデータ       |
+| 4   | 毛色マスタ           | `coat_colors`            | 毛色の分類マスタデータ     |
+| 5   | 猫基本情報           | `cats`                   | 猫の個体情報               |
+| 6   | 交配記録             | `breeding_records`       | 交配・繁殖履歴             |
+| 7   | ケア記録             | `care_records`           | 医療・ケア履歴             |
+| 8   | スケジュール         | `schedules`              | 予定・タスク管理           |
+| 9   | タグカテゴリ         | `tag_categories`         | タグの分類カテゴリ         |
+| 10  | タグマスタ           | `tags`                   | カテゴリ配下のタグ定義     |
+| 11  | タグ自動化ルール     | `tag_automation_rules`   | タグ自動付与のルール管理   |
+| 12  | タグ自動化実行       | `tag_automation_runs`    | 自動付与の実行履歴         |
+| 13  | タグ付与履歴         | `tag_assignment_history` | 手動/自動タグ操作の履歴管理 |
+| 14  | 猫タグ関連           | `cat_tags`               | 猫とタグの多対多関連       |
+| 15  | 血統情報             | `pedigrees`              | 血統書・家系図データ       |
+
 
 ---
 
@@ -260,25 +265,125 @@
 - 主キー: `id`
 - 外部キー: `cat_id` → cats.id, `assigned_to` → users.id
 
-### 9. タグマスタ（tags）
+### 9. タグカテゴリ（tag_categories）
 
-**概要**: 猫の分類・ラベリング用タグを定義
+**概要**: タグをカテゴリ単位で整理し、対象スコープや表示順を管理
 
-| フィールド名 | 物理名        | データ型 | NULL | デフォルト | 説明             |
-| ------------ | ------------- | -------- | ---- | ---------- | ---------------- |
-| ID           | `id`          | String   | ✗    | uuid()     | 主キー（UUID）   |
-| タグ名       | `name`        | String   | ✗    | -          | タグの名称       |
-| 色           | `color`       | String   | ✗    | #3B82F6    | 表示色（HEX）    |
-| 説明         | `description` | String   | ✓    | -          | タグの用途説明   |
-| 作成日時     | `created_at`  | DateTime | ✗    | now()      | レコード作成日時 |
-| 更新日時     | `updated_at`  | DateTime | ✗    | -          | レコード更新日時 |
+| フィールド名     | 物理名           | データ型 | NULL | デフォルト | 説明                     |
+| ---------------- | ---------------- | -------- | ---- | ---------- | ------------------------ |
+| ID               | `id`             | String   | ✗    | uuid()     | 主キー（UUID）           |
+| キー             | `key`            | String   | ✗    | -          | 一意なカテゴリキー       |
+| 名称             | `name`           | String   | ✗    | -          | カテゴリ名               |
+| 説明             | `description`    | String   | ✓    | -          | カテゴリ説明             |
+| 色               | `color`          | String   | ✓    | #3B82F6    | UI表示用カラー           |
+| 表示順           | `display_order`  | Int      | ✗    | 0          | 並び替え用インデックス   |
+| スコープ         | `scopes`         | String[] | ✗    | []         | 利用可能なページスコープ |
+| 有効フラグ       | `is_active`      | Boolean  | ✗    | true       | 利用可否                 |
+| 作成日時         | `created_at`     | DateTime | ✗    | now()      | レコード作成日時         |
+| 更新日時         | `updated_at`     | DateTime | ✗    | -          | レコード更新日時         |
 
 **制約**:
 
 - 主キー: `id`
-- ユニーク制約: `name`
+- ユニーク制約: `key`
 
-### 10. 血統情報（pedigrees）
+### 10. タグマスタ（tags）
+
+**概要**: カテゴリ配下の個別タグを定義し、手動/自動付与可否や表示順を制御
+
+| フィールド名           | 物理名              | データ型 | NULL | デフォルト | 説明                       |
+| ---------------------- | ------------------- | -------- | ---- | ---------- | -------------------------- |
+| ID                     | `id`                | String   | ✗    | uuid()     | 主キー（UUID）             |
+| カテゴリID             | `category_id`       | String   | ✗    | -          | 所属カテゴリ（外部キー）   |
+| タグ名                 | `name`              | String   | ✗    | -          | タグの名称                 |
+| 表示色                 | `color`             | String   | ✗    | #3B82F6    | UI表示用カラー             |
+| 説明                   | `description`       | String   | ✓    | -          | タグの用途説明             |
+| 表示順                 | `display_order`     | Int      | ✗    | 0          | 並び順                     |
+| 手動付与可否           | `allows_manual`     | Boolean  | ✗    | true       | 手動操作で利用可能か       |
+| 自動付与可否           | `allows_automation` | Boolean  | ✗    | true       | 自動ルールで利用可能か     |
+| メタデータ             | `metadata`          | Json     | ✓    | -          | 任意の付随情報             |
+| 有効フラグ             | `is_active`         | Boolean  | ✗    | true       | 利用可否                   |
+| 作成日時               | `created_at`        | DateTime | ✗    | now()      | レコード作成日時           |
+| 更新日時               | `updated_at`        | DateTime | ✗    | -          | レコード更新日時           |
+
+**制約**:
+
+- 主キー: `id`
+- 複合ユニーク制約: (`category_id`, `name`)
+- 外部キー: `category_id` → tag_categories.id（CASCADE）
+
+### 11. タグ自動化ルール（tag_automation_rules）
+
+**概要**: イベントやスケジュールをトリガーにタグを自動付与/剥奪するルール
+
+| フィールド名     | 物理名        | データ型                 | NULL | デフォルト | 説明                                 |
+| ---------------- | ------------- | ------------------------ | ---- | ---------- | ------------------------------------ |
+| ID               | `id`          | String                   | ✗    | uuid()     | 主キー（UUID）                     |
+| キー             | `key`         | String                   | ✗    | -          | ルール識別子（ユニーク）           |
+| 名称             | `name`        | String                   | ✗    | -          | ルール名                             |
+| 説明             | `description` | String                   | ✓    | -          | ルールの説明                         |
+| トリガ種別       | `trigger_type`| TagAutomationTriggerType | ✗    | -          | EVENT / SCHEDULE / MANUAL           |
+| イベント種別     | `event_type`  | TagAutomationEventType   | ✗    | -          | 具体的なトリガイベント               |
+| スコープ         | `scope`       | String                   | ✓    | -          | 適用対象スコープ                     |
+| 有効フラグ       | `is_active`   | Boolean                  | ✗    | true       | ルールが有効か                       |
+| 優先度           | `priority`    | Int                      | ✗    | 0          | ルール適用優先度                     |
+| コンフィグ       | `config`      | Json                     | ✓    | -          | 追加設定（JSON）                     |
+| 作成日時         | `created_at`  | DateTime                 | ✗    | now()      | 作成日時                             |
+| 更新日時         | `updated_at`  | DateTime                 | ✗    | -          | 更新日時                             |
+
+**制約**:
+
+- 主キー: `id`
+- ユニーク制約: `key`
+
+### 12. タグ自動化実行（tag_automation_runs）
+
+**概要**: 自動化ルールの実行履歴と処理結果を保存
+
+| フィールド名       | 物理名          | データ型               | NULL | デフォルト | 説明                     |
+| ------------------ | --------------- | ---------------------- | ---- | ---------- | ------------------------ |
+| ID                 | `id`            | String                 | ✗    | uuid()     | 主キー（UUID）           |
+| ルールID           | `rule_id`       | String                 | ✗    | -          | 関連ルール（外部キー）   |
+| イベントペイロード | `event_payload` | Json                   | ✓    | -          | 実行時の入力データ       |
+| ステータス         | `status`        | TagAutomationRunStatus | ✗    | PENDING    | 実行状態                 |
+| 開始時刻           | `started_at`    | DateTime               | ✓    | -          | 開始時間                 |
+| 完了時刻           | `completed_at`  | DateTime               | ✓    | -          | 完了時間                 |
+| エラーメッセージ   | `error_message` | String                 | ✓    | -          | 失敗時メッセージ         |
+| 作成日時           | `created_at`    | DateTime               | ✗    | now()      | レコード作成日時         |
+| 更新日時           | `updated_at`    | DateTime               | ✗    | -          | レコード更新日時         |
+
+**制約**:
+
+- 主キー: `id`
+- 外部キー: `rule_id` → tag_automation_rules.id（CASCADE）
+- インデックス: `rule_id`
+
+### 13. タグ付与履歴（tag_assignment_history）
+
+**概要**: 手動/自動を問わずタグ付与・剥奪操作の履歴を保管
+
+| フィールド名 | 物理名              | データ型             | NULL | デフォルト | 説明                           |
+| ------------ | ------------------- | -------------------- | ---- | ---------- | ------------------------------ |
+| ID           | `id`                | String               | ✗    | uuid()     | 主キー（UUID）                 |
+| 猫ID         | `cat_id`            | String               | ✗    | -          | 対象猫（外部キー）             |
+| タグID       | `tag_id`            | String               | ✗    | -          | 対象タグ（外部キー）           |
+| ルールID     | `rule_id`           | String               | ✓    | -          | 自動化ルール（任意）           |
+| 実行ID       | `automation_run_id` | String               | ✓    | -          | 自動化実行履歴（任意）         |
+| アクション   | `action`            | TagAssignmentAction  | ✗    | ASSIGNED   | ASSIGNED / UNASSIGNED         |
+| ソース       | `source`            | TagAssignmentSource  | ✗    | MANUAL     | MANUAL / AUTOMATION / SYSTEM |
+| 理由         | `reason`            | String               | ✓    | -          | 操作理由                       |
+| メタデータ   | `metadata`          | Json                 | ✓    | -          | 追加情報                       |
+| 作成日時     | `created_at`        | DateTime             | ✗    | now()      | レコード作成日時               |
+
+**制約**:
+
+- 主キー: `id`
+- 外部キー: `cat_id` → cats.id（CASCADE）
+- 外部キー: `tag_id` → tags.id（CASCADE）
+- 外部キー: `rule_id` → tag_automation_rules.id（SET NULL）
+- 外部キー: `automation_run_id` → tag_automation_runs.id（SET NULL）
+- インデックス: `cat_id`, `tag_id`, `rule_id`, `automation_run_id`
+### 14. 血統情報（pedigrees）
 
 **概要**: 血統書データと家系図情報を管理する複雑なテーブル
 
@@ -338,13 +443,9 @@
 - → maternalGrandfather（多対1）: 母方祖父
 - → maternalGrandmother（多対1）: 母方祖母
 - → fatherOf（1対多）: 父親としての子孫
-- → motherOf（1対多）: 母親としての子孫
-- → paternalGrandfatherOf（1対多）: 父方祖父としての孫
-- → paternalGrandmotherOf（1対多）: 父方祖母としての孫
-- → maternalGrandfatherOf（1対多）: 母方祖父としての孫
-- → maternalGrandmotherOf（1対多）: 母方祖母としての孫
 
-### 11. 猫タグ関連（cat_tags）
+
+### 15. 猫タグ関連（cat_tags）
 
 **概要**: 猫とタグの多対多関係を管理する中間テーブル
 

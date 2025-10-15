@@ -44,7 +44,6 @@ export class TagsService {
           tags: (group.tags ?? []).map((tag) => ({
             id: tag.id,
             groupId: tag.groupId,
-            categoryId: group.categoryId,
             name: tag.name,
             color: tag.color,
             textColor: tag.textColor,
