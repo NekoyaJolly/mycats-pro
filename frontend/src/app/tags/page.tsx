@@ -112,6 +112,7 @@ type CategoryFormValues = {
 };
 
 type TagFormValues = {
+  categoryId: string;
   name: string;
   groupId: string;
   description: string;
