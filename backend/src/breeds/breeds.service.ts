@@ -78,7 +78,7 @@ export class BreedsService {
       include: {
         cats: {
           include: {
-            color: true,
+            coatColor: true,
           },
           orderBy: {
             name: "asc",

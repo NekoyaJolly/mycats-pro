@@ -10,6 +10,7 @@ import {
   TextInput,
   Textarea,
   Select,
+  Switch,
   Flex,
   Alert,
   LoadingOverlay,
@@ -20,6 +21,7 @@ import { IconArrowLeft, IconDeviceFloppy } from '@tabler/icons-react';
 import { z } from 'zod';
 import { PageTitle } from '@/components/PageTitle';
 import { useCreateCat, type CreateCatRequest } from '@/lib/api/hooks/use-cats';
+import TagSelector from '@/components/TagSelector';
 
 const optionalString = z
   .string()
@@ -27,7 +29,6 @@ const optionalString = z
   .transform((value) => (value?.trim() ? value.trim() : undefined));
 
 const catFormSchema = z.object({
-  registrationId: z.string().min(1, '登録IDは必須です'),
   name: z.string().min(1, '名前は必須です'),
   gender: z.enum(['MALE', 'FEMALE'], {
     errorMap: () => ({ message: '性別を選択してください' }),
@@ -37,21 +38,12 @@ const catFormSchema = z.object({
     .min(1, '生年月日を入力してください')
     .regex(/^\d{4}-\d{2}-\d{2}$/, '生年月日はYYYY-MM-DD形式で入力してください'),
   breedId: optionalString,
-  colorId: optionalString,
-  pattern: optionalString,
-  weight: z
-    .string()
-    .optional()
-    .transform((value) => {
-      if (!value || value.trim() === '') return undefined;
-      const num = parseFloat(value);
-      return isNaN(num) ? undefined : num;
-    }),
-  microchipId: optionalString,
-  fatherId: optionalString,
-  motherId: optionalString,
-  imageUrl: optionalString,
-  notes: optionalString,
+  coatColorId: optionalString,
+  microchipNumber: optionalString,
+  registrationNumber: optionalString,
+  description: optionalString,
+  isInHouse: z.boolean().default(true),
+  tagIds: z.array(z.string()).default([]),
 });
 
 type CatFormValues = z.infer<typeof catFormSchema>;
@@ -67,37 +59,31 @@ export default function CatRegistrationPage() {
   } = useForm<CatFormValues>({
     resolver: zodResolver(catFormSchema),
     defaultValues: {
-      registrationId: '',
       name: '',
       gender: 'MALE',
       birthDate: '',
       breedId: undefined,
-      colorId: undefined,
-      pattern: undefined,
-      weight: undefined,
-      microchipId: undefined,
-      fatherId: undefined,
-      motherId: undefined,
-      imageUrl: undefined,
-      notes: undefined,
+      coatColorId: undefined,
+      microchipNumber: undefined,
+      registrationNumber: undefined,
+      description: undefined,
+      isInHouse: true,
+      tagIds: [],
     },
   });
 
   const onSubmit = async (values: CatFormValues) => {
     const payload: CreateCatRequest = {
-      registrationId: values.registrationId,
       name: values.name,
       gender: values.gender,
       birthDate: values.birthDate,
       breedId: values.breedId ?? null,
-      colorId: values.colorId ?? null,
-      pattern: values.pattern ?? null,
-      weight: values.weight ?? null,
-      microchipId: values.microchipId ?? null,
-      fatherId: values.fatherId ?? null,
-      motherId: values.motherId ?? null,
-      imageUrl: values.imageUrl ?? null,
-      notes: values.notes ?? null,
+      coatColorId: values.coatColorId ?? null,
+      microchipNumber: values.microchipNumber,
+      registrationNumber: values.registrationNumber,
+      description: values.description,
+      isInHouse: values.isInHouse,
+      tagIds: values.tagIds.length > 0 ? values.tagIds : undefined,
     };
 
     try {
@@ -153,21 +139,6 @@ export default function CatRegistrationPage() {
           <Card shadow="sm" padding="lg" radius="md" withBorder>
             <form onSubmit={handleSubmit(onSubmit)}>
               <Stack gap="md">
-                <Controller
-                  name="registrationId"
-                  control={control}
-                  render={({ field }) => (
-                    <TextInput
-                      label="登録ID"
-                      placeholder="登録IDを入力してください（例：REG-001）"
-                      required
-                      error={errors.registrationId?.message}
-                      {...field}
-                      value={field.value}
-                    />
-                  )}
-                />
-
                 <Controller
                   name="name"
                   control={control}
@@ -226,7 +197,6 @@ export default function CatRegistrationPage() {
                       <TextInput
                         label="生年月日"
                         placeholder="YYYY-MM-DD"
-                        required
                         error={errors.birthDate?.message}
                         {...field}
                         value={field.value ?? ''}
@@ -235,13 +205,13 @@ export default function CatRegistrationPage() {
                   />
 
                   <Controller
-                    name="colorId"
+                    name="coatColorId"
                     control={control}
                     render={({ field }) => (
                       <TextInput
-                        label="毛色 ID"
-                        placeholder="毛色IDまたは未設定"
-                        error={errors.colorId?.message}
+                        label="色柄 ID"
+                        placeholder="色柄IDまたは未設定"
+                        error={errors.coatColorId?.message}
                         {...field}
                         value={field.value ?? ''}
                       />
@@ -251,13 +221,13 @@ export default function CatRegistrationPage() {
 
                 <Group grow>
                   <Controller
-                    name="pattern"
+                    name="microchipNumber"
                     control={control}
                     render={({ field }) => (
                       <TextInput
-                        label="模様・パターン"
-                        placeholder="例：タビー、三毛"
-                        error={errors.pattern?.message}
+                        label="マイクロチップ番号"
+                        placeholder="マイクロチップ番号"
+                        error={errors.microchipNumber?.message}
                         {...field}
                         value={field.value ?? ''}
                       />
@@ -265,76 +235,13 @@ export default function CatRegistrationPage() {
                   />
 
                   <Controller
-                    name="weight"
+                    name="registrationNumber"
                     control={control}
                     render={({ field }) => (
                       <TextInput
-                        label="体重 (kg)"
-                        placeholder="例：4.5"
-                        type="number"
-                        step="0.1"
-                        error={errors.weight?.message}
-                        {...field}
-                        value={field.value !== undefined ? String(field.value) : ''}
-                        onChange={(event) => field.onChange(event.currentTarget.value)}
-                      />
-                    )}
-                  />
-                </Group>
-
-                <Group grow>
-                  <Controller
-                    name="microchipId"
-                    control={control}
-                    render={({ field }) => (
-                      <TextInput
-                        label="マイクロチップID"
-                        placeholder="マイクロチップID"
-                        error={errors.microchipId?.message}
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    )}
-                  />
-
-                  <Controller
-                    name="imageUrl"
-                    control={control}
-                    render={({ field }) => (
-                      <TextInput
-                        label="画像URL"
-                        placeholder="画像のURL"
-                        error={errors.imageUrl?.message}
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    )}
-                  />
-                </Group>
-
-                <Group grow>
-                  <Controller
-                    name="fatherId"
-                    control={control}
-                    render={({ field }) => (
-                      <TextInput
-                        label="父猫ID"
-                        placeholder="父猫のID"
-                        error={errors.fatherId?.message}
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    )}
-                  />
-
-                  <Controller
-                    name="motherId"
-                    control={control}
-                    render={({ field }) => (
-                      <TextInput
-                        label="母猫ID"
-                        placeholder="母猫のID"
-                        error={errors.motherId?.message}
+                        label="登録番号"
+                        placeholder="登録番号"
+                        error={errors.registrationNumber?.message}
                         {...field}
                         value={field.value ?? ''}
                       />
@@ -343,16 +250,42 @@ export default function CatRegistrationPage() {
                 </Group>
 
                 <Controller
-                  name="notes"
+                  name="description"
                   control={control}
                   render={({ field }) => (
                     <Textarea
                       label="備考"
                       placeholder="特徴や性格などを記入してください"
                       minRows={3}
-                      error={errors.notes?.message}
+                      error={errors.description?.message}
                       {...field}
                       value={field.value ?? ''}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="isInHouse"
+                  control={control}
+                  render={({ field }) => (
+                    <Switch
+                      label="施設内に在舎している猫です"
+                      checked={field.value}
+                      onChange={(event) => field.onChange(event.currentTarget.checked)}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="tagIds"
+                  control={control}
+                  render={({ field }) => (
+                    <TagSelector
+                      selectedTags={field.value ?? []}
+                      onChange={field.onChange}
+                      label="タグ"
+                      placeholder="猫の特徴タグを選択"
+                      disabled={isSubmitting}
                     />
                   )}
                 />

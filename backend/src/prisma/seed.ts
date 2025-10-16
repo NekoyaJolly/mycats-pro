@@ -68,26 +68,26 @@ async function main() {
 
   // 2) Cats (one male, one female)
   const maleCat = await prisma.cat.upsert({
-    where: { registrationId: "REG-ALPHA" },
+    where: { registrationNumber: "REG-ALPHA" },
     update: {},
     create: {
-      registrationId: "REG-ALPHA",
+      registrationNumber: "REG-ALPHA",
       name: "Alpha",
-  gender: "MALE",
+      gender: "MALE",
       birthDate: new Date("2023-01-01"),
-      isActive: true,
+      isInHouse: true,
     },
   });
 
   const femaleCat = await prisma.cat.upsert({
-    where: { registrationId: "REG-BETA" },
+    where: { registrationNumber: "REG-BETA" },
     update: {},
     create: {
-      registrationId: "REG-BETA",
+      registrationNumber: "REG-BETA",
       name: "Beta",
-  gender: "FEMALE",
+      gender: "FEMALE",
       birthDate: new Date("2023-02-01"),
-      isActive: true,
+      isInHouse: true,
     },
   });
 
@@ -163,12 +163,12 @@ async function main() {
   console.log("Admin:", { email, password: forceUpdate || adminAction === "created" ? password : "(unchanged)", id: admin.id, action: adminAction });
   console.log("Male Cat:", {
     id: maleCat.id,
-    registrationId: maleCat.registrationId,
+    registrationNumber: maleCat.registrationNumber,
     name: maleCat.name,
   });
   console.log("Female Cat:", {
     id: femaleCat.id,
-    registrationId: femaleCat.registrationId,
+    registrationNumber: femaleCat.registrationNumber,
     name: femaleCat.name,
   });
   console.log("Tag Category:", { id: category.id, key: category.key, name: category.name });

@@ -12,25 +12,25 @@ import { notifications } from '@mantine/notifications';
  */
 export interface Cat {
   id: string;
-  registrationId: string;
   name: string;
   gender: 'MALE' | 'FEMALE';
   birthDate: string;
   breedId: string | null;
-  colorId: string | null;
-  pattern: string | null;
-  weight: number | null;
-  microchipId: string | null;
-  isActive: boolean;
-  notes: string | null;
-  imageUrl: string | null;
+  coatColorId: string | null;
+  microchipNumber: string | null;
+  registrationNumber: string | null;
+  description: string | null;
+  isInHouse: boolean;
+  adoptedAt: string | null;
+  deathDate: string | null;
   fatherId: string | null;
   motherId: string | null;
+  ownerId: string;
   createdAt: string;
   updatedAt: string;
   // リレーション（オプショナル）
   breed?: { id: string; name: string };
-  color?: { id: string; name: string };
+  coatColor?: { id: string; name: string };
   father?: Cat;
   mother?: Cat;
   tags?: Array<{ id: string; name: string; color: string }>;
@@ -45,8 +45,8 @@ export interface GetCatsParams {
   search?: string;
   gender?: 'MALE' | 'FEMALE';
   breedId?: string;
-  colorId?: string;
-  isActive?: boolean;
+  coatColorId?: string;
+  isInHouse?: boolean;
 }
 
 type CatsListQuery = ApiQueryParams<'/cats', 'get'>;
@@ -67,19 +67,18 @@ export interface GetCatsResponse {
  * 猫作成/更新リクエスト
  */
 export interface CreateCatRequest {
-  registrationId: string;
   name: string;
   gender: 'MALE' | 'FEMALE';
   birthDate: string;
   breedId?: string | null;
-  colorId?: string | null;
-  pattern?: string | null;
-  weight?: number | null;
-  microchipId?: string | null;
+  coatColorId?: string | null;
+  microchipNumber?: string | null;
+  registrationNumber?: string | null;
+  description?: string | null;
+  isInHouse?: boolean;
   fatherId?: string | null;
   motherId?: string | null;
-  imageUrl?: string | null;
-  notes?: string | null;
+  tagIds?: string[];
 }
 
 export type UpdateCatRequest = Partial<CreateCatRequest>;

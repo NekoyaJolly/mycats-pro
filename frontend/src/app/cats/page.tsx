@@ -46,7 +46,7 @@ export default function CatsPage() {
         params.gender = 'FEMALE';
         break;
       case 'raising':
-        params.isActive = true;
+        params.isInHouse = true;
         break;
       default:
         break;
@@ -100,7 +100,7 @@ export default function CatsPage() {
         });
         break;
       case 'raising':
-        filtered = apiCats.filter((cat) => cat.isActive);
+        filtered = apiCats.filter((cat) => cat.isInHouse);
         break;
       default:
         filtered = apiCats;
@@ -110,7 +110,7 @@ export default function CatsPage() {
     if (searchTerm) {
       filtered = filtered.filter((cat) =>
         cat.name.includes(searchTerm) || 
-        (cat.color?.name || '').includes(searchTerm) ||
+        (cat.coatColor?.name || '').includes(searchTerm) ||
         (cat.breed?.name || '').includes(searchTerm)
       );
     }
