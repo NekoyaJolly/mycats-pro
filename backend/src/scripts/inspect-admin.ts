@@ -27,6 +27,21 @@ async function main() {
       isActive: admin.isActive,
       passwordHashPreview: admin.passwordHash?.slice(0, 16),
     });
+
+    const recentAttempts = await prisma.loginAttempt.findMany({
+      where: { email: admin.email },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      select: {
+        createdAt: true,
+        success: true,
+        reason: true,
+        ipAddress: true,
+        userAgent: true,
+      },
+    });
+
+    console.log('Recent login attempts:', recentAttempts);
   } finally {
     await prisma.$disconnect();
   }

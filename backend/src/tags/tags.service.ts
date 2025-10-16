@@ -28,6 +28,7 @@ export class TagsService {
         name: category.name,
         description: category.description ?? undefined,
         color: category.color ?? undefined,
+        textColor: category.textColor ?? undefined,
         displayOrder: category.displayOrder,
         scopes: category.scopes,
         isActive: category.isActive,
@@ -36,6 +37,8 @@ export class TagsService {
           categoryId: group.categoryId,
           name: group.name,
           description: group.description ?? undefined,
+          color: group.color ?? undefined,
+          textColor: group.textColor ?? undefined,
           displayOrder: group.displayOrder,
           isActive: group.isActive,
           tags: (group.tags ?? []).map((tag) => ({
@@ -43,6 +46,7 @@ export class TagsService {
             groupId: tag.groupId,
             name: tag.name,
             color: tag.color,
+            textColor: tag.textColor,
             description: tag.description ?? undefined,
             displayOrder: tag.displayOrder,
             allowsManual: tag.allowsManual,
@@ -63,6 +67,7 @@ export class TagsService {
         group: { connect: { id: dto.groupId } },
         name: dto.name,
         color: dto.color ?? undefined,
+        textColor: dto.textColor ?? undefined,
         description: dto.description ?? undefined,
         displayOrder,
         ...(dto.allowsManual !== undefined ? { allowsManual: dto.allowsManual } : {}),
@@ -82,6 +87,7 @@ export class TagsService {
     const updateData: Prisma.TagUpdateInput = {
       ...(dto.name !== undefined ? { name: dto.name } : {}),
       ...(dto.color !== undefined ? { color: dto.color } : {}),
+  ...(dto.textColor !== undefined ? { textColor: dto.textColor } : {}),
       ...(dto.description !== undefined ? { description: dto.description } : {}),
       ...(dto.displayOrder !== undefined ? { displayOrder: dto.displayOrder } : {}),
       ...(dto.metadata !== undefined

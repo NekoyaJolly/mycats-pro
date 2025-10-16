@@ -4,14 +4,29 @@ import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import cookieParser from 'cookie-parser';
+import { config as loadEnv } from 'dotenv';
+import { existsSync, statSync } from 'fs';
 import helmet from 'helmet';
 import { Logger as PinoLogger } from 'nestjs-pino';
+import { resolve } from 'path';
 
 import { AppModule } from "./app.module";
 import { validateProductionEnvironment, logEnvironmentInfo } from "./common/environment.validation";
 import { EnhancedGlobalExceptionFilter } from "./common/filters/enhanced-global-exception.filter";
 import { PerformanceMonitoringInterceptor } from "./common/interceptors/performance-monitoring.interceptor";
 import { TransformResponseInterceptor } from "./common/interceptors/transform-response.interceptor";
+
+const candidateEnvFiles: Array<{ file: string; override: boolean }> = [
+  { file: resolve(__dirname, "..", ".env"), override: false },
+  { file: resolve(__dirname, "..", ".env.example"), override: false },
+  { file: resolve(__dirname, "..", ".env.local"), override: true },
+];
+
+for (const candidate of candidateEnvFiles) {
+  if (existsSync(candidate.file) && statSync(candidate.file).size > 0) {
+    loadEnv({ path: candidate.file, override: candidate.override });
+  }
+}
 
 async function bootstrap() {
   const logger = new Logger("Bootstrap");

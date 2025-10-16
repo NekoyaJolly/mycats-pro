@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsBoolean, IsOptional, IsString, IsUUID, MinLength, IsNumber } from "class-validator";
+import { IsBoolean, IsHexColor, IsNumber, IsOptional, IsString, IsUUID, MinLength } from "class-validator";
 
 export class CreateTagGroupDto {
   @ApiProperty({ description: "所属カテゴリID", example: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" })
@@ -25,4 +25,14 @@ export class CreateTagGroupDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiPropertyOptional({ description: "グループ表示用のカラー", example: "#3B82F6" })
+  @IsOptional()
+  @IsHexColor()
+  color?: string;
+
+  @ApiPropertyOptional({ description: "グループタイトルのテキストカラー", example: "#111827" })
+  @IsOptional()
+  @IsHexColor()
+  textColor?: string;
 }

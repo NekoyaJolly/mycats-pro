@@ -30,6 +30,11 @@ export class CreateTagCategoryDto {
   @IsHexColor()
   color?: string;
 
+  @ApiPropertyOptional({ description: "カテゴリに使用するテキストカラー", example: "#111827" })
+  @IsOptional()
+  @IsHexColor()
+  textColor?: string;
+
   @ApiPropertyOptional({ description: "表示順" })
   @IsOptional()
   @IsNumber()
