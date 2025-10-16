@@ -67,18 +67,19 @@ export interface GetCatsResponse {
  * 猫作成/更新リクエスト
  */
 export interface CreateCatRequest {
+  registrationId: string;
   name: string;
   gender: 'MALE' | 'FEMALE';
   birthDate: string;
   breedId?: string | null;
-  coatColorId?: string | null;
-  microchipNumber?: string | null;
-  registrationNumber?: string | null;
-  description?: string | null;
-  isInHouse?: boolean;
+  colorId?: string | null;
+  pattern?: string | null;
+  weight?: number | null;
+  microchipId?: string | null;
   fatherId?: string | null;
   motherId?: string | null;
-  tagIds?: string[];
+  imageUrl?: string | null;
+  notes?: string | null;
 }
 
 export type UpdateCatRequest = Partial<CreateCatRequest>;
