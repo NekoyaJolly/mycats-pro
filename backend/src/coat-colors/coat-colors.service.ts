@@ -130,7 +130,7 @@ export class CoatColorsService {
 
     // Check if color is being used
     const [catCount, pedigreeCount] = await Promise.all([
-      this.prisma.cat.count({ where: { colorId: id } }),
+      this.prisma.cat.count({ where: { coatColorId: id } }),
       this.prisma.pedigree.count({ where: { coatColorCode: parseInt(id) } }),
     ]);
 
@@ -165,11 +165,11 @@ export class CoatColorsService {
           take: 10,
         }),
         this.prisma.cat.groupBy({
-          by: ["colorId"],
+          by: ["coatColorId"],
           _count: true,
           orderBy: {
             _count: {
-              colorId: "desc",
+              coatColorId: "desc",
             },
           },
         }),

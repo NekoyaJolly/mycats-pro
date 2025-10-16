@@ -108,28 +108,21 @@ model Gender {
 }
 
 model Cat {
-  id             String @id @default(uuid())
-  registrationId String @unique @map("registration_id")
-  name           String
+  id                 String   @id @default(uuid())
+  registrationNumber String?  @unique @map("registration_number") // 登録番号
+  name               String
+  gender             String   // MALE, FEMALE
+  birthDate          DateTime @map("birth_date")
 
-  // Updated breed and color relations
-  breedId String?    @map("breed_id")
-  breed   Breed?     @relation(fields: [breedId], references: [id])
-  colorId String?    @map("color_id")
-  color   CoatColor? @relation(fields: [colorId], references: [id])
+  // Breed and Color stored by ID (for relations) but also can store names
+  breedId       String?    @map("breed_id")
+  breed         Breed?     @relation(fields: [breedId], references: [id])
+  coatColorId   String?    @map("coat_color_id")
+  coatColor     CoatColor? @relation(fields: [coatColorId], references: [id])
 
-  // Legacy fields for backward compatibility
-  legacyBreed String? @map("legacy_breed") // Old breed field
-  legacyColor String? @map("legacy_color") // Old color field
-
-  pattern     String?
-  gender      String // MALE, FEMALE, or other values
-  birthDate   DateTime @map("birth_date")
-  weight      Float?
-  microchipId String?  @unique @map("microchip_id")
-  isActive    Boolean  @default(true) @map("is_active")
-  notes       String?
-  imageUrl    String?  @map("image_url")
+  microchipNumber String?  @unique @map("microchip_number")
+  description     String?  @map("description") // 説明・備考
+  isInHouse       Boolean  @default(true) @map("is_in_house") // 施設内在舎
 
   // Parent information
   fatherId String? @map("father_id")
@@ -140,10 +133,6 @@ model Cat {
   // Children relations
   fatherOf Cat[] @relation("CatFather")
   motherOf Cat[] @relation("CatMother")
-
-  // Owner (removed - not using user relation)
-  // ownerId         String?   @map("owner_id")
-  // owner           User?     @relation(fields: [ownerId], references: [id])
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -159,6 +148,7 @@ model Cat {
   pedigreeId            String?                @map("pedigree_id") // PedigreeIDで紐付け（全頭ではない）
 
   @@index([breedId])
+  @@index([coatColorId])
   @@index([fatherId])
   @@index([motherId])
   @@index([birthDate])

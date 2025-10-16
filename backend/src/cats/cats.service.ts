@@ -8,61 +8,29 @@ import { Prisma } from "@prisma/client";
 
 import { PrismaService } from "../prisma/prisma.service";
 
-import {
-  CatGender,
-  InvalidGenderError,
-  parseGenderInput,
-  parseOptionalGenderInput,
-} from "./constants/gender";
 import { CreateCatDto, UpdateCatDto, CatQueryDto } from "./dto";
 
 @Injectable()
 export class CatsService {
   constructor(private prisma: PrismaService) {}
 
-  private ensureGender(value: unknown): CatGender {
-    try {
-      return parseGenderInput(value);
-    } catch (error) {
-      if (error instanceof InvalidGenderError) {
-        throw new BadRequestException(error.message);
-      }
-      throw error;
-    }
-  }
-
-  private ensureOptionalGender(value: unknown): CatGender | undefined {
-    if (value === undefined || value === null) {
-      return undefined;
-    }
-
-    try {
-      return parseOptionalGenderInput(value);
-    } catch (error) {
-      if (error instanceof InvalidGenderError) {
-        throw new BadRequestException(error.message);
-      }
-      throw error;
-    }
-  }
-
   async create(createCatDto: CreateCatDto) {
     const {
-      registrationId,
       name,
-      breedId,
-      colorId,
-      pattern,
       gender,
       birthDate,
-      weight,
-      microchipId,
+      breedId,
+      coatColorId,
+      microchipNumber,
+      registrationNumber,
+      description,
+      isInHouse,
       fatherId,
       motherId,
-      imageUrl,
-      notes,
+      tagIds,
     } = createCatDto;
 
+    // Validate breed if provided
     if (breedId) {
       const breed = await this.prisma.breed.findUnique({
         where: { id: breedId },
@@ -72,54 +40,81 @@ export class CatsService {
       }
     }
 
-    if (colorId) {
+    // Validate coatColor if provided
+    if (coatColorId) {
       const color = await this.prisma.coatColor.findUnique({
-        where: { id: colorId },
+        where: { id: coatColorId },
       });
       if (!color) {
-        throw new BadRequestException("Invalid color ID");
+        throw new BadRequestException("Invalid coat color ID");
       }
     }
 
-  const birth = new Date(birthDate);
-  const normalizedGender = this.ensureGender(gender);
+    const birth = new Date(birthDate);
 
     try {
-      return await this.prisma.cat.create({
+      // Create the cat
+      const cat = await this.prisma.cat.create({
         data: {
-          registrationId,
           name,
-          ...(pattern !== undefined ? { pattern } : {}),
-          gender: normalizedGender,
+          gender,
           birthDate: birth,
-          ...(typeof weight === "number" ? { weight } : {}),
-          ...(microchipId ? { microchipId } : {}),
-          ...(imageUrl ? { imageUrl } : {}),
-          ...(notes ? { notes } : {}),
+          ...(registrationNumber ? { registrationNumber } : {}),
+          ...(microchipNumber ? { microchipNumber } : {}),
+          ...(description ? { description } : {}),
+          isInHouse: isInHouse ?? true,
           ...(breedId ? { breed: { connect: { id: breedId } } } : {}),
-          ...(colorId ? { color: { connect: { id: colorId } } } : {}),
+          ...(coatColorId ? { coatColor: { connect: { id: coatColorId } } } : {}),
           ...(fatherId ? { father: { connect: { id: fatherId } } } : {}),
           ...(motherId ? { mother: { connect: { id: motherId } } } : {}),
         },
         include: {
           breed: true,
-          color: true,
+          coatColor: true,
           father: true,
           mother: true,
-          maleBreedingRecords: true,
-          femaleBreedingRecords: true,
-          careRecords: {
-            orderBy: { careDate: "desc" },
-            take: 5,
+          tags: {
+            include: {
+              tag: true,
+            },
           },
         },
       });
+
+      // Handle tag assignments if provided
+      if (tagIds && tagIds.length > 0) {
+        await this.prisma.catTag.createMany({
+          data: tagIds.map((tagId) => ({
+            catId: cat.id,
+            tagId,
+          })),
+          skipDuplicates: true,
+        });
+
+        // Fetch the cat again with tags
+        return await this.prisma.cat.findUnique({
+          where: { id: cat.id },
+          include: {
+            breed: true,
+            coatColor: true,
+            father: true,
+            mother: true,
+            tags: {
+              include: {
+                tag: true,
+              },
+            },
+          },
+        });
+      }
+
+      return cat;
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === "P2002"
       ) {
-        throw new ConflictException("Cat with the same registration ID already exists");
+        throw new ConflictException("Cat with the same registration number already exists");
       }
       throw error;
     }
@@ -146,16 +141,16 @@ export class CatsService {
     if (search) {
       where.OR = [
         { name: { contains: search, mode: "insensitive" } },
-        { microchipId: { contains: search, mode: "insensitive" } },
-        { notes: { contains: search, mode: "insensitive" } },
+        { microchipNumber: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
       ];
     }
 
     // Filters
     if (breedId) where.breedId = breedId;
-    if (colorId) where.colorId = colorId;
+    if (colorId) where.coatColorId = colorId;
     if (gender) {
-      where.gender = this.ensureGender(gender);
+      where.gender = gender;
     }
 
     // Age filters
@@ -183,7 +178,7 @@ export class CatsService {
       }
     }
 
-    type Sortable = "createdAt" | "updatedAt" | "name" | "birthDate" | "weight";
+    type Sortable = "createdAt" | "updatedAt" | "name" | "birthDate";
     const orderBy: Prisma.CatOrderByWithRelationInput = {
       [sortBy as Sortable]: sortOrder,
     } as Prisma.CatOrderByWithRelationInput;
@@ -195,7 +190,12 @@ export class CatsService {
         take: limit,
         include: {
           breed: true,
-          color: true,
+          coatColor: true,
+          tags: {
+            include: {
+              tag: true,
+            },
+          },
         },
         orderBy,
       }),
@@ -218,21 +218,12 @@ export class CatsService {
       where: { id },
       include: {
         breed: true,
-        color: true,
-        maleBreedingRecords: {
+        coatColor: true,
+        father: true,
+        mother: true,
+        tags: {
           include: {
-            female: true,
-          },
-        },
-        femaleBreedingRecords: {
-          include: {
-            male: true,
-          },
-        },
-        careRecords: {
-          orderBy: { careDate: "desc" },
-          include: {
-            recorder: true,
+            tag: true,
           },
         },
       },
@@ -255,19 +246,17 @@ export class CatsService {
     }
 
     const {
-      registrationId,
       name,
-      breedId,
-      colorId,
-      pattern,
       gender,
       birthDate,
-      weight,
-      microchipId,
+      breedId,
+      coatColorId,
+      microchipNumber,
+      registrationNumber,
+      description,
+      isInHouse,
       fatherId,
       motherId,
-      imageUrl,
-      notes,
     } = updateCatDto;
 
     // Validate breed if provided
@@ -281,38 +270,41 @@ export class CatsService {
     }
 
     // Validate color if provided
-    if (colorId) {
+    if (coatColorId) {
       const color = await this.prisma.coatColor.findUnique({
-        where: { id: colorId },
+        where: { id: coatColorId },
       });
       if (!color) {
-        throw new BadRequestException("Invalid color ID");
+        throw new BadRequestException("Invalid coat color ID");
       }
     }
 
-  const birth = birthDate ? new Date(birthDate) : undefined;
-  const normalizedGender = this.ensureOptionalGender(gender);
+    const birth = birthDate ? new Date(birthDate) : undefined;
+
     try {
       return await this.prisma.cat.update({
         where: { id },
         data: {
-          ...(registrationId ? { registrationId } : {}),
           ...(name ? { name } : {}),
-          ...(pattern !== undefined ? { pattern } : {}),
-          ...(typeof weight === "number" ? { weight } : {}),
-          ...(microchipId ? { microchipId } : {}),
-          ...(imageUrl ? { imageUrl } : {}),
-          ...(notes ? { notes } : {}),
-          ...(normalizedGender ? { gender: normalizedGender } : {}),
+          ...(gender ? { gender } : {}),
           ...(birth ? { birthDate: birth } : {}),
+          ...(registrationNumber !== undefined ? { registrationNumber } : {}),
+          ...(microchipNumber !== undefined ? { microchipNumber } : {}),
+          ...(description !== undefined ? { description } : {}),
+          ...(isInHouse !== undefined ? { isInHouse } : {}),
           ...(breedId ? { breed: { connect: { id: breedId } } } : {}),
-          ...(colorId ? { color: { connect: { id: colorId } } } : {}),
+          ...(coatColorId ? { coatColor: { connect: { id: coatColorId } } } : {}),
           ...(fatherId ? { father: { connect: { id: fatherId } } } : {}),
           ...(motherId ? { mother: { connect: { id: motherId } } } : {}),
         },
         include: {
           breed: true,
-          color: true,
+          coatColor: true,
+          tags: {
+            include: {
+              tag: true,
+            },
+          },
         },
       });
     } catch (error) {
@@ -320,7 +312,7 @@ export class CatsService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === "P2002"
       ) {
-        throw new ConflictException("Cat with the same registration ID already exists");
+        throw new ConflictException("Cat with the same registration number already exists");
       }
       throw error;
     }
@@ -339,7 +331,7 @@ export class CatsService {
       where: { id },
       include: {
         breed: true,
-        color: true,
+        coatColor: true,
       },
     });
   }
@@ -355,13 +347,13 @@ export class CatsService {
         male: {
           include: {
             breed: true,
-            color: true,
+            coatColor: true,
           },
         },
         female: {
           include: {
             breed: true,
-            color: true,
+            coatColor: true,
           },
         },
         recorder: true,
@@ -415,35 +407,16 @@ export class CatsService {
       }),
     ]);
 
-    const baseGenderCounts: Record<CatGender, number> = {
-      [CatGender.MALE]: 0,
-      [CatGender.FEMALE]: 0,
-      [CatGender.NEUTER]: 0,
-      [CatGender.SPAY]: 0,
+    const genderDistribution: Record<string, number> = {
+      MALE: 0,
+      FEMALE: 0,
     };
 
     for (const group of genderGroups) {
-      const canonical = this.ensureOptionalGender(group.gender);
-      if (!canonical) {
-        continue;
+      if (group.gender === "MALE" || group.gender === "FEMALE") {
+        genderDistribution[group.gender] = group._count;
       }
-      baseGenderCounts[canonical] = group._count;
     }
-
-    const genderDistribution = {
-      male: baseGenderCounts[CatGender.MALE],
-      female: baseGenderCounts[CatGender.FEMALE],
-      neuter: baseGenderCounts[CatGender.NEUTER],
-      spay: baseGenderCounts[CatGender.SPAY],
-    };
-
-    const knownGenderTotal =
-      genderDistribution.male +
-      genderDistribution.female +
-      genderDistribution.neuter +
-      genderDistribution.spay;
-
-    const unknown = Math.max(totalCats - knownGenderTotal, 0);
 
     const breedIds = breedStats.map((stat) => stat.breedId).filter(Boolean);
     const breeds = await this.prisma.breed.findMany({
@@ -457,10 +430,7 @@ export class CatsService {
 
     return {
       total: totalCats,
-      genderDistribution: {
-        ...genderDistribution,
-        unknown,
-      },
+      genderDistribution,
       breedDistribution: breedStatsWithNames,
     };
   }

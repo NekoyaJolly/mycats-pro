@@ -5,27 +5,27 @@ import {
   IsOptional,
   IsDateString,
   MaxLength,
-  IsNumber,
-  IsIn,
+  IsBoolean,
+  IsArray,
 } from "class-validator";
 
-import {
-  CatGender,
-  CatGenderInput,
-  GENDER_INPUT_VALUES,
-  transformGenderInput,
-} from "../constants/gender";
-
 export class CreateCatDto {
-  @ApiProperty({ description: "登録ID", example: "REG-ALPHA" })
-  @IsString()
-  @MaxLength(100)
-  registrationId: string;
-
   @ApiProperty({ description: "猫の名前", example: "Alpha" })
   @IsString()
   @MaxLength(200)
   name: string;
+
+  @ApiProperty({
+    description: "性別",
+    enum: ["MALE", "FEMALE"],
+    example: "MALE",
+  })
+  @IsString()
+  gender: "MALE" | "FEMALE";
+
+  @ApiProperty({ description: "生年月日", example: "2024-05-01" })
+  @IsDateString()
+  birthDate: string;
 
   @ApiPropertyOptional({ description: "品種ID" })
   @IsOptional()
@@ -35,39 +35,30 @@ export class CreateCatDto {
   @ApiPropertyOptional({ description: "毛色ID" })
   @IsOptional()
   @IsString()
-  colorId?: string;
+  coatColorId?: string;
 
-  @ApiPropertyOptional({ description: "パターン" })
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  pattern?: string;
-
-  @ApiProperty({
-    description: "性別 (マスター名称またはキー)",
-    enum: GENDER_INPUT_VALUES,
-    example: CatGender.MALE,
-  })
-  @Transform(({ value }) => transformGenderInput(value), { toClassOnly: true })
-  @IsString()
-  @IsIn(GENDER_INPUT_VALUES)
-  gender: CatGenderInput;
-
-  @ApiProperty({ description: "生年月日", example: "2024-05-01" })
-  @IsDateString()
-  birthDate: string;
-
-  @ApiPropertyOptional({ description: "体重 (kg)" })
-  @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
-  weight?: number;
-
-  @ApiPropertyOptional({ description: "マイクロチップID" })
+  @ApiPropertyOptional({ description: "マイクロチップ番号" })
   @IsOptional()
   @IsString()
   @MaxLength(50)
-  microchipId?: string;
+  microchipNumber?: string;
+
+  @ApiPropertyOptional({ description: "登録番号" })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  registrationNumber?: string;
+
+  @ApiPropertyOptional({ description: "説明・備考" })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  description?: string;
+
+  @ApiPropertyOptional({ description: "施設内に在舎しているか" })
+  @IsOptional()
+  @IsBoolean()
+  isInHouse?: boolean;
 
   @ApiPropertyOptional({ description: "父猫のID" })
   @IsOptional()
@@ -79,15 +70,9 @@ export class CreateCatDto {
   @IsString()
   motherId?: string;
 
-  @ApiPropertyOptional({ description: "写真URL" })
+  @ApiPropertyOptional({ description: "タグID配列" })
   @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  imageUrl?: string;
-
-  @ApiPropertyOptional({ description: "備考" })
-  @IsOptional()
-  @IsString()
-  @MaxLength(1000)
-  notes?: string;
+  @IsArray()
+  @IsString({ each: true })
+  tagIds?: string[];
 }
