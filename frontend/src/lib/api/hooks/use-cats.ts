@@ -56,11 +56,13 @@ type CatDetailPathParams = ApiPathParams<'/cats/{id}', 'get'>;
  * 猫一覧レスポンス
  */
 export interface GetCatsResponse {
-  cats: Cat[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+  data: Cat[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 /**

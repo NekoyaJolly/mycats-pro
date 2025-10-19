@@ -72,7 +72,7 @@ export class PedigreeController {
   })
   @ApiQuery({ name: "search", required: false, description: "検索キーワード" })
   @ApiQuery({ name: "breedId", required: false, description: "品種ID" })
-  @ApiQuery({ name: "colorId", required: false, description: "毛色ID" })
+  @ApiQuery({ name: "coatColorId", required: false, description: "毛色ID" })
   @ApiQuery({
     name: "gender",
     required: false,

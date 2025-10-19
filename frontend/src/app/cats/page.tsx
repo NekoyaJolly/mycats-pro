@@ -58,7 +58,7 @@ export default function CatsPage() {
   // API連携でデータ取得
   const { data, isLoading, isError, error, isRefetching } = useGetCats(queryParams);
 
-  const apiCats = data?.data?.cats || [];
+  const apiCats = data?.data?.data || [];
 
   // 年齢計算関数
   const calculateAge = (birthDate: string) => {

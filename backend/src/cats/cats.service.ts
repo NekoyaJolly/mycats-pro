@@ -126,7 +126,7 @@ export class CatsService {
       limit = 10,
       search,
       breedId,
-      colorId,
+      coatColorId,
       gender,
       ageMin,
       ageMax,
@@ -148,7 +148,7 @@ export class CatsService {
 
     // Filters
     if (breedId) where.breedId = breedId;
-    if (colorId) where.coatColorId = colorId;
+    if (coatColorId) where.coatColorId = coatColorId;
     if (gender) {
       where.gender = gender;
     }

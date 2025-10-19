@@ -32,8 +32,8 @@ export class BreedingService {
     const {
       page = 1,
       limit = 20,
-      motherId,
-      fatherId,
+      femaleId,
+      maleId,
       dateFrom,
       dateTo,
       sortBy = "createdAt",
@@ -41,8 +41,8 @@ export class BreedingService {
     } = query;
 
     const where: BreedingWhereInput = {};
-    if (motherId) where.femaleId = motherId;
-    if (fatherId) where.maleId = fatherId;
+    if (femaleId) where.femaleId = femaleId;
+    if (maleId) where.maleId = maleId;
     if (dateFrom || dateTo) {
       where.breedingDate = {};
       if (dateFrom) where.breedingDate.gte = new Date(dateFrom);
@@ -79,34 +79,34 @@ export class BreedingService {
     // Validate parents existence
     const [female, male] = await Promise.all([
       this.prisma.cat.findUnique({ 
-        where: { id: dto.motherId },
+        where: { id: dto.femaleId },
         select: { id: true, gender: true }
       }),
       this.prisma.cat.findUnique({ 
-        where: { id: dto.fatherId },
+        where: { id: dto.maleId },
         select: { id: true, gender: true }
       }),
     ]);
 
-    if (!female) throw new NotFoundException("motherId not found");
-    if (!male) throw new NotFoundException("fatherId not found");
+    if (!female) throw new NotFoundException("femaleId not found");
+    if (!male) throw new NotFoundException("maleId not found");
 
     // Basic gender check (optional but useful)
     if ((female as CatWithGender).gender === "MALE") {
-      throw new BadRequestException("motherId must refer to a FEMALE cat");
+      throw new BadRequestException("femaleId must refer to a FEMALE cat");
     }
     if ((male as CatWithGender).gender === "FEMALE") {
-      throw new BadRequestException("fatherId must refer to a MALE cat");
+      throw new BadRequestException("maleId must refer to a MALE cat");
     }
 
     const firstUser = userId ? null : await this.prisma.user.findFirst();
     const result = await this.prisma.breedingRecord.create({
       data: {
-        femaleId: dto.motherId,
-        maleId: dto.fatherId,
-        breedingDate: new Date(dto.matingDate),
-        expectedDueDate: dto.expectedBirthDate
-          ? new Date(dto.expectedBirthDate)
+        femaleId: dto.femaleId,
+        maleId: dto.maleId,
+        breedingDate: new Date(dto.breedingDate),
+        expectedDueDate: dto.expectedDueDate
+          ? new Date(dto.expectedDueDate)
           : undefined,
         notes: dto.notes,
         recordedBy: userId ?? (firstUser ? firstUser.id : undefined as string),
@@ -123,11 +123,11 @@ export class BreedingService {
     await this.prisma.breedingRecord.update({
       where: { id },
       data: {
-        femaleId: dto.motherId,
-        maleId: dto.fatherId,
-        breedingDate: dto.matingDate ? new Date(dto.matingDate) : undefined,
-        expectedDueDate: dto.expectedBirthDate
-          ? new Date(dto.expectedBirthDate)
+        femaleId: dto.femaleId,
+        maleId: dto.maleId,
+        breedingDate: dto.breedingDate ? new Date(dto.breedingDate) : undefined,
+        expectedDueDate: dto.expectedDueDate
+          ? new Date(dto.expectedDueDate)
           : undefined,
         notes: dto.notes,
       },

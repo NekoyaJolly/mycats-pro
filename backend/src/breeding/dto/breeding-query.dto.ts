@@ -22,15 +22,15 @@ export class BreedingQueryDto {
   @IsPositive()
   limit?: number = 20;
 
-  @ApiPropertyOptional({ description: "母猫ID" })
+  @ApiPropertyOptional({ description: "メス猫ID" })
   @IsOptional()
   @IsUUID()
-  motherId?: string;
+  femaleId?: string;
 
-  @ApiPropertyOptional({ description: "父猫ID" })
+  @ApiPropertyOptional({ description: "オス猫ID" })
   @IsOptional()
   @IsUUID()
-  fatherId?: string;
+  maleId?: string;
 
   @ApiPropertyOptional({ description: "開始日(YYYY-MM-DD)" })
   @IsOptional()

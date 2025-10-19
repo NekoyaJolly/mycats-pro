@@ -8,22 +8,22 @@ import {
 
 export class CreateBreedingDto {
   @ApiProperty({
-    description: "母猫のID",
+    description: "メス猫のID",
     example: "11111111-1111-1111-1111-111111111111",
   })
   @IsUUID()
-  motherId: string;
+  femaleId: string;
 
   @ApiProperty({
-    description: "父猫のID",
+    description: "オス猫のID",
     example: "22222222-2222-2222-2222-222222222222",
   })
   @IsUUID()
-  fatherId: string;
+  maleId: string;
 
   @ApiProperty({ description: "交配日", example: "2025-08-01" })
   @IsDateString()
-  matingDate: string;
+  breedingDate: string;
 
   @ApiPropertyOptional({
     description: "出産予定日 (YYYY-MM-DD)",
@@ -31,7 +31,7 @@ export class CreateBreedingDto {
   })
   @IsOptional()
   @IsDateString()
-  expectedBirthDate?: string;
+  expectedDueDate?: string;
 
   @ApiPropertyOptional({ description: "メモ", example: "初回の交配。" })
   @IsOptional()

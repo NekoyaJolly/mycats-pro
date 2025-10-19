@@ -28,7 +28,7 @@ export class PedigreeQueryDto {
   @ApiPropertyOptional({ description: "毛色ID" })
   @IsOptional()
   @IsString()
-  colorId?: string;
+  coatColorId?: string;
 
   @ApiPropertyOptional({ description: "性別 (1: オス, 2: メス)" })
   @IsOptional()

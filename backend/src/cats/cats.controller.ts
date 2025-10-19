@@ -72,7 +72,7 @@ export class CatsController {
   })
   @ApiQuery({ name: "search", required: false, description: "検索キーワード" })
   @ApiQuery({ name: "breedId", required: false, description: "品種ID" })
-  @ApiQuery({ name: "colorId", required: false, description: "毛色ID" })
+  @ApiQuery({ name: "coatColorId", required: false, description: "毛色ID" })
   @ApiQuery({ name: "gender", required: false, description: "性別" })
   @ApiQuery({ name: "status", required: false, description: "ステータス" })
   @ApiQuery({ name: "ageMin", required: false, description: "最小年齢" })

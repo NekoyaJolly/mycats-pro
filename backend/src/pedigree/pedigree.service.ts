@@ -62,7 +62,7 @@ export class PedigreeService {
       limit = 10,
       search,
       breedId,
-      colorId,
+      coatColorId,
       gender,
       catName2: _catName2,
       eyeColor,
@@ -85,7 +85,7 @@ export class PedigreeService {
 
     // Filters
     if (breedId) where.breedCode = parseInt(breedId);
-    if (colorId) where.coatColorCode = parseInt(colorId);
+    if (coatColorId) where.coatColorCode = parseInt(coatColorId);
     if (gender) where.genderCode = parseInt(gender);
     if (eyeColor) where.eyeColor = eyeColor;
 
@@ -173,7 +173,7 @@ export class PedigreeService {
       ...(updatePedigreeDto.oldCode && { oldCode: updatePedigreeDto.oldCode }),
       ...(updatePedigreeDto.catId && { catId: updatePedigreeDto.catId }),
       ...(updatePedigreeDto.breedId && { breedId: updatePedigreeDto.breedId }),
-      ...(updatePedigreeDto.colorId && { colorId: updatePedigreeDto.colorId }),
+      ...(updatePedigreeDto.coatColorId && { coatColorId: updatePedigreeDto.coatColorId }),
       ...(updatePedigreeDto.breedCode !== undefined && { breedCode: updatePedigreeDto.breedCode }),
       ...(updatePedigreeDto.coatColorCode !== undefined && { coatColorCode: updatePedigreeDto.coatColorCode }),
       ...(updatePedigreeDto.fatherPedigreeId && { fatherPedigreeId: updatePedigreeDto.fatherPedigreeId }),

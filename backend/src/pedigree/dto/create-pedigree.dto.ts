@@ -115,7 +115,7 @@ export class CreatePedigreeDto {
   @ApiPropertyOptional({ description: "毛色ID" })
   @IsOptional()
   @IsString()
-  colorId?: string;
+  coatColorId?: string;
 
   @ApiPropertyOptional({ description: "血統書発行日" })
   @IsOptional()
