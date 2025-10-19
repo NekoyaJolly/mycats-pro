@@ -1,3 +1,6 @@
+import { existsSync, statSync } from 'fs';
+import { resolve } from 'path';
+
 import { ValidationPipe, Logger } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
@@ -5,10 +8,9 @@ import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import cookieParser from 'cookie-parser';
 import { config as loadEnv } from 'dotenv';
-import { existsSync, statSync } from 'fs';
 import helmet from 'helmet';
 import { Logger as PinoLogger } from 'nestjs-pino';
-import { resolve } from 'path';
+
 
 import { AppModule } from "./app.module";
 import { validateProductionEnvironment, logEnvironmentInfo } from "./common/environment.validation";

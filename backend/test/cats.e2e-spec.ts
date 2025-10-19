@@ -189,6 +189,28 @@ describe('Cats API (e2e)', () => {
       expect(duplicateRes.body.error.message).toContain('registration ID');
     });
 
+    it('should handle unique microchip number constraint', async () => {
+      const microchipNumber = `${randomUUID().replace(/-/g, '').substring(0, 15)}`;
+      const registrationId1 = `CAT-${randomUUID()}`;
+      const registrationId2 = `CAT-${randomUUID()}`;
+
+      await request(app.getHttpServer())
+        .post('/api/v1/cats')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ ...buildCatPayload({ registrationId: registrationId1 }), microchipNumber })
+        .expect(201);
+
+      const duplicateRes = await request(app.getHttpServer())
+        .post('/api/v1/cats')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ ...buildCatPayload({ registrationId: registrationId2, name: 'Duplicate Cat' }), microchipNumber })
+        .expect(409);
+
+      expect(duplicateRes.body.success).toBe(false);
+      expect(duplicateRes.body.error.code).toBe('CONFLICT');
+      expect(duplicateRes.body.error.message).toContain('microchip');
+    });
+
     it('should create multiple cats successfully', async () => {
       const payloads = [buildCatPayload(), buildCatPayload(), buildCatPayload()];
 

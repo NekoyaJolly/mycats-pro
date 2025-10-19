@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+
 import { AppModule } from '../app.module';
 import { AuthService } from '../auth/auth.service';
 
@@ -22,7 +23,7 @@ async function main() {
 }
 
 main().catch((error) => {
-  // eslint-disable-next-line no-console
+   
   console.error('Unexpected error', error);
   process.exit(1);
 });
