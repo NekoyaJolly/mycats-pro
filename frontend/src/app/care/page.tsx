@@ -36,7 +36,7 @@ import {
   useCompleteCareSchedule,
   useGetCareSchedules,
 } from '@/lib/api/hooks/use-care';
-import { useGetCats } from '@/lib/api/hooks/use-cats';
+import { useGetCats, type Cat } from '@/lib/api/hooks/use-cats';
 
 const CARE_TYPE_LABELS: Record<CareType, string> = {
   VACCINATION: 'ワクチン',
@@ -164,12 +164,12 @@ export default function CarePage() {
   const catsQuery = useGetCats({ limit: 100 });
   const catsOptions = useMemo(() => {
     return (
-      catsQuery.data?.data?.cats?.map((cat) => ({
+      catsQuery.data?.data?.data?.map((cat: Cat) => ({
         value: cat.id,
         label: cat.name,
       })) ?? []
     );
-  }, [catsQuery.data?.data?.cats]);
+  }, [catsQuery.data?.data?.data]);
 
   const schedules = scheduleQuery.data?.data ?? [];
   const meta = scheduleQuery.data?.meta ?? {
