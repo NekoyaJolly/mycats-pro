@@ -114,6 +114,10 @@ export class CatsService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === "P2002"
       ) {
+        const target = error.meta?.target as string[] | undefined;
+        if (target?.includes("microchipNumber") || target?.includes("microchip_number")) {
+          throw new ConflictException("Cat with the same microchip number already exists");
+        }
         throw new ConflictException("Cat with the same registration number already exists");
       }
       throw error;
@@ -312,6 +316,10 @@ export class CatsService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === "P2002"
       ) {
+        const target = error.meta?.target as string[] | undefined;
+        if (target?.includes("microchipNumber") || target?.includes("microchip_number")) {
+          throw new ConflictException("Cat with the same microchip number already exists");
+        }
         throw new ConflictException("Cat with the same registration number already exists");
       }
       throw error;
