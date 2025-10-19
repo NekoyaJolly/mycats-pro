@@ -1,0 +1,359 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+  checks: write
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9"
+
+jobs:
+  # 1. セキュリティスキャン
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "CRITICAL,HIGH,MEDIUM"
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
+          category: "trivy-fs-scan"
+          wait-for-processing: false
+
+      - name: Check for critical vulnerabilities
+        run: |
+          echo "🔍 Scanning for critical and high severity vulnerabilities..."
+          if trivy fs --severity CRITICAL,HIGH --quiet --exit-code 1 .; then
+            echo "✅ No critical or high severity vulnerabilities found"
+          else
+            echo "❌ Critical or high severity vulnerabilities detected!"
+            trivy fs --severity CRITICAL,HIGH .
+            exit 1
+          fi
+
+      - name: Dependency security audit
+        run: |
+          echo "🔒 Running audit of dependencies..."
+          if command -v npm &> /dev/null; then
+            npm audit --audit-level high || { echo "⚠️ npm audit found issues"; exit 1; }
+          fi
+          echo "✅ Dependency audit completed"
+
+  # 2. 型チェック・Lint
+  lint-and-typecheck:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    needs: [ security-scan ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        id: pnpm-cache-dir
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache-dir.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        working-directory: backend
+        run: npx prisma generate
+
+      - name: TypeScript type check - Backend
+        working-directory: backend
+        run: npm run type-check
+
+      - name: TypeScript type check - Frontend
+        run: pnpm --filter frontend run type-check
+
+      - name: Lint - Backend
+        working-directory: backend
+        run: npm run lint -- --max-warnings=300
+        continue-on-error: false
+
+      - name: Lint - Frontend
+        run: pnpm --filter frontend run lint
+        continue-on-error: false
+
+  # 3. ユニットテスト
+  unit-test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: [ lint-and-typecheck ]
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+      JWT_SECRET: test-jwt-secret-key-for-ci
+      ARGON2_MEMORY_COST: 65536
+      ARGON2_TIME_COST: 3
+      ARGON2_PARALLELISM: 4
+      MAX_LOGIN_ATTEMPTS: 5
+      LOGIN_LOCKOUT_DURATION_MINUTES: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        id: pnpm-cache-dir
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache-dir.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        working-directory: backend
+        run: npx prisma generate
+
+      - name: Run database migrations
+        working-directory: backend
+        run: npx prisma migrate deploy
+
+      - name: Run backend unit tests
+        working-directory: backend
+        run: npm run test
+
+      - name: Run frontend unit tests
+        run: pnpm --filter frontend run test
+
+  # 4. E2Eテスト
+  e2e-test:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: [ unit-test ]
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: e2edb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/e2edb
+      JWT_SECRET: test-jwt-secret-key-for-e2e
+      ARGON2_MEMORY_COST: 65536
+      ARGON2_TIME_COST: 3
+      ARGON2_PARALLELISM: 4
+      MAX_LOGIN_ATTEMPTS: 5
+      LOGIN_LOCKOUT_DURATION_MINUTES: 15
+      PRISMA_CLIENT_ENGINE_TYPE: library
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        id: pnpm-cache-dir
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache-dir.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Clean Prisma engines
+        run: |
+          rm -rf node_modules/.prisma || true
+          rm -rf backend/node_modules/.prisma || true
+
+      - name: Generate Prisma Client (Node-API)
+        working-directory: backend
+        env:
+          PRISMA_CLIENT_ENGINE_TYPE: library
+        run: pnpm exec prisma generate
+
+      - name: Run database migrations
+        working-directory: backend
+        run: npx prisma migrate deploy
+
+      - name: Run E2E tests
+        working-directory: backend
+        run: npm run test:e2e
+
+  # 5. Build & Artifact
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [ e2e-test ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        id: pnpm-cache-dir
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache-dir.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ env.PNPM_VERSION }}-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Clean previous build outputs
+        run: |
+          echo "🧹 Cleaning previous build outputs..."
+          rm -rf backend/dist frontend/.next
+          echo "✅ Clean completed"
+
+      - name: Generate Prisma Client
+        working-directory: backend
+        run: npx prisma generate
+
+      - name: Build backend
+        working-directory: backend
+        run: npm run build
+
+      - name: Build frontend
+        run: pnpm --filter frontend run build
+
+      - name: Verify build outputs
+        run: |
+          echo "🔍 Verifying build outputs..."
+          if [ -d "backend/dist" ]; then
+            echo "✅ Backend dist/ directory exists"
+          else
+            echo "❌ Backend build failed - no dist/ directory"
+            exit 1
+          fi
+          if [ -d "frontend/.next" ]; then
+            echo "✅ Frontend .next/ directory exists"
+          else
+            echo "❌ Frontend build failed - no .next/ directory"
+            exit 1
+          fi
+
+      - name: Upload build artifacts - Backend
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-build
+          path: backend/dist
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Upload build artifacts - Frontend
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/.next
+          retention-days: 7
+          if-no-files-found: error
+
+  # Note: 以下のジョブは現時点ではスキップ（将来的に有効化可能）
+  # - performance-test (k6による負荷テスト)
+  # - deploy-production (本番環境デプロイ)
