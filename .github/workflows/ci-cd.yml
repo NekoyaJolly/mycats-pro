@@ -58,13 +58,26 @@ jobs:
             exit 1
           fi
 
+      - name: Setup Node.js for audit
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm for audit
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Dependency security audit
         run: |
-          echo "🔒 Running audit of dependencies..."
-          if command -v npm &> /dev/null; then
-            npm audit --audit-level high || { echo "⚠️ npm audit found issues"; exit 1; }
-          fi
-          echo "✅ Dependency audit completed"
+          echo "🔒 Running pnpm audit of dependencies..."
+          pnpm audit --audit-level high --prod || {
+            echo "⚠️ High severity vulnerabilities found in production dependencies"
+            echo "📋 Running detailed audit report..."
+            pnpm audit --prod
+            exit 1
+          }
+          echo "✅ Dependency audit completed - no high severity issues in production dependencies"
 
   # 2. 型チェック・Lint
   lint-and-typecheck:
