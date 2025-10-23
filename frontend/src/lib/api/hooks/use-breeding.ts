@@ -112,8 +112,82 @@ const breedingNgRuleKeys = createDomainQueryKeys<string, BreedingNgRuleFilter>('
   },
 });
 
+// Pregnancy Check types and hooks
+export type PregnancyStatus = 'CONFIRMED' | 'SUSPECTED' | 'NEGATIVE' | 'ABORTED';
+
+export interface PregnancyCheck {
+  id: string;
+  motherId: string;
+  checkDate: string;
+  status: PregnancyStatus;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  mother?: { id: string; name: string | null } | null;
+}
+
+export interface PregnancyCheckListResponse {
+  success: boolean;
+  data?: PregnancyCheck[];
+  meta?: BreedingListMeta;
+  message?: string;
+  error?: string;
+}
+
+export type CreatePregnancyCheckRequest = {
+  motherId: string;
+  checkDate: string;
+  status: PregnancyStatus;
+  notes?: string;
+};
+
+export type UpdatePregnancyCheckRequest = Partial<CreatePregnancyCheckRequest>;
+
+const pregnancyCheckKeys = createDomainQueryKeys<string, any>('pregnancy-checks');
+
+// Birth Plan types and hooks
+export type BirthStatus = 'EXPECTED' | 'BORN' | 'ABORTED' | 'STILLBORN';
+
+export interface BirthPlan {
+  id: string;
+  motherId: string;
+  expectedBirthDate: string;
+  actualBirthDate?: string | null;
+  status: BirthStatus;
+  expectedKittens?: number | null;
+  actualKittens?: number | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  mother?: { id: string; name: string | null } | null;
+}
+
+export interface BirthPlanListResponse {
+  success: boolean;
+  data?: BirthPlan[];
+  meta?: BreedingListMeta;
+  message?: string;
+  error?: string;
+}
+
+export type CreateBirthPlanRequest = {
+  motherId: string;
+  expectedBirthDate: string;
+  actualBirthDate?: string;
+  status: BirthStatus;
+  expectedKittens?: number;
+  actualKittens?: number;
+  notes?: string;
+};
+
+export type UpdateBirthPlanRequest = Partial<CreateBirthPlanRequest>;
+
+const birthPlanKeys = createDomainQueryKeys<string, any>('birth-plans');
+
 export { breedingKeys };
 export { breedingNgRuleKeys };
+export { pregnancyCheckKeys };
+export { birthPlanKeys };
 
 export function useGetBreedingRecords(
   params: GetBreedingParams = {},
@@ -309,6 +383,194 @@ export function useDeleteBreedingNgRule() {
     onError: (error: Error) => {
       notifications.show({
         title: 'NGルールの削除に失敗しました',
+        message: error.message ?? '時間をおいて再度お試しください。',
+        color: 'red',
+      });
+    },
+  });
+}
+
+// Pregnancy Check hooks
+export function useGetPregnancyChecks(
+  params: any = {},
+  options?: Omit<UseQueryOptions<PregnancyCheckListResponse>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: pregnancyCheckKeys.list(params),
+    queryFn: () => apiRequest<PregnancyCheck[]>('/breeding/pregnancy-checks', { 
+      method: 'GET'
+    }) as Promise<PregnancyCheckListResponse>,
+    ...options,
+  });
+}
+
+export function useCreatePregnancyCheck() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreatePregnancyCheckRequest) =>
+      apiRequest<PregnancyCheck>('/breeding/pregnancy-checks', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: pregnancyCheckKeys.lists() });
+      notifications.show({
+        title: '妊娠チェックを登録しました',
+        message: '妊娠確認リストに追加しました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: '妊娠チェックの登録に失敗しました',
+        message: error.message ?? '入力内容をご確認の上、再度お試しください。',
+        color: 'red',
+      });
+    },
+  });
+}
+
+export function useUpdatePregnancyCheck() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdatePregnancyCheckRequest }) =>
+      apiRequest<PregnancyCheck>(`/breeding/pregnancy-checks/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: pregnancyCheckKeys.lists() });
+      notifications.show({
+        title: '妊娠チェックを更新しました',
+        message: '最新の情報に更新されました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: '妊娠チェックの更新に失敗しました',
+        message: error.message ?? '時間をおいて再度お試しください。',
+        color: 'red',
+      });
+    },
+  });
+}
+
+export function useDeletePregnancyCheck() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiRequest<unknown>(`/breeding/pregnancy-checks/${id}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: pregnancyCheckKeys.lists() });
+      notifications.show({
+        title: '妊娠チェックを削除しました',
+        message: 'リストから該当レコードを削除しました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: '妊娠チェックの削除に失敗しました',
+        message: error.message ?? '時間をおいて再度お試しください。',
+        color: 'red',
+      });
+    },
+  });
+}
+
+// Birth Plan hooks
+export function useGetBirthPlans(
+  params: any = {},
+  options?: Omit<UseQueryOptions<BirthPlanListResponse>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: birthPlanKeys.list(params),
+    queryFn: () => apiRequest<BirthPlan[]>('/breeding/birth-plans', { 
+      method: 'GET'
+    }) as Promise<BirthPlanListResponse>,
+    ...options,
+  });
+}
+
+export function useCreateBirthPlan() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateBirthPlanRequest) =>
+      apiRequest<BirthPlan>('/breeding/birth-plans', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: birthPlanKeys.lists() });
+      notifications.show({
+        title: '出産計画を登録しました',
+        message: '出産予定リストに追加しました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: '出産計画の登録に失敗しました',
+        message: error.message ?? '入力内容をご確認の上、再度お試しください。',
+        color: 'red',
+      });
+    },
+  });
+}
+
+export function useUpdateBirthPlan() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateBirthPlanRequest }) =>
+      apiRequest<BirthPlan>(`/breeding/birth-plans/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: birthPlanKeys.lists() });
+      notifications.show({
+        title: '出産計画を更新しました',
+        message: '最新の情報に更新されました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: '出産計画の更新に失敗しました',
+        message: error.message ?? '時間をおいて再度お試しください。',
+        color: 'red',
+      });
+    },
+  });
+}
+
+export function useDeleteBirthPlan() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiRequest<unknown>(`/breeding/birth-plans/${id}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: birthPlanKeys.lists() });
+      notifications.show({
+        title: '出産計画を削除しました',
+        message: 'リストから該当レコードを削除しました。',
+        color: 'teal',
+      });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: '出産計画の削除に失敗しました',
         message: error.message ?? '時間をおいて再度お試しください。',
         color: 'red',
       });

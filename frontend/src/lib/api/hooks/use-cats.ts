@@ -13,7 +13,7 @@ import { notifications } from '@mantine/notifications';
 export interface Cat {
   id: string;
   name: string;
-  gender: 'MALE' | 'FEMALE';
+  gender: 'MALE' | 'FEMALE' | 'NEUTER' | 'SPAY';
   birthDate: string;
   breedId: string | null;
   coatColorId: string | null;
@@ -43,7 +43,7 @@ export interface GetCatsParams {
   page?: number;
   limit?: number;
   search?: string;
-  gender?: 'MALE' | 'FEMALE';
+  gender?: 'MALE' | 'FEMALE' | 'NEUTER' | 'SPAY';
   breedId?: string;
   coatColorId?: string;
   isInHouse?: boolean;
@@ -70,7 +70,7 @@ export interface GetCatsResponse {
  */
 export interface CreateCatRequest {
   name: string;
-  gender: 'MALE' | 'FEMALE';
+  gender: 'MALE' | 'FEMALE' | 'NEUTER' | 'SPAY';
   birthDate: string;
   breedId?: string | null;
   coatColorId?: string | null;
@@ -239,5 +239,20 @@ export function useDeleteCat() {
         color: 'red',
       });
     },
+  });
+}
+
+/**
+ * 猫の繁殖履歴を取得するフック
+ */
+export function useGetCatBreedingHistory(
+  id: string,
+  options?: Omit<UseQueryOptions<ApiResponse<unknown>>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: catKeys.breedingHistory(id),
+    queryFn: () => apiClient.get('/cats/{id}/breeding-history', { pathParams: { id } }),
+    enabled: !!id,
+    ...options,
   });
 }

@@ -285,8 +285,8 @@ export default function CatsPage() {
                 <Flex justify="space-between" align="center">
                   <Group gap="md" style={{ flex: 1 }}>
                     <Text fw={600}>{cat.name}</Text>
-                    <Badge color={cat.gender === 'MALE' ? 'blue' : 'pink'} size="sm">
-                      {cat.gender === 'MALE' ? 'オス' : 'メス'}
+                    <Badge color={cat.gender === 'MALE' ? 'blue' : cat.gender === 'FEMALE' ? 'pink' : 'gray'} size="sm">
+                      {cat.gender === 'MALE' ? 'オス' : cat.gender === 'FEMALE' ? 'メス' : cat.gender === 'NEUTER' ? '去勢' : '避妊'}
                     </Badge>
                     <Text size="sm">{cat.breed?.name || '未登録'}</Text>
                     <Text size="sm">{calculateAge(cat.birthDate)}</Text>

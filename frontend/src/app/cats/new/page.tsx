@@ -32,7 +32,7 @@ const optionalString = z
 
 const catFormSchema = z.object({
   name: z.string().min(1, '名前は必須です'),
-  gender: z.enum(['MALE', 'FEMALE'], {
+  gender: z.enum(['MALE', 'FEMALE', 'NEUTER', 'SPAY'], {
     errorMap: () => ({ message: '性別を選択してください' }),
   }),
   birthDate: z
@@ -191,8 +191,10 @@ export default function CatRegistrationPage() {
                         label="性別"
                         placeholder="性別を選択"
                         data={[
-                          { value: 'MALE', label: 'オス' },
-                          { value: 'FEMALE', label: 'メス' },
+                          { value: 'MALE', label: 'Male (オス)' },
+                          { value: 'FEMALE', label: 'Female (メス)' },
+                          { value: 'NEUTER', label: 'Neuter (去勢オス)' },
+                          { value: 'SPAY', label: 'Spay (避妊メス)' },
                         ]}
                         required
                         error={errors.gender?.message}
