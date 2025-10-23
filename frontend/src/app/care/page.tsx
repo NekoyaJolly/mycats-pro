@@ -164,12 +164,12 @@ export default function CarePage() {
   const catsQuery = useGetCats({ limit: 100 });
   const catsOptions = useMemo(() => {
     return (
-      catsQuery.data?.data?.data?.map((cat: Cat) => ({
+      catsQuery.data?.data?.map((cat: Cat) => ({
         value: cat.id,
         label: cat.name,
       })) ?? []
     );
-  }, [catsQuery.data?.data?.data]);
+  }, [catsQuery.data?.data]);
 
   const schedules = scheduleQuery.data?.data ?? [];
   const meta = scheduleQuery.data?.meta ?? {

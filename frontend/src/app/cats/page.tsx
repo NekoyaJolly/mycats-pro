@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useMemo, useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Container,
   Text,
@@ -19,8 +19,8 @@ import {
   Alert,
 } from '@mantine/core';
 import { PageTitle } from '@/components/PageTitle';
-import { IconSearch, IconPlus, IconAlertCircle } from '@tabler/icons-react';
-import { useGetCats } from '@/lib/api/hooks/use-cats';
+import { IconSearch, IconPlus, IconAlertCircle, IconRefresh } from '@tabler/icons-react';
+import { useGetCats, useGetCatStatistics, type Cat } from '@/lib/api/hooks/use-cats';
 import { useDebouncedValue } from '@mantine/hooks';
 import type { GetCatsParams } from '@/lib/api/hooks/use-cats';
 
@@ -30,6 +30,7 @@ export default function CatsPage() {
   const [sortBy, setSortBy] = useState('name');
   const [debouncedSearch] = useDebouncedValue(searchTerm, 300);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const queryParams = useMemo<GetCatsParams>(() => {
     const params: GetCatsParams = {};
@@ -46,9 +47,18 @@ export default function CatsPage() {
         params.gender = 'FEMALE';
         break;
       case 'raising':
-        params.isInHouse = true;
+        // We need the full dataset client-side to determine which mothers are raising kittens.
+        // Request a larger limit so client can compute correctly.
+        params.limit = 1000;
+        break;
+      case 'kitten':
+        // Kitten filtering is done client-side (motherId present + <12 months old).
+        // Make sure we fetch sufficient rows to compute correctly.
+        params.limit = 1000;
         break;
       default:
+        // For 'cats' tab, also fetch sufficient data for accurate counts
+        params.limit = 1000;
         break;
     }
 
@@ -56,9 +66,44 @@ export default function CatsPage() {
   }, [debouncedSearch, activeTab]);
 
   // API連携でデータ取得
-  const { data, isLoading, isError, error, isRefetching } = useGetCats(queryParams);
+  const { data, isLoading, isError, error, isRefetching, refetch } = useGetCats(queryParams, {
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+  });
 
-  const apiCats = data?.data?.data || [];
+  const { data: statsData } = useGetCatStatistics();
+
+  // 新規登録からの遷移を検知して自動リフレッシュ
+  useEffect(() => {
+    const refreshParam = searchParams.get('t');
+    if (refreshParam) {
+      refetch();
+      // URLからパラメータを削除
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('t');
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+  }, [searchParams, refetch]);
+
+  const apiCats = data?.data || [];
+
+  // compute counts for kitten / raising
+  const kittenCount = apiCats.filter((cat: Cat) => {
+    if (!cat.birthDate || !cat.motherId) return false;
+    const birthDate = new Date(cat.birthDate);
+    const today = new Date();
+    const ageInDays = Math.floor((today.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24));
+    return ageInDays <= 60; // 60日以内
+  }).length;
+
+  // Raising: 新規登録された生後11ヶ月以内の猫
+  const raisingCount = apiCats.filter((cat: Cat) => {
+    if (!cat.birthDate) return false;
+    const birthDate = new Date(cat.birthDate);
+    const today = new Date();
+    const ageInMonths = (today.getFullYear() - birthDate.getFullYear()) * 12 + (today.getMonth() - birthDate.getMonth());
+    return ageInMonths < 11; // 11ヶ月以内
+  }).length;
 
   // 年齢計算関数
   const calculateAge = (birthDate: string) => {
@@ -85,22 +130,30 @@ export default function CatsPage() {
     
     switch (activeTab) {
       case 'male':
-        filtered = apiCats.filter((cat) => cat.gender === 'MALE');
+        filtered = apiCats.filter((cat: Cat) => cat.gender === 'MALE');
         break;
       case 'female':
-        filtered = apiCats.filter((cat) => cat.gender === 'FEMALE');
+        filtered = apiCats.filter((cat: Cat) => cat.gender === 'FEMALE');
         break;
       case 'kitten':
-        // 1歳未満を子猫とする
-        filtered = apiCats.filter((cat) => {
+        // 母猫の出産時に登録された生後60日以内の子猫のみ表示
+        filtered = apiCats.filter((cat: Cat) => {
+          if (!cat.birthDate || !cat.motherId) return false;
           const birthDate = new Date(cat.birthDate);
           const today = new Date();
-          const ageInMonths = (today.getFullYear() - birthDate.getFullYear()) * 12 + (today.getMonth() - birthDate.getMonth());
-          return ageInMonths < 12;
+          const ageInDays = Math.floor((today.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24));
+          return ageInDays <= 60; // 60日以内
         });
         break;
       case 'raising':
-        filtered = apiCats.filter((cat) => cat.isInHouse);
+        // 新規登録された生後11ヶ月以内の猫（養成中の猫）
+        filtered = apiCats.filter((cat: Cat) => {
+          if (!cat.birthDate) return false;
+          const birthDate = new Date(cat.birthDate);
+          const today = new Date();
+          const ageInMonths = (today.getFullYear() - birthDate.getFullYear()) * 12 + (today.getMonth() - birthDate.getMonth());
+          return ageInMonths < 11; // 11ヶ月以内
+        });
         break;
       default:
         filtered = apiCats;
@@ -108,7 +161,7 @@ export default function CatsPage() {
     
     // 検索フィルター適用
     if (searchTerm) {
-      filtered = filtered.filter((cat) =>
+      filtered = filtered.filter((cat: Cat) =>
         cat.name.includes(searchTerm) || 
         (cat.coatColor?.name || '').includes(searchTerm) ||
         (cat.breed?.name || '').includes(searchTerm)
@@ -116,7 +169,7 @@ export default function CatsPage() {
     }
     
     // ソート適用
-    filtered.sort((a, b) => {
+    filtered.sort((a: Cat, b: Cat) => {
       switch (sortBy) {
         case 'name':
           return a.name.localeCompare(b.name);
@@ -150,13 +203,23 @@ export default function CatsPage() {
         <Container size="xl">
           <Group justify="space-between" align="center">
             <PageTitle withMarginBottom={false}>在舎猫一覧</PageTitle>
-            <Button
-              leftSection={<IconPlus size={16} />}
-              onClick={() => router.push('/cats/new')}
-              variant="filled"
-            >
-              新規登録
-            </Button>
+            <Group gap="sm">
+              <Button
+                variant="light"
+                leftSection={<IconRefresh size={16} />}
+                onClick={() => refetch()}
+                loading={isRefetching}
+              >
+                更新
+              </Button>
+              <Button
+                leftSection={<IconPlus size={16} />}
+                onClick={() => router.push('/cats/new')}
+                variant="filled"
+              >
+                新規登録
+              </Button>
+            </Group>
           </Group>
         </Container>
       </Box>
@@ -191,12 +254,12 @@ export default function CatsPage() {
         {/* タブ */}
         <Tabs value={activeTab} onChange={(value) => setActiveTab(value || 'cats')} mb="md">
           <Tabs.List>
-            <Tabs.Tab value="cats">Cats ({apiCats.length})</Tabs.Tab>
-            <Tabs.Tab value="male">Male ({apiCats.filter(c => c.gender === 'MALE').length})</Tabs.Tab>
-            <Tabs.Tab value="female">Female ({apiCats.filter(c => c.gender === 'FEMALE').length})</Tabs.Tab>
-            <Tabs.Tab value="kitten">Kitten</Tabs.Tab>
-            <Tabs.Tab value="raising">Raising</Tabs.Tab>
-          </Tabs.List>
+              <Tabs.Tab value="cats">Cats ({(statsData && (statsData as any).data?.total) ?? apiCats.length})</Tabs.Tab>
+              <Tabs.Tab value="male">Male ({(statsData && (statsData as any).data?.genderDistribution?.MALE) ?? apiCats.filter((c: Cat) => c.gender === 'MALE').length})</Tabs.Tab>
+              <Tabs.Tab value="female">Female ({(statsData && (statsData as any).data?.genderDistribution?.FEMALE) ?? apiCats.filter((c: Cat) => c.gender === 'FEMALE').length})</Tabs.Tab>
+              <Tabs.Tab value="kitten">Kitten ({kittenCount})</Tabs.Tab>
+              <Tabs.Tab value="raising">Raising ({raisingCount})</Tabs.Tab>
+            </Tabs.List>
         </Tabs>
 
         {/* エラー表示 */}
@@ -218,7 +281,7 @@ export default function CatsPage() {
         {/* 猫リスト（コンパクト表示） */}
         {!isLoading && !isError && (
           <Stack gap="xs">
-            {filteredCats.map((cat) => (
+            {filteredCats.map((cat: Cat) => (
               <Card key={cat.id} shadow="sm" padding="sm" radius="md" withBorder>
                 <Flex justify="space-between" align="center">
                   <Group gap="md" style={{ flex: 1 }}>
