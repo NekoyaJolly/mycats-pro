@@ -1,3 +1,6 @@
+-- Enable uuid-ossp extension for UUID generation
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 -- Create table for tag groups
 CREATE TABLE "tag_groups" (
     "id" TEXT NOT NULL,

@@ -195,6 +195,10 @@ jobs:
         working-directory: backend
         run: npx prisma generate
 
+      - name: Enable PostgreSQL extensions
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d testdb -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
+
       - name: Run database migrations
         working-directory: backend
         run: npx prisma migrate deploy
@@ -274,6 +278,10 @@ jobs:
         env:
           PRISMA_CLIENT_ENGINE_TYPE: library
         run: pnpm exec prisma generate
+
+      - name: Enable PostgreSQL extensions
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d e2edb -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
 
       - name: Run database migrations
         working-directory: backend
