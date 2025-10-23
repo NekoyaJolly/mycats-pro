@@ -102,11 +102,14 @@ export const catKeys = {
  */
 export function useGetCats(
   params: GetCatsParams = {},
-  options?: Omit<UseQueryOptions<ApiResponse<GetCatsResponse>>, 'queryKey' | 'queryFn'>,
+  options?: Omit<UseQueryOptions<GetCatsResponse>, 'queryKey' | 'queryFn'>,
 ) {
   return useQuery({
     queryKey: catKeys.list(params),
-    queryFn: () => apiClient.get('/cats', { query: params as CatsListQuery }) as Promise<ApiResponse<GetCatsResponse>>,
+    queryFn: () => apiClient.get('/cats', { query: params as CatsListQuery }).then(res => ({
+      data: res.data as Cat[],
+      meta: res.meta as { total: number; page: number; limit: number; totalPages: number },
+    })),
     ...options,
   });
 }
