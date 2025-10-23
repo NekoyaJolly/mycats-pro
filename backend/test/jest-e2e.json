@@ -11,5 +11,6 @@
     "!src/**/*.spec.ts"
   ],
   "coverageDirectory": "../coverage-e2e",
-  "testEnvironment": "node"
+  "testEnvironment": "node",
+  "maxWorkers": 1
 }

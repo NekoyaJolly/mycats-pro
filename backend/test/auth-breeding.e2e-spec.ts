@@ -20,7 +20,7 @@ describe("Auth -> Breeding (e2e)", () => {
   });
 
   it("register, login, create breeding", async () => {
-    const email = `test_${Date.now()}@example.com`;
+    const email = `breeding_test_${Date.now()}_${Math.random().toString(36).substring(7)}@example.com`;
   const password = "Secret123!";
 
     // register

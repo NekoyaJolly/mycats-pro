@@ -20,7 +20,7 @@ describe("Auth register (e2e)", () => {
   });
 
   it("registers then rejects duplicate email with 409/400", async () => {
-    const emailRaw = ` Dup_${Date.now()}@Example.com `;
+    const emailRaw = `register_dup_${Date.now()}_${Math.random().toString(36).substring(7)}@Example.com `;
     const email = emailRaw; // server should normalize
     const password = "Secret123!";
 
