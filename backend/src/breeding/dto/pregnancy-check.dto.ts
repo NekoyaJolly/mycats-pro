@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsEnum, IsOptional, IsString, IsDateString, IsUUID, IsInt, Min } from "class-validator";
 import { PregnancyStatus } from "@prisma/client";
+import { IsEnum, IsOptional, IsString, IsDateString, IsUUID, IsInt, Min } from "class-validator";
 
 export class CreatePregnancyCheckDto {
   @ApiProperty({ description: "妊娠チェック対象の猫ID" })
