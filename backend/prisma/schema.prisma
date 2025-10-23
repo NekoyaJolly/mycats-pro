@@ -36,6 +36,8 @@ model User {
   schedules       Schedule[]
   medicalRecords  MedicalRecord[]
   loginAttempts   LoginAttempt[]
+  pregnancyChecks PregnancyCheck[]
+  birthPlans      BirthPlan[]
   // cats            Cat[]  // Removed: not using user relation for cats
 
   @@map("users")
@@ -197,6 +199,54 @@ model BreedingNgRule {
   updatedAt        DateTime           @updatedAt @map("updated_at")
 
   @@map("breeding_ng_rules")
+}
+
+model PregnancyCheck {
+  id                String           @id @default(uuid())
+  breedingRecordId  String           @map("breeding_record_id")
+  maleId            String           @map("male_id")
+  femaleId          String           @map("female_id")
+  maleName          String           @map("male_name")
+  femaleName        String           @map("female_name")
+  matingDate        DateTime         @map("mating_date")
+  checkDate         DateTime         @map("check_date")
+  status            PregnancyStatus  @default(PENDING)
+  notes             String?
+  recordedBy        String           @map("recorded_by")
+  recorder          User             @relation(fields: [recordedBy], references: [id])
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  @@index([maleId])
+  @@index([femaleId])
+  @@index([status])
+  @@index([checkDate])
+  @@map("pregnancy_checks")
+}
+
+model BirthPlan {
+  id                String      @id @default(uuid())
+  breedingRecordId  String      @map("breeding_record_id")
+  maleId            String      @map("male_id")
+  femaleId          String      @map("female_id")
+  maleName          String      @map("male_name")
+  femaleName        String      @map("female_name")
+  matingDate        DateTime    @map("mating_date")
+  expectedDate      DateTime    @map("expected_date")
+  actualBirthDate   DateTime?   @map("actual_birth_date")
+  numberOfKittens   Int?        @map("number_of_kittens")
+  status            BirthStatus @default(PLANNED)
+  notes             String?
+  recordedBy        String      @map("recorded_by")
+  recorder          User        @relation(fields: [recordedBy], references: [id])
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  @@index([maleId])
+  @@index([femaleId])
+  @@index([status])
+  @@index([expectedDate])
+  @@map("birth_plans")
 }
 
 model CareRecord {
@@ -761,4 +811,18 @@ enum TagAutomationRunStatus {
   PENDING
   COMPLETED
   FAILED
+}
+
+enum PregnancyStatus {
+  PENDING
+  CONFIRMED
+  NOT_PREGNANT
+  CANCELLED
+}
+
+enum BirthStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
 }

@@ -1,4 +1,4 @@
-import type { Prisma, BreedingNgRuleType } from '@prisma/client';
+import type { Prisma, BreedingNgRuleType, PregnancyStatus, BirthStatus } from '@prisma/client';
 
 export interface BreedingWhereInput {
   femaleId?: string;
@@ -67,4 +67,60 @@ export interface BreedingNgRuleListResponse {
 export interface BreedingNgRuleResponse {
   success: true;
   data: BreedingNgRule;
+}
+
+// PregnancyCheck types
+export interface PregnancyCheck {
+  id: string;
+  breedingRecordId: string;
+  maleId: string;
+  femaleId: string;
+  maleName: string;
+  femaleName: string;
+  matingDate: Date;
+  checkDate: Date;
+  status: PregnancyStatus;
+  notes: string | null;
+  recordedBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PregnancyCheckListResponse {
+  success: true;
+  data: PregnancyCheck[];
+}
+
+export interface PregnancyCheckResponse {
+  success: true;
+  data: PregnancyCheck;
+}
+
+// BirthPlan types
+export interface BirthPlan {
+  id: string;
+  breedingRecordId: string;
+  maleId: string;
+  femaleId: string;
+  maleName: string;
+  femaleName: string;
+  matingDate: Date;
+  expectedDate: Date;
+  actualBirthDate: Date | null;
+  numberOfKittens: number | null;
+  status: BirthStatus;
+  notes: string | null;
+  recordedBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface BirthPlanListResponse {
+  success: true;
+  data: BirthPlan[];
+}
+
+export interface BirthPlanResponse {
+  success: true;
+  data: BirthPlan;
 }

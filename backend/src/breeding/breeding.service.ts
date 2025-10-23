@@ -13,6 +13,12 @@ import {
   UpdateBreedingDto,
   CreateBreedingNgRuleDto,
   UpdateBreedingNgRuleDto,
+  CreatePregnancyCheckDto,
+  UpdatePregnancyCheckDto,
+  PregnancyCheckQueryDto,
+  CreateBirthPlanDto,
+  UpdateBirthPlanDto,
+  BirthPlanQueryDto,
 } from "./dto";
 import {
   BreedingWhereInput,
@@ -22,6 +28,10 @@ import {
   BreedingSuccessResponse,
   BreedingNgRuleListResponse,
   BreedingNgRuleResponse,
+  PregnancyCheckListResponse,
+  PregnancyCheckResponse,
+  BirthPlanListResponse,
+  BirthPlanResponse,
 } from "./types/breeding.types";
 
 @Injectable()
@@ -201,6 +211,112 @@ export class BreedingService {
 
   async removeNgRule(id: string): Promise<BreedingSuccessResponse> {
     await this.prisma.breedingNgRule.delete({ where: { id } });
+    return { success: true };
+  }
+
+  // PregnancyCheck methods
+  async findAllPregnancyChecks(query: PregnancyCheckQueryDto): Promise<PregnancyCheckListResponse> {
+    const where: Prisma.PregnancyCheckWhereInput = {};
+    if (query.maleId) where.maleId = query.maleId;
+    if (query.femaleId) where.femaleId = query.femaleId;
+    if (query.status) where.status = query.status;
+
+    const data = await this.prisma.pregnancyCheck.findMany({
+      where,
+      orderBy: { checkDate: 'asc' },
+    });
+
+    return { success: true, data };
+  }
+
+  async createPregnancyCheck(dto: CreatePregnancyCheckDto, userId?: string): Promise<PregnancyCheckResponse> {
+    const firstUser = userId ? null : await this.prisma.user.findFirst();
+    const data = await this.prisma.pregnancyCheck.create({
+      data: {
+        breedingRecordId: dto.breedingRecordId,
+        maleId: dto.maleId,
+        femaleId: dto.femaleId,
+        maleName: dto.maleName,
+        femaleName: dto.femaleName,
+        matingDate: new Date(dto.matingDate),
+        checkDate: new Date(dto.checkDate),
+        notes: dto.notes,
+        recordedBy: userId ?? (firstUser ? firstUser.id : undefined as string),
+      },
+    });
+
+    return { success: true, data };
+  }
+
+  async updatePregnancyCheck(id: string, dto: UpdatePregnancyCheckDto): Promise<PregnancyCheckResponse> {
+    const data = await this.prisma.pregnancyCheck.update({
+      where: { id },
+      data: {
+        checkDate: dto.checkDate ? new Date(dto.checkDate) : undefined,
+        status: dto.status,
+        notes: dto.notes,
+      },
+    });
+
+    return { success: true, data };
+  }
+
+  async removePregnancyCheck(id: string): Promise<BreedingSuccessResponse> {
+    await this.prisma.pregnancyCheck.delete({ where: { id } });
+    return { success: true };
+  }
+
+  // BirthPlan methods
+  async findAllBirthPlans(query: BirthPlanQueryDto): Promise<BirthPlanListResponse> {
+    const where: Prisma.BirthPlanWhereInput = {};
+    if (query.maleId) where.maleId = query.maleId;
+    if (query.femaleId) where.femaleId = query.femaleId;
+    if (query.status) where.status = query.status;
+
+    const data = await this.prisma.birthPlan.findMany({
+      where,
+      orderBy: { expectedDate: 'asc' },
+    });
+
+    return { success: true, data };
+  }
+
+  async createBirthPlan(dto: CreateBirthPlanDto, userId?: string): Promise<BirthPlanResponse> {
+    const firstUser = userId ? null : await this.prisma.user.findFirst();
+    const data = await this.prisma.birthPlan.create({
+      data: {
+        breedingRecordId: dto.breedingRecordId,
+        maleId: dto.maleId,
+        femaleId: dto.femaleId,
+        maleName: dto.maleName,
+        femaleName: dto.femaleName,
+        matingDate: new Date(dto.matingDate),
+        expectedDate: new Date(dto.expectedDate),
+        notes: dto.notes,
+        recordedBy: userId ?? (firstUser ? firstUser.id : undefined as string),
+      },
+    });
+
+    return { success: true, data };
+  }
+
+  async updateBirthPlan(id: string, dto: UpdateBirthPlanDto): Promise<BirthPlanResponse> {
+    const data = await this.prisma.birthPlan.update({
+      where: { id },
+      data: {
+        expectedDate: dto.expectedDate ? new Date(dto.expectedDate) : undefined,
+        actualBirthDate: dto.actualBirthDate ? new Date(dto.actualBirthDate) : undefined,
+        numberOfKittens: dto.numberOfKittens,
+        status: dto.status,
+        notes: dto.notes,
+      },
+    });
+
+    return { success: true, data };
+  }
+
+  async removeBirthPlan(id: string): Promise<BreedingSuccessResponse> {
+    await this.prisma.birthPlan.delete({ where: { id } });
     return { success: true };
   }
 }
