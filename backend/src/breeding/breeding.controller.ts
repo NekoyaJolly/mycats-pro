@@ -29,6 +29,12 @@ import {
   UpdateBreedingDto,
   CreateBreedingNgRuleDto,
   UpdateBreedingNgRuleDto,
+  CreatePregnancyCheckDto,
+  UpdatePregnancyCheckDto,
+  PregnancyCheckQueryDto,
+  CreateBirthPlanDto,
+  UpdateBirthPlanDto,
+  BirthPlanQueryDto,
 } from "./dto";
 
 @ApiTags("Breeding")
@@ -109,5 +115,79 @@ export class BreedingController {
   @ApiParam({ name: "id" })
   removeNgRule(@Param("id") id: string) {
     return this.breedingService.removeNgRule(id);
+  }
+
+  // Pregnancy Check endpoints
+  @Get("pregnancy-checks")
+  @ApiOperation({ summary: "妊娠チェック一覧の取得" })
+  @ApiResponse({ status: HttpStatus.OK })
+  findAllPregnancyChecks(@Query() query: PregnancyCheckQueryDto) {
+    return this.breedingService.findAllPregnancyChecks(query);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post("pregnancy-checks")
+  @ApiOperation({ summary: "妊娠チェックの新規作成" })
+  @ApiResponse({ status: HttpStatus.CREATED })
+  createPregnancyCheck(@Body() dto: CreatePregnancyCheckDto) {
+    return this.breedingService.createPregnancyCheck(dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch("pregnancy-checks/:id")
+  @ApiOperation({ summary: "妊娠チェックの更新" })
+  @ApiResponse({ status: HttpStatus.OK })
+  @ApiParam({ name: "id" })
+  updatePregnancyCheck(@Param("id") id: string, @Body() dto: UpdatePregnancyCheckDto) {
+    return this.breedingService.updatePregnancyCheck(id, dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Delete("pregnancy-checks/:id")
+  @ApiOperation({ summary: "妊娠チェックの削除" })
+  @ApiResponse({ status: HttpStatus.OK })
+  @ApiParam({ name: "id" })
+  removePregnancyCheck(@Param("id") id: string) {
+    return this.breedingService.removePregnancyCheck(id);
+  }
+
+  // Birth Plan endpoints
+  @Get("birth-plans")
+  @ApiOperation({ summary: "出産計画一覧の取得" })
+  @ApiResponse({ status: HttpStatus.OK })
+  findAllBirthPlans(@Query() query: BirthPlanQueryDto) {
+    return this.breedingService.findAllBirthPlans(query);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post("birth-plans")
+  @ApiOperation({ summary: "出産計画の新規作成" })
+  @ApiResponse({ status: HttpStatus.CREATED })
+  createBirthPlan(@Body() dto: CreateBirthPlanDto) {
+    return this.breedingService.createBirthPlan(dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch("birth-plans/:id")
+  @ApiOperation({ summary: "出産計画の更新" })
+  @ApiResponse({ status: HttpStatus.OK })
+  @ApiParam({ name: "id" })
+  updateBirthPlan(@Param("id") id: string, @Body() dto: UpdateBirthPlanDto) {
+    return this.breedingService.updateBirthPlan(id, dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Delete("birth-plans/:id")
+  @ApiOperation({ summary: "出産計画の削除" })
+  @ApiResponse({ status: HttpStatus.OK })
+  @ApiParam({ name: "id" })
+  removeBirthPlan(@Param("id") id: string) {
+    return this.breedingService.removeBirthPlan(id);
   }
 }

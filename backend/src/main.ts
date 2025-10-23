@@ -63,7 +63,7 @@ async function bootstrap() {
   // Pino logger
   app.useLogger(app.get(PinoLogger));
 
-  // Security: Helmet middleware for security headers
+    // Security: Helmet middleware for security headers
   app.use(
     helmet({
       contentSecurityPolicy: {
@@ -107,16 +107,14 @@ async function bootstrap() {
   // Cookie parser (for refresh token, etc.)
   app.use(cookieParser());
 
-  // Global validation pipe
+    // Global validation pipe
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,
         transform: true,
       }),
-    );
-
-    // Global response interceptor
+    );    // Global response interceptor
     app.useGlobalInterceptors(new TransformResponseInterceptor());
 
     // Performance monitoring interceptor
@@ -199,9 +197,7 @@ async function bootstrap() {
       }
 
       res.status(health.success ? 200 : 503).json(health);
-    });
-
-    // Swagger documentation
+    });    // Swagger documentation
     if (process.env.NODE_ENV !== "production") {
       const config = new DocumentBuilder()
         .setTitle("Cat Management System API")

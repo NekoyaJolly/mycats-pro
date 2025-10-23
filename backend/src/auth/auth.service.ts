@@ -93,7 +93,9 @@ export class AuthService {
 
     // パスワード検証（Argon2またはbcrypt）
     let isValidPassword = false;
-    if (this.passwordService.isArgon2Hash(user.passwordHash)) {
+    const isArgon2 = this.passwordService.isArgon2Hash(user.passwordHash);
+    
+    if (isArgon2) {
       isValidPassword = await this.passwordService.verifyPassword(
         password,
         user.passwordHash,

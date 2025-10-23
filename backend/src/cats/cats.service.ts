@@ -466,10 +466,12 @@ export class CatsService {
     const genderDistribution: Record<string, number> = {
       MALE: 0,
       FEMALE: 0,
+      NEUTER: 0,
+      SPAY: 0,
     };
 
     for (const group of genderGroups) {
-      if (group.gender === "MALE" || group.gender === "FEMALE") {
+      if (group.gender === "MALE" || group.gender === "FEMALE" || group.gender === "NEUTER" || group.gender === "SPAY") {
         genderDistribution[group.gender] = group._count;
       }
     }

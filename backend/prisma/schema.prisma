@@ -36,6 +36,8 @@ model User {
   schedules       Schedule[]
   medicalRecords  MedicalRecord[]
   loginAttempts   LoginAttempt[]
+  pregnancyChecks PregnancyCheck[]
+  birthPlans      BirthPlan[]
   // cats            Cat[]  // Removed: not using user relation for cats
 
   @@map("users")
@@ -111,7 +113,7 @@ model Cat {
   id                 String   @id @default(uuid())
   registrationId   String?  @unique @map("registration_number") // 登録番号
   name               String
-  gender             String   // MALE, FEMALE
+  gender             String   // MALE, FEMALE, NEUTER, SPAY
   birthDate          DateTime @map("birth_date")
 
   // Breed and Color stored by ID (for relations) but also can store names
@@ -145,6 +147,8 @@ model Cat {
   tags                  CatTag[]
   medicalRecords        MedicalRecord[]
   tagHistory            TagAssignmentHistory[]
+  pregnancyChecks PregnancyCheck[] @relation("PregnancyCheckMother")
+  birthPlans      BirthPlan[]    @relation("BirthPlanMother")
   pedigreeId            String?                @map("pedigree_id") // PedigreeIDで紐付け（全頭ではない）
 
   @@index([breedId])
@@ -197,6 +201,49 @@ model BreedingNgRule {
   updatedAt        DateTime           @updatedAt @map("updated_at")
 
   @@map("breeding_ng_rules")
+}
+
+model PregnancyCheck {
+  id              String            @id @default(uuid())
+  motherId        String            @map("mother_id")
+  checkDate       DateTime          @map("check_date")
+  status          PregnancyStatus   @default(SUSPECTED)
+  notes           String?
+
+  mother Cat @relation("PregnancyCheckMother", fields: [motherId], references: [id])
+
+  recordedBy String @map("recorded_by")
+  recorder   User   @relation(fields: [recordedBy], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([motherId])
+  @@index([checkDate])
+  @@map("pregnancy_checks")
+}
+
+model BirthPlan {
+  id              String         @id @default(uuid())
+  motherId        String         @map("mother_id")
+  expectedBirthDate DateTime     @map("expected_birth_date")
+  actualBirthDate DateTime?      @map("actual_birth_date")
+  status          BirthStatus    @default(EXPECTED)
+  expectedKittens Int?           @map("expected_kittens")
+  actualKittens   Int?           @map("actual_kittens")
+  notes           String?
+
+  mother Cat @relation("BirthPlanMother", fields: [motherId], references: [id])
+
+  recordedBy String @map("recorded_by")
+  recorder   User   @relation(fields: [recordedBy], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([motherId])
+  @@index([expectedBirthDate])
+  @@map("birth_plans")
 }
 
 model CareRecord {
@@ -641,6 +688,20 @@ enum BreedingStatus {
   IN_PROGRESS
   COMPLETED
   FAILED
+}
+
+enum PregnancyStatus {
+  CONFIRMED
+  SUSPECTED
+  NEGATIVE
+  ABORTED
+}
+
+enum BirthStatus {
+  EXPECTED
+  BORN
+  ABORTED
+  STILLBORN
 }
 
 enum BreedingNgRuleType {

@@ -22,6 +22,7 @@ async function main() {
       memoryCost: 65536,
       timeCost: 3,
       parallelism: 4,
+      hashLength: 64,
     });
     admin = await prisma.user.create({
       data: {
@@ -53,6 +54,7 @@ async function main() {
         memoryCost: 65536,
         timeCost: 3,
         parallelism: 4,
+        hashLength: 64,
       });
       updateData.passwordHash = hash;
       needsUpdate = true;

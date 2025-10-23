@@ -5,6 +5,6 @@ import { CreateCatDto } from "./create-cat.dto";
 
 export class UpdateCatDto extends PartialType(CreateCatDto) {
   @IsOptional()
-  @IsIn(["MALE", "FEMALE"])
-  gender?: "MALE" | "FEMALE";
+  @IsIn(["MALE", "FEMALE", "NEUTER", "SPAY"])
+  gender?: "MALE" | "FEMALE" | "NEUTER" | "SPAY";
 }

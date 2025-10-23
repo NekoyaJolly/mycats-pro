@@ -1,4 +1,4 @@
-// Prisma Schema - Last Updated: 2025-10-23T15:51:08.458Z
+// Prisma Schema - Last Updated: 2025-10-23T19:05:15.782Z
 // Auto-generated from schema.prisma
 
 // This is your Prisma schema file,
@@ -39,6 +39,8 @@ model User {
   schedules       Schedule[]
   medicalRecords  MedicalRecord[]
   loginAttempts   LoginAttempt[]
+  pregnancyChecks PregnancyCheck[]
+  birthPlans      BirthPlan[]
   // cats            Cat[]  // Removed: not using user relation for cats
 
   @@map("users")
@@ -114,7 +116,7 @@ model Cat {
   id                 String   @id @default(uuid())
   registrationId   String?  @unique @map("registration_number") // 登録番号
   name               String
-  gender             String   // MALE, FEMALE
+  gender             String   // MALE, FEMALE, NEUTER, SPAY
   birthDate          DateTime @map("birth_date")
 
   // Breed and Color stored by ID (for relations) but also can store names
@@ -148,6 +150,10 @@ model Cat {
   tags                  CatTag[]
   medicalRecords        MedicalRecord[]
   tagHistory            TagAssignmentHistory[]
+  pregnancyChecksMale   PregnancyCheck[]       @relation("PregnancyCheckMale")
+  pregnancyChecksFemale PregnancyCheck[]       @relation("PregnancyCheckFemale")
+  birthPlansMale        BirthPlan[]            @relation("BirthPlanMale")
+  birthPlansFemale      BirthPlan[]            @relation("BirthPlanFemale")
   pedigreeId            String?                @map("pedigree_id") // PedigreeIDで紐付け（全頭ではない）
 
   @@index([breedId])
@@ -200,6 +206,60 @@ model BreedingNgRule {
   updatedAt        DateTime           @updatedAt @map("updated_at")
 
   @@map("breeding_ng_rules")
+}
+
+model PregnancyCheck {
+  id              String            @id @default(uuid())
+  maleId          String            @map("male_id")
+  femaleId        String            @map("female_id")
+  maleName        String            @map("male_name")
+  femaleName      String            @map("female_name")
+  matingDate      DateTime          @map("mating_date")
+  checkDate       DateTime          @map("check_date")
+  status          PregnancyStatus   @default(PENDING)
+  notes           String?
+
+  male   Cat @relation("PregnancyCheckMale", fields: [maleId], references: [id])
+  female Cat @relation("PregnancyCheckFemale", fields: [femaleId], references: [id])
+
+  recordedBy String @map("recorded_by")
+  recorder   User   @relation(fields: [recordedBy], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([maleId])
+  @@index([femaleId])
+  @@index([checkDate])
+  @@map("pregnancy_checks")
+}
+
+model BirthPlan {
+  id              String         @id @default(uuid())
+  maleId          String         @map("male_id")
+  femaleId        String         @map("female_id")
+  maleName        String         @map("male_name")
+  femaleName      String         @map("female_name")
+  matingDate      DateTime       @map("mating_date")
+  expectedDate    DateTime       @map("expected_date")
+  actualDate      DateTime?      @map("actual_date")
+  status          BirthStatus    @default(EXPECTED)
+  numberOfKittens Int?           @map("number_of_kittens")
+  notes           String?
+
+  male   Cat @relation("BirthPlanMale", fields: [maleId], references: [id])
+  female Cat @relation("BirthPlanFemale", fields: [femaleId], references: [id])
+
+  recordedBy String @map("recorded_by")
+  recorder   User   @relation(fields: [recordedBy], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([maleId])
+  @@index([femaleId])
+  @@index([expectedDate])
+  @@map("birth_plans")
 }
 
 model CareRecord {
@@ -644,6 +704,19 @@ enum BreedingStatus {
   IN_PROGRESS
   COMPLETED
   FAILED
+}
+
+enum PregnancyStatus {
+  PENDING
+  CONFIRMED
+  NEGATIVE
+  CANCELLED
+}
+
+enum BirthStatus {
+  EXPECTED
+  COMPLETED
+  CANCELLED
 }
 
 enum BreedingNgRuleType {

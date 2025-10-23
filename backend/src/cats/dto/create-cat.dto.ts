@@ -17,12 +17,12 @@ export class CreateCatDto {
 
   @ApiProperty({
     description: "性別",
-    enum: ["MALE", "FEMALE"],
+    enum: ["MALE", "FEMALE", "NEUTER", "SPAY"],
     example: "MALE",
   })
   @IsString()
-  @IsIn(["MALE", "FEMALE"])
-  gender: "MALE" | "FEMALE";
+  @IsIn(["MALE", "FEMALE", "NEUTER", "SPAY"])
+  gender: "MALE" | "FEMALE" | "NEUTER" | "SPAY";
 
   @ApiProperty({ description: "生年月日", example: "2024-05-01" })
   @IsDateString()
