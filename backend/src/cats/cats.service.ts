@@ -22,7 +22,7 @@ export class CatsService {
       breedId,
       coatColorId,
       microchipNumber,
-      registrationNumber,
+      registrationId,
       description,
       isInHouse,
       fatherId,
@@ -31,23 +31,47 @@ export class CatsService {
     } = createCatDto;
 
     // Validate breed if provided
+    let breedIdToConnect: string | undefined;
     if (breedId) {
-      const breed = await this.prisma.breed.findUnique({
+      // Try to find by ID first
+      let breed = await this.prisma.breed.findUnique({
         where: { id: breedId },
       });
+      
+      // If not found by ID, try to find by name
       if (!breed) {
-        throw new BadRequestException("Invalid breed ID");
+        breed = await this.prisma.breed.findFirst({
+          where: { name: breedId },
+        });
       }
+      
+      if (!breed) {
+        throw new BadRequestException("Invalid breed ID or name");
+      }
+      
+      breedIdToConnect = breed.id;
     }
 
     // Validate coatColor if provided
+    let coatColorIdToConnect: string | undefined;
     if (coatColorId) {
-      const color = await this.prisma.coatColor.findUnique({
+      // Try to find by ID first
+      let color = await this.prisma.coatColor.findUnique({
         where: { id: coatColorId },
       });
+      
+      // If not found by ID, try to find by name
       if (!color) {
-        throw new BadRequestException("Invalid coat color ID");
+        color = await this.prisma.coatColor.findFirst({
+          where: { name: coatColorId },
+        });
       }
+      
+      if (!color) {
+        throw new BadRequestException("Invalid coat color ID or name");
+      }
+      
+      coatColorIdToConnect = color.id;
     }
 
     const birth = new Date(birthDate);
@@ -59,12 +83,12 @@ export class CatsService {
           name,
           gender,
           birthDate: birth,
-          ...(registrationNumber ? { registrationNumber } : {}),
+          ...(registrationId ? { registrationId } : {}),
           ...(microchipNumber ? { microchipNumber } : {}),
           ...(description ? { description } : {}),
           isInHouse: isInHouse ?? true,
-          ...(breedId ? { breed: { connect: { id: breedId } } } : {}),
-          ...(coatColorId ? { coatColor: { connect: { id: coatColorId } } } : {}),
+          ...(breedIdToConnect ? { breed: { connect: { id: breedIdToConnect } } } : {}),
+          ...(coatColorIdToConnect ? { coatColor: { connect: { id: coatColorIdToConnect } } } : {}),
           ...(fatherId ? { father: { connect: { id: fatherId } } } : {}),
           ...(motherId ? { mother: { connect: { id: motherId } } } : {}),
         },
@@ -256,7 +280,7 @@ export class CatsService {
       breedId,
       coatColorId,
       microchipNumber,
-      registrationNumber,
+      registrationId,
       description,
       isInHouse,
       fatherId,
@@ -264,23 +288,47 @@ export class CatsService {
     } = updateCatDto;
 
     // Validate breed if provided
+    let breedIdToConnect: string | undefined;
     if (breedId) {
-      const breed = await this.prisma.breed.findUnique({
+      // Try to find by ID first
+      let breed = await this.prisma.breed.findUnique({
         where: { id: breedId },
       });
+      
+      // If not found by ID, try to find by name
       if (!breed) {
-        throw new BadRequestException("Invalid breed ID");
+        breed = await this.prisma.breed.findFirst({
+          where: { name: breedId },
+        });
       }
+      
+      if (!breed) {
+        throw new BadRequestException("Invalid breed ID or name");
+      }
+      
+      breedIdToConnect = breed.id;
     }
 
     // Validate color if provided
+    let coatColorIdToConnect: string | undefined;
     if (coatColorId) {
-      const color = await this.prisma.coatColor.findUnique({
+      // Try to find by ID first
+      let color = await this.prisma.coatColor.findUnique({
         where: { id: coatColorId },
       });
+      
+      // If not found by ID, try to find by name
       if (!color) {
-        throw new BadRequestException("Invalid coat color ID");
+        color = await this.prisma.coatColor.findFirst({
+          where: { name: coatColorId },
+        });
       }
+      
+      if (!color) {
+        throw new BadRequestException("Invalid coat color ID or name");
+      }
+      
+      coatColorIdToConnect = color.id;
     }
 
     const birth = birthDate ? new Date(birthDate) : undefined;
@@ -292,12 +340,12 @@ export class CatsService {
           ...(name ? { name } : {}),
           ...(gender ? { gender } : {}),
           ...(birth ? { birthDate: birth } : {}),
-          ...(registrationNumber !== undefined ? { registrationNumber } : {}),
+          ...(registrationId !== undefined ? { registrationId } : {}),
           ...(microchipNumber !== undefined ? { microchipNumber } : {}),
           ...(description !== undefined ? { description } : {}),
           ...(isInHouse !== undefined ? { isInHouse } : {}),
-          ...(breedId ? { breed: { connect: { id: breedId } } } : {}),
-          ...(coatColorId ? { coatColor: { connect: { id: coatColorId } } } : {}),
+          ...(breedIdToConnect ? { breed: { connect: { id: breedIdToConnect } } } : {}),
+          ...(coatColorIdToConnect ? { coatColor: { connect: { id: coatColorIdToConnect } } } : {}),
           ...(fatherId ? { father: { connect: { id: fatherId } } } : {}),
           ...(motherId ? { mother: { connect: { id: motherId } } } : {}),
         },

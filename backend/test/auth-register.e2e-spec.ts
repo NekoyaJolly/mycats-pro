@@ -1,7 +1,8 @@
-import { INestApplication, ValidationPipe } from "@nestjs/common";
+import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
 import { AppModule } from "../src/app.module";
+import { createTestApp } from "./utils/create-test-app";
 
 describe("Auth register (e2e)", () => {
   let app: INestApplication;
@@ -10,10 +11,8 @@ describe("Auth register (e2e)", () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
-    app = moduleRef.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
-    app.setGlobalPrefix("api/v1");
-    await app.init();
+
+    app = await createTestApp(moduleRef);
   });
 
   afterAll(async () => {

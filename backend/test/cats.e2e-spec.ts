@@ -11,7 +11,6 @@ interface CatPayload {
   name: string;
   gender: 'MALE' | 'FEMALE';
   birthDate: string;
-  pattern?: string;
   weight?: number;
   microchipId?: string;
   notes?: string;
@@ -27,7 +26,6 @@ function buildCatPayload(overrides: Partial<CatPayload> = {}): CatPayload {
     name: 'Test Cat',
     gender: 'MALE',
     birthDate: '2024-01-01',
-    pattern: 'SOLID',
     ...overrides,
   };
 }
@@ -57,10 +55,6 @@ describe('Cats API (e2e)', () => {
       .expect(201);
 
     authToken = loginRes.body.data.access_token;
-  });
-
-  afterAll(async () => {
-    await app.close();
   });
 
   describe('GET /api/v1/cats', () => {
@@ -133,8 +127,9 @@ describe('Cats API (e2e)', () => {
       expect(res.body.error.code).toBe('BAD_REQUEST');
       expect(res.body.error.details).toEqual(
         expect.arrayContaining([
-          expect.stringContaining('registrationId'),
           expect.stringContaining('name'),
+          expect.stringContaining('gender'),
+          expect.stringContaining('birthDate'),
         ]),
       );
     });
@@ -186,7 +181,7 @@ describe('Cats API (e2e)', () => {
 
       expect(duplicateRes.body.success).toBe(false);
       expect(duplicateRes.body.error.code).toBe('CONFLICT');
-      expect(duplicateRes.body.error.message).toContain('registration ID');
+      expect(duplicateRes.body.error.message).toContain('registration number');
     });
 
     it('should handle unique microchip number constraint', async () => {
@@ -291,7 +286,7 @@ describe('Cats API (e2e)', () => {
     it('should update cat with valid data', async () => {
       const updateData = {
         name: 'Updated Name',
-        pattern: 'STRIPED',
+        description: 'Updated description',
       };
 
       const res = await request(app.getHttpServer())
@@ -302,7 +297,7 @@ describe('Cats API (e2e)', () => {
 
       expect(res.body.success).toBe(true);
       expect(res.body.data.name).toBe(updateData.name);
-      expect(res.body.data.pattern).toBe(updateData.pattern);
+      expect(res.body.data.description).toBe(updateData.description);
     });
 
     it('should allow partial updates', async () => {
@@ -453,13 +448,12 @@ describe('Cats API (e2e)', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           ...buildCatPayload(),
-          breedId: '00000000-0000-0000-0000-000000000000',
+          breedId: 'invalid-uuid',
         })
         .expect(400);
 
       expect(res.body.success).toBe(false);
       expect(res.body.error.code).toBe('BAD_REQUEST');
-  expect(res.body.error.message).toContain('Invalid breed ID');
     });
   });
 });

@@ -11,6 +11,7 @@ import {
   Logger,
   UseGuards,
   ParseUUIDPipe,
+  Header,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -56,6 +57,7 @@ export class CatsController {
   }
 
   @Get()
+  @Header('Cache-Control', 'no-cache')
   @ApiOperation({ summary: "猫データを検索・一覧取得" })
   @ApiResponse({ status: HttpStatus.OK, description: "猫データの一覧" })
   @ApiQuery({

@@ -1,7 +1,8 @@
-import { INestApplication, ValidationPipe } from "@nestjs/common";
+import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
 import { AppModule } from "../src/app.module";
+import { createTestApp } from "./utils/create-test-app";
 
 describe("Auth -> Breeding (e2e)", () => {
   let app: INestApplication;
@@ -10,13 +11,8 @@ describe("Auth -> Breeding (e2e)", () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
-    app = moduleRef.createNestApplication();
-    app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, transform: true }),
-    );
-    // Mirror main.ts behavior
-    app.setGlobalPrefix("api/v1");
-    await app.init();
+
+    app = await createTestApp(moduleRef);
   });
 
   afterAll(async () => {
@@ -47,9 +43,9 @@ describe("Auth -> Breeding (e2e)", () => {
       .post("/api/v1/breeding")
       .set("Authorization", `Bearer ${token}`)
       .send({
-        motherId: "00000000-0000-0000-0000-000000000000",
-        fatherId: "00000000-0000-0000-0000-000000000000",
-        matingDate: "2025-08-01",
+        femaleId: "00000000-0000-0000-0000-000000000000",
+        maleId: "00000000-0000-0000-0000-000000000000",
+        breedingDate: "2025-08-01",
       })
       .expect((res) => {
         // Accept 400/404 since cats may not exist; at least auth works

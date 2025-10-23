@@ -298,7 +298,7 @@ describe('Pedigree module (integration)', () => {
         .get('/api/v1/pedigrees')
         .query({
           breedId: String(breed.code),
-          colorId: String(color.code),
+          coatColorId: String(color.code),
           gender: String(gender.code),
           eyeColor: 'Amber',
           page: 1,

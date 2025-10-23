@@ -1,7 +1,8 @@
-import { INestApplication, ValidationPipe } from "@nestjs/common";
+import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
 import { AppModule } from "../src/app.module";
+import { createTestApp } from "./utils/create-test-app";
 
 describe("Care & Tags flows (e2e)", () => {
   let app: INestApplication;
@@ -10,12 +11,8 @@ describe("Care & Tags flows (e2e)", () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
-    app = moduleRef.createNestApplication();
-    app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, transform: true }),
-    );
-    app.setGlobalPrefix("api/v1");
-    await app.init();
+
+    app = await createTestApp(moduleRef);
   });
 
   afterAll(async () => {
@@ -49,7 +46,6 @@ describe("Care & Tags flows (e2e)", () => {
         name: "E2E Kitty",
         gender: "FEMALE",
         birthDate: "2024-01-01T00:00:00.000Z",
-        ownerId,
       })
       .expect(201);
     const catId =
@@ -59,11 +55,27 @@ describe("Care & Tags flows (e2e)", () => {
       catRes.body?.cat?.id ??
       catRes.body?.data?.catId;
 
+    // create a tag category first
+    const categoryRes = await request(app.getHttpServer())
+      .post("/api/v1/tags/categories")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ name: "Test Category" })
+      .expect(201);
+    const categoryId = categoryRes.body.data.id as string;
+
+    // create a tag group
+    const groupRes = await request(app.getHttpServer())
+      .post("/api/v1/tags/groups")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ categoryId, name: "Test Group" })
+      .expect(201);
+    const groupId = groupRes.body.data.id as string;
+
     // create a tag (auth required)
     const tagRes = await request(app.getHttpServer())
       .post("/api/v1/tags")
       .set("Authorization", `Bearer ${token}`)
-      .send({ name: `indoor-${Date.now()}`, color: "#00AA88" })
+      .send({ name: `indoor-${Date.now()}`, groupId, color: "#00AA88" })
       .expect(201);
     const tagId = tagRes.body.data.id as string;
 
@@ -112,7 +124,6 @@ describe("Care & Tags flows (e2e)", () => {
         name: "E2E Care Cat",
         gender: "FEMALE",
         birthDate: "2024-01-01T00:00:00.000Z",
-        ownerId,
       })
       .expect(201);
     const catId =
@@ -128,6 +139,7 @@ describe("Care & Tags flows (e2e)", () => {
       .set("Authorization", `Bearer ${token}`)
       .send({
         catId,
+        name: "Annual Health Check",
         careType: "HEALTH_CHECK",
         scheduledDate: "2025-09-01",
         description: "Annual check",

@@ -109,7 +109,7 @@ model Gender {
 
 model Cat {
   id                 String   @id @default(uuid())
-  registrationNumber String?  @unique @map("registration_number") // 登録番号
+  registrationId   String?  @unique @map("registration_number") // 登録番号
   name               String
   gender             String   // MALE, FEMALE
   birthDate          DateTime @map("birth_date")
@@ -121,7 +121,7 @@ model Cat {
   coatColor     CoatColor? @relation(fields: [coatColorId], references: [id])
 
   microchipNumber String?  @unique @map("microchip_number")
-  description     String?  @map("description") // 説明・備考
+  description     String?  @map("notes") // 説明・備考
   isInHouse       Boolean  @default(true) @map("is_in_house") // 施設内在舎
 
   // Parent information

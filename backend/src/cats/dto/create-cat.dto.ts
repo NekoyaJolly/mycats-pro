@@ -7,6 +7,7 @@ import {
   MaxLength,
   IsBoolean,
   IsArray,
+  IsIn,
 } from "class-validator";
 
 export class CreateCatDto {
@@ -21,6 +22,7 @@ export class CreateCatDto {
     example: "MALE",
   })
   @IsString()
+  @IsIn(["MALE", "FEMALE"])
   gender: "MALE" | "FEMALE";
 
   @ApiProperty({ description: "生年月日", example: "2024-05-01" })
@@ -47,7 +49,7 @@ export class CreateCatDto {
   @IsOptional()
   @IsString()
   @MaxLength(100)
-  registrationNumber?: string;
+  registrationId?: string;
 
   @ApiPropertyOptional({ description: "説明・備考" })
   @IsOptional()

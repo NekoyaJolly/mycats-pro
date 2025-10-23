@@ -67,6 +67,7 @@ describe("Care & Tags flows (e2e)", () => {
       .set("Authorization", `Bearer ${token}`)
       .send({
         catId,
+        name: "年次健康診断",
         careType: "HEALTH_CHECK",
         scheduledDate: "2025-09-01",
         description: "年次健診",
@@ -99,12 +100,30 @@ describe("Care & Tags flows (e2e)", () => {
       .expect(201);
     const token = login.body.data.access_token as string;
 
+    // create tag category
+    const categoryRes = await request(server)
+      .post("/api/v1/tags/categories")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ name: "Test Category", key: `test_category_${Date.now()}` })
+      .expect(201);
+    const categoryId = categoryRes.body.data.id as string;
+    expect(categoryId).toBeDefined();
+
+    // create tag group
+    const groupRes = await request(server)
+      .post("/api/v1/tags/groups")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ categoryId, name: "Test Group" })
+      .expect(201);
+    const groupId = groupRes.body.data.id as string;
+    expect(groupId).toBeDefined();
+
     // create tag
     const tagName = `tag_${Date.now()}`;
     const tagRes = await request(server)
       .post("/api/v1/tags")
       .set("Authorization", `Bearer ${token}`)
-      .send({ name: tagName, color: "#3B82F6" })
+      .send({ name: tagName, groupId, color: "#3B82F6" })
       .expect(201);
     const tagId = tagRes.body.data.id as string;
     expect(tagId).toBeDefined();
