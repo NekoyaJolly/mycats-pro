@@ -130,8 +130,11 @@ export class BreedingController {
   @Post("pregnancy-checks")
   @ApiOperation({ summary: "妊娠チェックの新規作成" })
   @ApiResponse({ status: HttpStatus.CREATED })
-  createPregnancyCheck(@Body() dto: CreatePregnancyCheckDto) {
-    return this.breedingService.createPregnancyCheck(dto);
+  createPregnancyCheck(
+    @Body() dto: CreatePregnancyCheckDto,
+    @GetUser() user?: RequestUser,
+  ) {
+    return this.breedingService.createPregnancyCheck(dto, user?.userId);
   }
 
   @ApiBearerAuth()
@@ -167,8 +170,11 @@ export class BreedingController {
   @Post("birth-plans")
   @ApiOperation({ summary: "出産計画の新規作成" })
   @ApiResponse({ status: HttpStatus.CREATED })
-  createBirthPlan(@Body() dto: CreateBirthPlanDto) {
-    return this.breedingService.createBirthPlan(dto);
+  createBirthPlan(
+    @Body() dto: CreateBirthPlanDto,
+    @GetUser() user?: RequestUser,
+  ) {
+    return this.breedingService.createBirthPlan(dto, user?.userId);
   }
 
   @ApiBearerAuth()

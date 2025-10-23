@@ -247,7 +247,7 @@ export class BreedingService {
     };
   }
 
-  async createPregnancyCheck(dto: CreatePregnancyCheckDto): Promise<PregnancyCheckResponse> {
+  async createPregnancyCheck(dto: CreatePregnancyCheckDto, userId?: string): Promise<PregnancyCheckResponse> {
     // Validate mother exists and is female
     const mother = await this.prisma.cat.findUnique({
       where: { id: dto.motherId },
@@ -259,13 +259,14 @@ export class BreedingService {
       throw new BadRequestException("Mother must be a female cat");
     }
 
+    const firstUser = userId ? null : await this.prisma.user.findFirst();
     const result = await this.prisma.pregnancyCheck.create({
       data: {
         motherId: dto.motherId,
         checkDate: new Date(dto.checkDate),
         status: dto.status,
         notes: dto.notes,
-        recordedBy: "system", // TODO: 実際のユーザーIDを使用
+        recordedBy: userId ?? (firstUser ? firstUser.id : undefined as string),
       },
       include: {
         mother: { select: { id: true, name: true } },
@@ -330,7 +331,7 @@ export class BreedingService {
     };
   }
 
-  async createBirthPlan(dto: CreateBirthPlanDto): Promise<BirthPlanResponse> {
+  async createBirthPlan(dto: CreateBirthPlanDto, userId?: string): Promise<BirthPlanResponse> {
     // Validate mother exists and is female
     const mother = await this.prisma.cat.findUnique({
       where: { id: dto.motherId },
@@ -342,6 +343,7 @@ export class BreedingService {
       throw new BadRequestException("Mother must be a female cat");
     }
 
+    const firstUser = userId ? null : await this.prisma.user.findFirst();
     const result = await this.prisma.birthPlan.create({
       data: {
         motherId: dto.motherId,
@@ -351,6 +353,7 @@ export class BreedingService {
         expectedKittens: dto.expectedKittens,
         actualKittens: dto.actualKittens,
         notes: dto.notes,
+        recordedBy: userId ?? (firstUser ? firstUser.id : undefined as string),
       },
       include: {
         mother: { select: { id: true, name: true } },
