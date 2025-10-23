@@ -39,6 +39,21 @@ const nextConfig: NextConfig = {
   },
   // モノレポ対応のためのワークスペースルート設定
   outputFileTracingRoot: path.join(__dirname, "../"),
+  // Memory optimization for CI/CD
+  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+    if (!dev && !isServer) {
+      config.optimization.splitChunks.cacheGroups = {
+        ...config.optimization.splitChunks.cacheGroups,
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          chunks: 'all',
+          priority: 10,
+        },
+      };
+    }
+    return config;
+  },
   // Remove rewrites and headers as they don't work with static export
 };
 

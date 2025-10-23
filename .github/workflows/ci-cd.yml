@@ -342,20 +342,31 @@ jobs:
 
       - name: Build frontend
         run: pnpm --filter frontend run build
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
 
       - name: Verify build outputs
         run: |
           echo "🔍 Verifying build outputs..."
+          echo "📁 Current directory: $(pwd)"
+          echo "📂 Directory contents:"
+          ls -la
           if [ -d "backend/dist" ]; then
             echo "✅ Backend dist/ directory exists"
+            echo "📏 Backend dist size: $(du -sh backend/dist)"
           else
             echo "❌ Backend build failed - no dist/ directory"
             exit 1
           fi
           if [ -d "frontend/.next" ]; then
             echo "✅ Frontend .next/ directory exists"
+            echo "📏 Frontend .next size: $(du -sh frontend/.next)"
+            echo "📂 Frontend .next contents:"
+            ls -la frontend/.next | head -10
           else
             echo "❌ Frontend build failed - no .next/ directory"
+            echo "📂 Frontend directory contents:"
+            ls -la frontend/
             exit 1
           fi
 
