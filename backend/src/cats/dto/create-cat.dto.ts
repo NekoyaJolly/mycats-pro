@@ -1,5 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { Transform, Type } from "class-transformer";
 import {
   IsString,
   IsOptional,
@@ -49,7 +48,7 @@ export class CreateCatDto {
   @IsOptional()
   @IsString()
   @MaxLength(100)
-  registrationId?: string;
+  registrationNumber?: string;
 
   @ApiPropertyOptional({ description: "説明・備考" })
   @IsOptional()

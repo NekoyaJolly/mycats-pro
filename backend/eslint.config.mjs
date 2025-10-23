@@ -122,6 +122,8 @@ export default [
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-misused-promises': 'off', // csv-parserの.on("data")で誤検知されるため
+      '@typescript-eslint/prefer-promise-reject-errors': 'off', // すでにErrorを保証しているがESLintが認識しないため
       'no-console': 'off', // スクリプトでのログ出力は許可
     }
   },

@@ -71,11 +71,6 @@ async function importBreeds() {
           breeds.push(data);
         }
       })
-        .on("data", (data: BreedData): void => {
-          if (data.key && data.name && data.key !== "キー") {
-            breeds.push(data);
-          }
-        })
       .on("end", async () => {
         try {
           const processedNames = new Set<string>();
@@ -125,11 +120,6 @@ async function importCoatColors() {
           colors.push(data);
         }
       })
-        .on("data", (data: CoatColorData): void => {
-          if (data.key && data.name && data.key !== "キー") {
-            colors.push(data);
-          }
-        })
       .on("end", async () => {
         try {
           const processedColorNames = new Set<string>();
@@ -179,16 +169,6 @@ async function assertCsvHeaders(csvPath: string, expected: string[]): Promise<vo
           }
         }
       })
-        .on("data", (row: unknown): void => {
-          if (Array.isArray(row)) {
-            rows.push(row.map((h) => String(h).trim()));
-            count++;
-            if (count >= 2) {
-              // 2行取得したらクローズ
-              readStream.destroy();
-            }
-          }
-        })
       .on("end", () => {
         const header = (rows[1] || rows[0] || []);
         const missing = expected.filter((k) => !header.includes(k));
@@ -423,7 +403,7 @@ async function importPedigrees() {
           reject(error);
         }
       })
-      .on("error", reject);
+      .on("error", (err) => reject(err instanceof Error ? err : new Error(String(err))));
   });
 }
 

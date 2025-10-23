@@ -24,11 +24,10 @@ describe("Care & Tags flows (e2e)", () => {
   const password = "Secret123!";
 
     // register
-    const reg = await request(app.getHttpServer())
+    await request(app.getHttpServer())
       .post("/api/v1/auth/register")
       .send({ email, password })
       .expect(201);
-    const ownerId = reg.body.data.id as string;
 
     // login
     const login = await request(app.getHttpServer())
@@ -104,11 +103,10 @@ describe("Care & Tags flows (e2e)", () => {
   const password = "Secret123!";
 
     // register & login
-    const reg = await request(app.getHttpServer())
+    await request(app.getHttpServer())
       .post("/api/v1/auth/register")
       .send({ email, password })
       .expect(201);
-    const ownerId = reg.body.data.id as string;
     const login = await request(app.getHttpServer())
       .post("/api/v1/auth/login")
       .send({ email, password })

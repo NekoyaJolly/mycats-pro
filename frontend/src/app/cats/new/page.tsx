@@ -21,6 +21,8 @@ import { IconArrowLeft, IconDeviceFloppy } from '@tabler/icons-react';
 import { z } from 'zod';
 import { PageTitle } from '@/components/PageTitle';
 import { useCreateCat, type CreateCatRequest } from '@/lib/api/hooks/use-cats';
+import { useGetBreeds } from '@/lib/api/hooks/use-breeds';
+import { useGetCoatColors } from '@/lib/api/hooks/use-coat-colors';
 import TagSelector from '@/components/TagSelector';
 
 const optionalString = z
@@ -40,7 +42,7 @@ const catFormSchema = z.object({
   breedId: optionalString,
   coatColorId: optionalString,
   microchipNumber: optionalString,
-  registrationNumber: optionalString,
+  registrationId: optionalString,
   description: optionalString,
   isInHouse: z.boolean().default(true),
   tagIds: z.array(z.string()).default([]),
@@ -51,6 +53,8 @@ type CatFormValues = z.infer<typeof catFormSchema>;
 export default function CatRegistrationPage() {
   const router = useRouter();
   const createCat = useCreateCat();
+  const { data: breedsData } = useGetBreeds({ limit: 100 });
+  const { data: coatColorsData } = useGetCoatColors({ limit: 100 });
   const {
     control,
     handleSubmit,
@@ -65,7 +69,7 @@ export default function CatRegistrationPage() {
       breedId: undefined,
       coatColorId: undefined,
       microchipNumber: undefined,
-      registrationNumber: undefined,
+      registrationId: undefined,
       description: undefined,
       isInHouse: true,
       tagIds: [],
@@ -80,7 +84,7 @@ export default function CatRegistrationPage() {
       breedId: values.breedId ?? null,
       coatColorId: values.coatColorId ?? null,
       microchipNumber: values.microchipNumber,
-      registrationNumber: values.registrationNumber,
+      registrationNumber: values.registrationId,
       description: values.description,
       isInHouse: values.isInHouse,
       tagIds: values.tagIds.length > 0 ? values.tagIds : undefined,
@@ -90,7 +94,8 @@ export default function CatRegistrationPage() {
       const response = await createCat.mutateAsync(payload);
       reset();
       const newCatId = response.data?.id;
-      router.replace(newCatId ? `/cats/${newCatId}` : '/cats');
+      // 登録成功後に一覧ページに遷移（タイムスタンプを追加してキャッシュをバイパス）
+      router.replace(`/cats?t=${Date.now()}`);
     } catch {
       // エラーハンドリングは useCreateCat 内で通知を表示
     }
@@ -159,12 +164,21 @@ export default function CatRegistrationPage() {
                     name="breedId"
                     control={control}
                     render={({ field }) => (
-                      <TextInput
-                        label="品種 ID"
-                        placeholder="品種IDまたは未設定"
+                      <Select
+                        label="品種"
+                        placeholder="品種を選択"
+                        data={[
+                          { value: '', label: '未設定' },
+                          ...(breedsData?.data?.data?.map((breed) => ({
+                            value: breed.id,
+                            label: breed.name,
+                          })) ?? []),
+                        ]}
                         error={errors.breedId?.message}
-                        {...field}
                         value={field.value ?? ''}
+                        onChange={(value) => field.onChange(value || undefined)}
+                        searchable
+                        clearable
                       />
                     )}
                   />
@@ -208,12 +222,21 @@ export default function CatRegistrationPage() {
                     name="coatColorId"
                     control={control}
                     render={({ field }) => (
-                      <TextInput
-                        label="色柄 ID"
-                        placeholder="色柄IDまたは未設定"
+                      <Select
+                        label="色柄"
+                        placeholder="色柄を選択"
+                        data={[
+                          { value: '', label: '未設定' },
+                          ...(coatColorsData?.data?.data?.map((coatColor) => ({
+                            value: coatColor.id,
+                            label: coatColor.name,
+                          })) ?? []),
+                        ]}
                         error={errors.coatColorId?.message}
-                        {...field}
                         value={field.value ?? ''}
+                        onChange={(value) => field.onChange(value || undefined)}
+                        searchable
+                        clearable
                       />
                     )}
                   />
@@ -235,13 +258,13 @@ export default function CatRegistrationPage() {
                   />
 
                   <Controller
-                    name="registrationNumber"
+                    name="registrationId"
                     control={control}
                     render={({ field }) => (
                       <TextInput
                         label="登録番号"
                         placeholder="登録番号"
-                        error={errors.registrationNumber?.message}
+                        error={errors.registrationId?.message}
                         {...field}
                         value={field.value ?? ''}
                       />

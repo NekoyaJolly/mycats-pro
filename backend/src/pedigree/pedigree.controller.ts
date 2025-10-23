@@ -16,11 +16,9 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
-  ApiBearerAuth,
 } from "@nestjs/swagger";
 import { UserRole } from "@prisma/client";
 
-import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RoleGuard } from "../auth/role.guard";
 import { Roles } from "../auth/roles.decorator";
 
