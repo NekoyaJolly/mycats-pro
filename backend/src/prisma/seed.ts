@@ -79,7 +79,7 @@ async function main() {
 
   const maleCat = await prisma.cat.create({
     data: {
-      registrationNumber: "REG-ALPHA",
+      registrationId: "REG-ALPHA",
       name: "Alpha",
       gender: "MALE",
       birthDate: new Date("2023-01-01"),
@@ -89,7 +89,7 @@ async function main() {
 
   const femaleCat = await prisma.cat.create({
     data: {
-      registrationNumber: "REG-BETA",
+      registrationId: "REG-BETA",
       name: "Beta",
       gender: "FEMALE",
       birthDate: new Date("2023-02-01"),
@@ -169,12 +169,12 @@ async function main() {
   console.log("Admin:", { email, password: forceUpdate || adminAction === "created" ? password : "(unchanged)", id: admin.id, action: adminAction });
   console.log("Male Cat:", {
     id: maleCat.id,
-    registrationNumber: maleCat.registrationNumber,
+    registrationId: maleCat.registrationId,
     name: maleCat.name,
   });
   console.log("Female Cat:", {
     id: femaleCat.id,
-    registrationNumber: femaleCat.registrationNumber,
+    registrationId: femaleCat.registrationId,
     name: femaleCat.name,
   });
   console.log("Tag Category:", { id: category.id, key: category.key, name: category.name });
