@@ -66,38 +66,7 @@ async function main() {
     }
   }
 
-  // 2) Cats (one male, one female)
-  // Clean up existing seed data first
-  await prisma.cat.deleteMany({
-    where: {
-      OR: [
-        { name: "Alpha" },
-        { name: "Beta" }
-      ]
-    }
-  });
-
-  const maleCat = await prisma.cat.create({
-    data: {
-      registrationId: "REG-ALPHA",
-      name: "Alpha",
-      gender: "MALE",
-      birthDate: new Date("2023-01-01"),
-      isInHouse: true,
-    },
-  });
-
-  const femaleCat = await prisma.cat.create({
-    data: {
-      registrationId: "REG-BETA",
-      name: "Beta",
-      gender: "FEMALE",
-      birthDate: new Date("2023-02-01"),
-      isInHouse: true,
-    },
-  });
-
-  // 3) Sample tag category & tag
+  // 2) Sample tag category & tag
   const category = await prisma.tagCategory.upsert({
     where: { key: "cat_status" },
     update: {
@@ -167,16 +136,6 @@ async function main() {
 
   console.log("Seed complete ✅");
   console.log("Admin:", { email, password: forceUpdate || adminAction === "created" ? password : "(unchanged)", id: admin.id, action: adminAction });
-  console.log("Male Cat:", {
-    id: maleCat.id,
-    registrationId: maleCat.registrationId,
-    name: maleCat.name,
-  });
-  console.log("Female Cat:", {
-    id: femaleCat.id,
-    registrationId: femaleCat.registrationId,
-    name: femaleCat.name,
-  });
   console.log("Tag Category:", { id: category.id, key: category.key, name: category.name });
   console.log("Tag Group:", { id: group.id, name: group.name, categoryId: group.categoryId });
   console.log("Tag:", { id: tag.id, name: tag.name, groupId: tag.groupId });
