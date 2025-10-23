@@ -20,9 +20,8 @@ import {
 } from '@mantine/core';
 import { PageTitle } from '@/components/PageTitle';
 import { IconSearch, IconPlus, IconAlertCircle, IconRefresh } from '@tabler/icons-react';
-import { useGetCats, useGetCatStatistics, type Cat } from '@/lib/api/hooks/use-cats';
+import { useGetCats, useGetCatStatistics, type Cat, type GetCatsParams } from '@/lib/api/hooks/use-cats';
 import { useDebouncedValue } from '@mantine/hooks';
-import type { GetCatsParams } from '@/lib/api/hooks/use-cats';
 
 export default function CatsPage() {
   const [searchTerm, setSearchTerm] = useState('');
