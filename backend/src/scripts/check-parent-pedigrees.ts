@@ -10,7 +10,7 @@ async function checkParentPedigrees() {
         pedigreeId: true,
         catName: true,
         breedCode: true,
-        gender: true,
+        genderCode: true,
       },
     });
 
@@ -18,7 +18,7 @@ async function checkParentPedigrees() {
     console.log("血統書ID一覧:");
     allPedigrees.forEach((p) => {
       console.log(
-        `  ${p.pedigreeId} - ${p.catName || "名前なし"} (猫種: ${p.breedCode}, 性別: ${p.gender})`,
+        `  ${p.pedigreeId} - ${p.catName || "名前なし"} (猫種: ${p.breedCode}, 性別: ${p.genderCode})`,
       );
     });
 

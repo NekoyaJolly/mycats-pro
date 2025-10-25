@@ -129,7 +129,7 @@ async function importSelectedPedigrees(options: ImportOptions = {}) {
             `Cat_${record.キー}`,
           breedId: breedId,
           breedCode: parseInt(record.猫種ｺｰﾄﾞ) || null,
-          gender: parseInt(record.性別) || null,
+          genderCode: parseInt(record.性別) || null,
           eyeColor: record.目色 || null,
           colorId: colorId,
           coatColorCode: parseInt(record.毛色ｺｰﾄﾞ) || null,

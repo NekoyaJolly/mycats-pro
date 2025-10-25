@@ -64,7 +64,7 @@ async function importPedigreeData() {
           catName: catName,
           catName2: catName2 || null,
           breedCode: (breedCode !== null && !isNaN(breedCode)) ? breedCode : null,
-          gender: genderStr ? parseInt(genderStr, 10) : null,
+          genderCode: genderStr ? parseInt(genderStr, 10) : null,
           coatColorCode: (coatColorCode !== null && !isNaN(coatColorCode)) ? coatColorCode : null,
         },
       });

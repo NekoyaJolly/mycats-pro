@@ -106,10 +106,10 @@ async function importParentPedigrees() {
         if (existing) return; // スキップ
 
         const birthDate = record.BirthDate
-          ? new Date(record.BirthDate.replace(/\./g, "-"))
+          ? new Date(record.BirthDate.replace(/\./g, "-")).toISOString()
           : null;
         const registrationDate = record.RegistrationDate
-          ? new Date(record.RegistrationDate.replace(/\./g, "-"))
+          ? new Date(record.RegistrationDate.replace(/\./g, "-")).toISOString()
           : null;
 
         await tx.pedigree.create({
@@ -118,7 +118,7 @@ async function importParentPedigrees() {
             title: record.Title ?? null,
             catName: record.CatName ?? "",
             breedCode: parseInt(record.BreedCode, 10),
-            gender: parseInt(record.Gender, 10),
+            genderCode: parseInt(record.Gender, 10),
             eyeColor: record.EyeColor ?? null,
             coatColorCode: parseInt(record.CoatColorCode, 10),
             birthDate,
