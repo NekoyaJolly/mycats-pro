@@ -143,7 +143,7 @@ export type CreatePregnancyCheckRequest = {
 
 export type UpdatePregnancyCheckRequest = Partial<CreatePregnancyCheckRequest>;
 
-const pregnancyCheckKeys = createDomainQueryKeys<string, any>('pregnancy-checks');
+const pregnancyCheckKeys = createDomainQueryKeys<string, Record<string, unknown>>('pregnancy-checks');
 
 // Birth Plan types and hooks
 export type BirthStatus = 'EXPECTED' | 'BORN' | 'ABORTED' | 'STILLBORN';
@@ -182,7 +182,7 @@ export type CreateBirthPlanRequest = {
 
 export type UpdateBirthPlanRequest = Partial<CreateBirthPlanRequest>;
 
-const birthPlanKeys = createDomainQueryKeys<string, any>('birth-plans');
+const birthPlanKeys = createDomainQueryKeys<string, Record<string, unknown>>('birth-plans');
 
 export { breedingKeys };
 export { breedingNgRuleKeys };
@@ -392,7 +392,7 @@ export function useDeleteBreedingNgRule() {
 
 // Pregnancy Check hooks
 export function useGetPregnancyChecks(
-  params: any = {},
+  params: Record<string, unknown> = {},
   options?: Omit<UseQueryOptions<PregnancyCheckListResponse>, 'queryKey' | 'queryFn'>,
 ) {
   return useQuery({
@@ -486,7 +486,7 @@ export function useDeletePregnancyCheck() {
 
 // Birth Plan hooks
 export function useGetBirthPlans(
-  params: any = {},
+  params: Record<string, unknown> = {},
   options?: Omit<UseQueryOptions<BirthPlanListResponse>, 'queryKey' | 'queryFn'>,
 ) {
   return useQuery({
