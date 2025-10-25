@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, ChangeEvent } from 'react';
+import { useEffect, useState, ChangeEvent, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Box,
@@ -158,6 +158,10 @@ const calculateAgeInMonths = (birthDate: string): number => {
 };
 
 export default function BreedingPage() {
+  // hydration guard: 初回マウント時に localStorage から読み込むまで保存を抑制
+  const hydratedRef = useRef(false);
+  const mountCountRef = useRef(0);
+
   const [activeTab, setActiveTab] = useState('schedule');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 現在の月
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear()); // 現在の年
@@ -165,7 +169,7 @@ export default function BreedingPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedMaleForEdit, setSelectedMaleForEdit] = useState<string | null>(null);
   const [activeMales, setActiveMales] = useState<Cat[]>([]); // 最初は空
-  
+
   const [selectedMale, setSelectedMale] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedDuration, setSelectedDuration] = useState<number>(1); // 交配期間（日数）
@@ -175,10 +179,10 @@ export default function BreedingPage() {
   const [maleModalOpened, { open: openMaleModal, close: closeMaleModal }] = useDisclosure(false);
   const [rulesModalOpened, { open: openRulesModal, close: closeRulesModal }] = useDisclosure(false);
   const [newRuleModalOpened, { open: openNewRuleModal, close: closeNewRuleModal }] = useDisclosure(false);
-  
+
   // 交配チェック記録管理 - キー: "オスID-メスID-日付", 値: チェック回数
   const [matingChecks, setMatingChecks] = useState<{[key: string]: number}>({});
-  
+
   const [ngPairingRules, setNgPairingRules] = useState<NgPairingRule[]>(initialNgPairingRules);
   const [rulesError, setRulesError] = useState<string | null>(null);
   const [newRule, setNewRule] = useState<NewRuleState>({
@@ -198,31 +202,62 @@ export default function BreedingPage() {
     DEFAULT_DURATION: 'breeding_default_duration',
     SELECTED_YEAR: 'breeding_selected_year',
     SELECTED_MONTH: 'breeding_selected_month',
+    BREEDING_SCHEDULE: 'breeding_schedule',
+    MATING_CHECKS: 'breeding_mating_checks',
   };
+
+  console.log(`BreedingPage component rendered (mount count: ${mountCountRef.current}) - breedingSchedule:`, breedingSchedule);
+  console.log('BreedingPage component rendered - localStorage breeding_schedule:', localStorage.getItem(STORAGE_KEYS.BREEDING_SCHEDULE));
 
   // localStorageからデータを読み込む
   useEffect(() => {
+    console.log(`Loading data from localStorage (mount count: ${mountCountRef.current})...`);
     const loadFromStorage = () => {
       try {
         const storedActiveMales = localStorage.getItem(STORAGE_KEYS.ACTIVE_MALES);
         if (storedActiveMales) {
           const parsed = JSON.parse(storedActiveMales);
+          console.log('Loaded activeMales:', parsed);
           setActiveMales(parsed);
         }
 
         const storedDefaultDuration = localStorage.getItem(STORAGE_KEYS.DEFAULT_DURATION);
         if (storedDefaultDuration) {
-          setDefaultDuration(parseInt(storedDefaultDuration, 10));
+          const parsed = parseInt(storedDefaultDuration, 10);
+          console.log('Loaded defaultDuration:', parsed);
+          setDefaultDuration(parsed);
         }
 
         const storedYear = localStorage.getItem(STORAGE_KEYS.SELECTED_YEAR);
         if (storedYear) {
-          setSelectedYear(parseInt(storedYear, 10));
+          const parsed = parseInt(storedYear, 10);
+          console.log('Loaded selectedYear:', parsed);
+          setSelectedYear(parsed);
         }
 
         const storedMonth = localStorage.getItem(STORAGE_KEYS.SELECTED_MONTH);
         if (storedMonth) {
-          setSelectedMonth(parseInt(storedMonth, 10));
+          const parsed = parseInt(storedMonth, 10);
+          console.log('Loaded selectedMonth:', parsed);
+          setSelectedMonth(parsed);
+        }
+
+        const storedBreedingSchedule = localStorage.getItem(STORAGE_KEYS.BREEDING_SCHEDULE);
+        if (storedBreedingSchedule) {
+          const parsed = JSON.parse(storedBreedingSchedule);
+          console.log('Loading breeding schedule from localStorage:', parsed);
+          setBreedingSchedule(parsed);
+          // すぐにlocalStorageを更新して同期を取る
+          localStorage.setItem(STORAGE_KEYS.BREEDING_SCHEDULE, storedBreedingSchedule);
+        }
+
+        const storedMatingChecks = localStorage.getItem(STORAGE_KEYS.MATING_CHECKS);
+        if (storedMatingChecks) {
+          const parsed = JSON.parse(storedMatingChecks);
+          console.log('Loading mating checks from localStorage:', parsed);
+          setMatingChecks(parsed);
+          // すぐにlocalStorageを更新
+          localStorage.setItem(STORAGE_KEYS.MATING_CHECKS, storedMatingChecks);
         }
       } catch (error) {
         console.warn('Failed to load breeding data from localStorage:', error);
@@ -230,23 +265,61 @@ export default function BreedingPage() {
     };
 
     loadFromStorage();
-  }, []);
-
-  // localStorageにデータを保存する
+    
+    // setTimeoutでhydratedRefをtrueにする
+    setTimeout(() => {
+      hydratedRef.current = true;
+    }, 0);
+  }, []);  // localStorageにデータを保存する
+  
+  // デバッグ用: breedingSchedule の変更を監視
   useEffect(() => {
+    console.log(`breedingSchedule state changed (mount count: ${mountCountRef.current}):`, breedingSchedule);
+    console.log('Current localStorage breeding_schedule:', localStorage.getItem(STORAGE_KEYS.BREEDING_SCHEDULE));
+  }, [breedingSchedule]);
+
+  // コンポーネントのマウント/アンマウントを追跡
+  useEffect(() => {
+    mountCountRef.current += 1;
+    console.log(`BreedingPage component mounted (count: ${mountCountRef.current})`);
+    return () => {
+      console.log('BreedingPage component unmounted');
+      hydratedRef.current = false; // reset hydrated state on unmount
+    };
+  }, []);
+  
+
+  useEffect(() => {
+    console.log(`Saving data to localStorage (mount count: ${mountCountRef.current})...`);
     const saveToStorage = () => {
+      // don't persist before we've hydrated from storage
+      if (!hydratedRef.current) return;
+
       try {
         localStorage.setItem(STORAGE_KEYS.ACTIVE_MALES, JSON.stringify(activeMales));
         localStorage.setItem(STORAGE_KEYS.DEFAULT_DURATION, defaultDuration.toString());
         localStorage.setItem(STORAGE_KEYS.SELECTED_YEAR, selectedYear.toString());
         localStorage.setItem(STORAGE_KEYS.SELECTED_MONTH, selectedMonth.toString());
+        // breedingScheduleが空でない場合のみ保存
+        if (Object.keys(breedingSchedule).length > 0) {
+          localStorage.setItem(STORAGE_KEYS.BREEDING_SCHEDULE, JSON.stringify(breedingSchedule));
+        }
+        localStorage.setItem(STORAGE_KEYS.MATING_CHECKS, JSON.stringify(matingChecks));
+        console.log('Saved to localStorage:', {
+          breedingSchedule,
+          matingChecks,
+          activeMales,
+          defaultDuration,
+          selectedYear,
+          selectedMonth
+        });
       } catch (error) {
         console.warn('Failed to save breeding data to localStorage:', error);
       }
     };
 
     saveToStorage();
-  }, [activeMales, defaultDuration, selectedYear, selectedMonth]);
+  }, [activeMales, defaultDuration, selectedYear, selectedMonth, breedingSchedule, matingChecks]);
 
   const catsQuery = useGetCats({}, { enabled: true });
   const { data: catsResponse } = catsQuery;
