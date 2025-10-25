@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -172,7 +173,7 @@ export class BreedingService {
   }
 
   async updateNgRule(id: string, dto: UpdateBreedingNgRuleDto): Promise<BreedingNgRuleResponse> {
-    const data: any = {
+    const data: Prisma.BreedingNgRuleUpdateInput = {
       name: dto.name,
       description: dto.description,
       type: dto.type,
@@ -218,7 +219,7 @@ export class BreedingService {
       status,
     } = query;
 
-    const where: any = {};
+    const where: Prisma.PregnancyCheckWhereInput = {};
     if (motherId) where.motherId = motherId;
     if (status) where.status = status;
 
@@ -302,7 +303,7 @@ export class BreedingService {
       status,
     } = query;
 
-    const where: any = {};
+    const where: Prisma.BirthPlanWhereInput = {};
     if (motherId) where.motherId = motherId;
     if (status) where.status = status;
 
